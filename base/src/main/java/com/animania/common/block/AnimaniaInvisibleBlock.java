@@ -18,10 +18,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/** Collision-free helper used by the legacy trough/invisiblock layout. */
+/** Interactive and collidable second half of the legacy two-block trough. */
 public final class AnimaniaInvisibleBlock extends BaseEntityBlock {
     public static final DirectionProperty CONTROLLER = DirectionProperty.create("controller", Direction.Plane.HORIZONTAL);
-    private static final VoxelShape SHAPE = Block.box(1.6, 0, 1.6, 14.4, 4.8, 14.4);
+    private static final VoxelShape NORTH_SOUTH = Block.box(1.6, 0, 0, 14.4, 4.8, 16);
+    private static final VoxelShape EAST_WEST = Block.box(0, 0, 1.6, 16, 4.8, 14.4);
 
     public AnimaniaInvisibleBlock(Properties properties) {
         super(properties.noOcclusion().noLootTable().strength(-1.0F, 3600000.0F));
@@ -33,8 +34,11 @@ public final class AnimaniaInvisibleBlock extends BaseEntityBlock {
         return new com.animania.common.AnimaniaBlocks.InvisibleTroughProxyEntity(pos, state);
     }
     public BlockPos controllerPos(BlockPos pos, BlockState state) { return pos.relative(state.getValue(CONTROLLER)); }
-    @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) { return SHAPE; }
-    @Override public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) { return SHAPE; }
+    private static VoxelShape shape(BlockState state) {
+        return state.getValue(CONTROLLER).getAxis() == Direction.Axis.Z ? NORTH_SOUTH : EAST_WEST;
+    }
+    @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) { return shape(state); }
+    @Override public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) { return shape(state); }
     @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         BlockPos controller = controllerPos(pos, state);
         BlockState controllerState = level.getBlockState(controller);

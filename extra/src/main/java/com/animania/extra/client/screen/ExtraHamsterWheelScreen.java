@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 /** Compact native screen for the wheel's single food slot. */
 public final class ExtraHamsterWheelScreen extends AbstractContainerScreen<ExtraHamsterWheelMenu> {
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/container/hopper.png");
+            new ResourceLocation("minecraft", "textures/gui/container/hopper.png");
 
     public ExtraHamsterWheelScreen(ExtraHamsterWheelMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);

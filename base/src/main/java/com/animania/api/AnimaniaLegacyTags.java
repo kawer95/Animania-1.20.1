@@ -18,7 +18,7 @@ public final class AnimaniaLegacyTags {
     public static final TagKey<Item> COOKED_PORK = forge("foods/cooked_pork");
 
     private static TagKey<Item> forge(String path) {
-        return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("forge", path));
+        return TagKey.create(Registries.ITEM, new ResourceLocation("forge", path));
     }
     private AnimaniaLegacyTags() { }
 }

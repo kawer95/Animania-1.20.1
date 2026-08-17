@@ -14,11 +14,11 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 /** One native layer replaces the 18 breed/sex-specific 1.12 pig mud layers. */
 public final class AnimaniaMudLayer extends RenderLayer<AnimaniaAnimalEntity, LegacyAnimalModel> {
-    private static final ResourceLocation ADULT = ResourceLocation.fromNamespaceAndPath(
+    private static final ResourceLocation ADULT = new ResourceLocation(
             "animania_farm", "textures/entity/pigs/pig_muddy.png");
-    private static final ResourceLocation HAMPSHIRE = ResourceLocation.fromNamespaceAndPath(
+    private static final ResourceLocation HAMPSHIRE = new ResourceLocation(
             "animania_farm", "textures/entity/pigs/pig_muddy_hampshire.png");
-    private static final ResourceLocation PIGLET = ResourceLocation.fromNamespaceAndPath(
+    private static final ResourceLocation PIGLET = new ResourceLocation(
             "animania_farm", "textures/entity/pigs/piglet_muddy.png");
 
     public AnimaniaMudLayer(RenderLayerParent<AnimaniaAnimalEntity, LegacyAnimalModel> parent) {

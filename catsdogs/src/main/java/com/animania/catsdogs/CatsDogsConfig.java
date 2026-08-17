@@ -11,7 +11,6 @@ import java.util.Map;
 public final class CatsDogsConfig {
     public static final ForgeConfigSpec SPEC;
     public static final ForgeConfigSpec.BooleanValue ENABLE_SPAWNS;
-    public static final ForgeConfigSpec.BooleanValue REQUIRE_TAMING_FOR_BREEDING;
     public static final ForgeConfigSpec.IntValue SPAWN_LIMIT_CATS;
     public static final ForgeConfigSpec.IntValue SPAWN_LIMIT_DOGS;
     public static final ForgeConfigSpec.IntValue SPAWN_PROBABILITY_CATS;
@@ -32,7 +31,6 @@ public final class CatsDogsConfig {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
         builder.push("catsdogs");
         ENABLE_SPAWNS = builder.define("enableNaturalSpawns", true);
-        REQUIRE_TAMING_FOR_BREEDING = builder.define("requireTamingForBreeding", true);
         SPAWN_LIMIT_CATS = builder.defineInRange("spawnLimitCats", 20, 1, 256);
         SPAWN_LIMIT_DOGS = builder.defineInRange("spawnLimitDogs", 20, 1, 256);
         SPAWN_PROBABILITY_CATS = builder.defineInRange("spawnProbabilityCats", 4, 1, 100);

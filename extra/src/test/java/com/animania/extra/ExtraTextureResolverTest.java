@@ -26,7 +26,7 @@ final class ExtraTextureResolverTest {
 
     private static void assertTexture(String id, String variant) {
         ResourceLocation texture = LegacyAnimalTextures.resolve(
-                ResourceLocation.fromNamespaceAndPath(AnimaniaExtra.MOD_ID, id), variant, false);
+                new ResourceLocation(AnimaniaExtra.MOD_ID, id), variant, false);
         String resource = "assets/" + texture.getNamespace() + "/" + texture.getPath();
         try (InputStream stream = ExtraTextureResolverTest.class.getClassLoader().getResourceAsStream(resource)) {
             assertNotNull(stream, id + " (" + variant + ") -> " + resource);

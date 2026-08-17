@@ -114,7 +114,6 @@ public final class ConfigMigrator {
             Map.entry("horseFood", "[\"minecraft:wheat\", \"harvestcraft:barleyitem\", \"harvestcraft:oatsitem\", \"harvestcraft:ryeitem\", \"minecraft:apple\", \"minecraft:carrot\"]"),
             Map.entry("sheepFood", "[\"minecraft:wheat\", \"harvestcraft:barleyitem\", \"harvestcraft:oatsitem\", \"harvestcraft:ryeitem\"]"),
             Map.entry("pigFood", "[\"minecraft:carrot\", \"minecraft:beetroot\", \"minecraft:potato\", \"minecraft:poisonous_potato\", \"minecraft:bread\"]"),
-            Map.entry("requireTamingForBreeding", "true"),
             Map.entry("hamsterWheelCapacity", "200000"),
             Map.entry("hamsterWheelGeneration", "20"),
             Map.entry("hamsterWheelUseTime", "2000"),
@@ -246,7 +245,7 @@ public final class ConfigMigrator {
             "rabbitCottontailBiomeTypes", "rabbitChinchillaBiomeTypes", "rabbitDutchBiomeTypes", "rabbitHavanaBiomeTypes", "rabbitJackBiomeTypes", "rabbitNewZealandBiomeTypes", "rabbitRexBiomeTypes", "rabbitLopBiomeTypes",
             "peafowlCharcoalBiomeTypes", "peafowlOpalBiomeTypes", "peafowlPeachBiomeTypes", "peafowlPurpleBiomeTypes", "peafowlTaupeBiomeTypes", "peafowlBlueBiomeTypes", "peafowlWhiteBiomeTypes");
     private static final Set<String> CATSDOGS_KEYS = Set.of(
-            "requireTamingForBreeding", "spawnLimitCats", "spawnLimitDogs", "spawnProbabilityCats",
+            "spawnLimitCats", "spawnLimitDogs", "spawnProbabilityCats",
             "spawnProbabilityDogs", "replaceVanillaWolves", "replaceVanillaOcelots", "catFood", "dogFood", "petBowlFood",
             "numberDogFamilies", "numberCatFamilies", "catBed", "catBed2", "dogBed", "dogBed2", "wolfBiomeTypes", "foxBiomeTypes", "ocelotBiomeTypes");
 

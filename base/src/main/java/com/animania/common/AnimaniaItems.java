@@ -1,6 +1,7 @@
 package com.animania.common;
 
 import com.animania.Animania;
+import com.animania.api.AnimaniaApi;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.BucketItem;
@@ -40,21 +41,21 @@ public final class AnimaniaItems {
                     new Item.Properties().craftRemainder(net.minecraft.world.item.Items.BUCKET).stacksTo(1)));
     /** Random all-Animania egg; addon entity types are discovered at use time. */
     public static final RegistryObject<Item> ENTITY_EGG_RANDOM = ITEMS.register("entity_egg_random",
-            () -> new AnimaniaEntityEggItem(AnimaniaItems::allAnimalTypes, new Item.Properties(), true));
+            () -> new AnimaniaEntityEggItem(AnimaniaItems::registeredAnimalTypes, new Item.Properties(), true));
 
     @SuppressWarnings("unchecked")
-    private static List<EntityType<? extends AnimaniaAnimalEntity>> allAnimalTypes() {
+    public static List<EntityType<? extends AnimaniaAnimalEntity>> registeredAnimalTypes() {
         List<EntityType<? extends AnimaniaAnimalEntity>> types = new ArrayList<>();
         ForgeRegistries.ENTITY_TYPES.getEntries().forEach(entry -> {
-            String namespace = entry.getKey().location().getNamespace();
-            String path = entry.getKey().location().getPath();
-            if ((namespace.equals(Animania.MOD_ID) || namespace.startsWith("animania_"))
-                    && !path.equals("cart") && !path.equals("wagon") && !path.equals("tiller")
-                    && !path.startsWith("item_")) {
+            var id = entry.getKey().location();
+            // Species registration is the authoritative addon-neutral animal
+            // roster. Namespace/name heuristics also admitted projectiles
+            // such as brown_egg_projectile and caused intermittent casts.
+            if (AnimaniaApi.species(id).isPresent()) {
                 types.add((EntityType<? extends AnimaniaAnimalEntity>) (EntityType<?>) entry.getValue());
             }
         });
-        return types;
+        return List.copyOf(types);
     }
 
     private AnimaniaItems() {

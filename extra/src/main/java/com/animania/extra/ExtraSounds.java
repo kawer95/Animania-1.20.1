@@ -21,7 +21,7 @@ public final class ExtraSounds {
 
     private static void add(String id) {
         ALL.put(id, SOUNDS.register(id, () -> SoundEvent.createVariableRangeEvent(
-                ResourceLocation.fromNamespaceAndPath(AnimaniaExtra.MOD_ID, id))));
+                new ResourceLocation(AnimaniaExtra.MOD_ID, id))));
     }
 
     private ExtraSounds() { }

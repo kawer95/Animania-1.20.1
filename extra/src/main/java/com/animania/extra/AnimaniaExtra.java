@@ -106,10 +106,21 @@ public final class AnimaniaExtra {
     private void attributes(EntityAttributeCreationEvent event) {
         ENTITIES.forEach((id, type) -> {
             var attributes = AnimaniaAnimalEntity.createAttributes();
-            if (id.equals("hamster")) {
-                attributes.add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH, 10.0D);
-                attributes.add(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED, 0.30000001192092896D);
-            }
+            double health;
+            double speed;
+            double attack = 1.0D;
+            if (id.startsWith("doe_")) { health = 9.0D; speed = 0.265D; }
+            else if (id.startsWith("buck_")) { health = 8.0D; speed = 0.265D; }
+            else if (id.startsWith("kit_")) { health = 3.0D; speed = 0.315D; }
+            else if (id.equals("hamster")) { health = 10.0D; speed = 0.30000001192092896D; }
+            else if (id.startsWith("ferret_")) { health = 8.0D; speed = 0.35D; attack = 0.5D; }
+            else if (id.startsWith("hedgehog")) { health = 8.0D; speed = 0.25D; }
+            else if (id.startsWith("peacock_") || id.startsWith("peahen_") || id.startsWith("peachick_")) {
+                health = 7.0D; speed = 0.25D; attack = 1.5D;
+            } else { health = 3.0D; speed = 0.30000001192092896D; }
+            attributes.add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH, health)
+                    .add(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED, speed)
+                    .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE, attack);
             event.put((EntityType<? extends LivingEntity>) type.get(), attributes.build());
         });
     }
@@ -208,8 +219,7 @@ public final class AnimaniaExtra {
         replacement.setCustomNameVisible(vanilla.isCustomNameVisible());
         replacement.setPersistenceRequired();
         if (baby) replacement.setAge(-AnimaniaAnimalEntity.childGrowthDuration());
-        event.getLevel().addFreshEntity(replacement);
-        event.setCanceled(true);
+        if (event.getLevel().addFreshEntity(replacement)) event.setCanceled(true);
     }
 
     private void registerGameTests(RegisterGameTestsEvent event) {
@@ -219,7 +229,8 @@ public final class AnimaniaExtra {
     private static AnimalGender gender(String id) {
         if (id.startsWith("kit_") || id.startsWith("peachick_")) return AnimalGender.CHILD;
         if (id.startsWith("doe_") || id.startsWith("peahen_")) return AnimalGender.FEMALE;
-        return AnimalGender.MALE;
+        if (id.startsWith("buck_") || id.startsWith("peacock_")) return AnimalGender.MALE;
+        return AnimalGender.NONE;
     }
 
     private static String family(String id) {

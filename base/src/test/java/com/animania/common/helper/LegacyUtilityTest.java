@@ -47,7 +47,7 @@ class LegacyUtilityTest {
         assertEquals(AnimalGender.MALE, EntityGender.MALE.resolve(() -> 2));
         assertEquals(AnimalGender.FEMALE, EntityGender.FEMALE.resolve(() -> 0));
         assertEquals(AnimalGender.CHILD, EntityGender.CHILD.resolve(() -> 1));
-        assertEquals(AnimalGender.MALE, EntityGender.NONE.resolve(() -> 2));
+        assertEquals(AnimalGender.NONE, EntityGender.NONE.resolve(() -> 2));
         assertEquals(AnimalGender.MALE, EntityGender.RANDOM.resolve(() -> 0));
         assertEquals(AnimalGender.FEMALE, EntityGender.RANDOM.resolve(() -> 1));
         assertEquals(AnimalGender.CHILD, EntityGender.RANDOM.resolve(() -> 2));

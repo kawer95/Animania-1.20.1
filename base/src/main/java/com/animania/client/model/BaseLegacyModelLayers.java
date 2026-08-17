@@ -15,10 +15,10 @@ import net.minecraft.resources.ResourceLocation;
 public final class BaseLegacyModelLayers {
     public static final Map<String, ModelLayerLocation> LAYERS = new LinkedHashMap<>();
     static {
-        LAYERS.put("salt_lick", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania", "legacy/salt_lick"), "main"));
-        LAYERS.put("nest", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania", "legacy/nest"), "main"));
-        LAYERS.put("trough", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania", "legacy/trough"), "main"));
-        LAYERS.put("water_bottle", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania", "legacy/water_bottle"), "main"));
+        LAYERS.put("salt_lick", new ModelLayerLocation(new ResourceLocation("animania", "legacy/salt_lick"), "main"));
+        LAYERS.put("nest", new ModelLayerLocation(new ResourceLocation("animania", "legacy/nest"), "main"));
+        LAYERS.put("trough", new ModelLayerLocation(new ResourceLocation("animania", "legacy/trough"), "main"));
+        LAYERS.put("water_bottle", new ModelLayerLocation(new ResourceLocation("animania", "legacy/water_bottle"), "main"));
     }
     private BaseLegacyModelLayers() {}
     public static LayerDefinition create(String id) {

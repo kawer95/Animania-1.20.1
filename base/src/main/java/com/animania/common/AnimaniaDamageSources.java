@@ -23,7 +23,7 @@ public final class AnimaniaDamageSources {
     }
     private static ResourceKey<DamageType> key(String path) {
         return ResourceKey.create(Registries.DAMAGE_TYPE,
-                ResourceLocation.fromNamespaceAndPath(Animania.MOD_ID, path));
+                new ResourceLocation(Animania.MOD_ID, path));
     }
     private AnimaniaDamageSources() { }
 }

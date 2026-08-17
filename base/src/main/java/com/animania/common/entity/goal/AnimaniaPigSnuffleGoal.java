@@ -19,7 +19,7 @@ import java.util.function.Predicate;
 
 /** Native 1.20.1 port of the leashed adult pig truffle-snuffling goal. */
 public final class AnimaniaPigSnuffleGoal extends Goal {
-    private static final ResourceLocation TRUFFLE = ResourceLocation.fromNamespaceAndPath("animania_farm", "truffle");
+    private static final ResourceLocation TRUFFLE = new ResourceLocation("animania_farm", "truffle");
     private final AnimaniaAnimalEntity pig;
     private final Predicate<BlockPos> forestCheck;
     private boolean spawned;

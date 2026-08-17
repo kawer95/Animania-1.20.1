@@ -50,7 +50,7 @@ public final class AnimaniaServerEvents {
                 event.getLevel().getBlockState(event.getPos()).getBlock());
         // The wheel owns this interaction: releasing here would spawn the
         // hamster on top instead of storing it inside the wheel.
-        if (ResourceLocation.fromNamespaceAndPath("animania_extra", "hamster_wheel").equals(clickedId)) return;
+        if (new ResourceLocation("animania_extra", "hamster_wheel").equals(clickedId)) return;
         BlockPos target = event.getPos().above();
         if (!releaseCarriedAnimal(event.getEntity(), target)) return;
         event.setCanceled(true);
@@ -87,7 +87,7 @@ public final class AnimaniaServerEvents {
         // paths such as "hamster" rather than a namespaced registry id.
         for (String namespace : java.util.List.of("animania_extra", "animania_farm", "animania_catsdogs", "animania")) {
             EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(
-                    ResourceLocation.fromNamespaceAndPath(namespace, storedType));
+                    new ResourceLocation(namespace, storedType));
             if (type != null) return type;
         }
         return null;
@@ -129,6 +129,11 @@ public final class AnimaniaServerEvents {
     @SubscribeEvent
     public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        // The joining client needs every already-online subject, while all
+        // clients need the joining player's current state.
+        for (ServerPlayer online : player.server.getPlayerList().getPlayers()) {
+            com.animania.network.AnimaniaNetwork.syncCarriedTo(online, player);
+        }
         com.animania.network.AnimaniaNetwork.syncCarried(player);
         boolean enabled;
         try { enabled = AnimaniaConfig.SHOW_MOD_UPDATE_NOTIFICATION.get(); }
@@ -148,6 +153,45 @@ public final class AnimaniaServerEvents {
                 .append(" " + target + " ")
                 .append(Component.translatable("animania.updatetext.2"))
                 .append(" ").append(download));
+    }
+
+    @SubscribeEvent
+    public void onStartTracking(PlayerEvent.StartTracking event) {
+        if (event.getEntity() instanceof ServerPlayer recipient
+                && event.getTarget() instanceof ServerPlayer subject) {
+            com.animania.network.AnimaniaNetwork.syncCarriedTo(subject, recipient);
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerClone(PlayerEvent.Clone event) {
+        if (!(event.getEntity() instanceof ServerPlayer replacement)) return;
+        var oldData = event.getOriginal().getPersistentData();
+        var newData = replacement.getPersistentData();
+        if (oldData.contains(AnimaniaAnimalEntity.CARRIED_ENTITY_TAG)
+                && oldData.contains(AnimaniaAnimalEntity.CARRIED_ANIMAL_TAG)) {
+            newData.putString(AnimaniaAnimalEntity.CARRIED_ENTITY_TAG,
+                    oldData.getString(AnimaniaAnimalEntity.CARRIED_ENTITY_TAG));
+            newData.put(AnimaniaAnimalEntity.CARRIED_ANIMAL_TAG,
+                    oldData.getCompound(AnimaniaAnimalEntity.CARRIED_ANIMAL_TAG).copy());
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) syncAllCarriedStatesTo(player);
+    }
+
+    @SubscribeEvent
+    public void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) syncAllCarriedStatesTo(player);
+    }
+
+    private static void syncAllCarriedStatesTo(ServerPlayer recipient) {
+        for (ServerPlayer online : recipient.server.getPlayerList().getPlayers()) {
+            com.animania.network.AnimaniaNetwork.syncCarriedTo(online, recipient);
+        }
+        com.animania.network.AnimaniaNetwork.syncCarried(recipient);
     }
 
     public static boolean shouldNotifyUpdate(boolean enabled, VersionChecker.Status status) {

@@ -62,19 +62,6 @@ public final class CatsDogsPetFacilityBlock extends HorizontalDirectionalBlock i
     }
 
     @Override
-    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-        if (!level.isClientSide && entity instanceof AnimaniaAnimalEntity animal && isPet(animal)) {
-            if (id.startsWith("cat_bed") || id.equals("cat_tower") || id.equals("dog_house") || id.equals("dog_pillow")) {
-                animal.setSleeping(true);
-                animal.setPlaying(false);
-            } else if (id.equals("litter_box") && isCat(animal)) {
-                animal.setThirst(100);
-                animal.setPlaying(false);
-            }
-        }
-    }
-
-    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide && player.isShiftKeyDown()) {
             player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.animania.pet_facility", id), true);
@@ -120,13 +107,4 @@ public final class CatsDogsPetFacilityBlock extends HorizontalDirectionalBlock i
         };
     }
 
-    private static boolean isPet(AnimaniaAnimalEntity animal) {
-        var id = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(animal.getType());
-        return id != null && "animania_catsdogs".equals(id.getNamespace());
-    }
-
-    private static boolean isCat(AnimaniaAnimalEntity animal) {
-        var id = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(animal.getType());
-        return id != null && (id.getPath().startsWith("queen_") || id.getPath().startsWith("tom_") || id.getPath().startsWith("kitten_"));
-    }
 }

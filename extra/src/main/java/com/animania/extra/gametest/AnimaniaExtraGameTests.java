@@ -51,6 +51,98 @@ import java.util.UUID;
 @PrefixGameTestTemplate(false)
 public final class AnimaniaExtraGameTests {
     @GameTest(template = "empty")
+    public static void legacyExtraAttributesSpecialInteractionsAndEnergyPersistence(GameTestHelper helper) {
+        AnimaniaAnimalEntity frog = createAnimal(helper, "frog");
+        AnimaniaAnimalEntity dart = createAnimal(helper, "dartfrog");
+        AnimaniaAnimalEntity ferret = createAnimal(helper, "ferret_grey");
+        AnimaniaAnimalEntity hedgehog = createAnimal(helper, "hedgehog");
+        AnimaniaAnimalEntity peacock = createAnimal(helper, "peacock_blue");
+        AnimaniaAnimalEntity doe = createAnimal(helper, "doe_rex");
+        helper.assertTrue(frog.getGender() == AnimalGender.NONE && ferret.getGender() == AnimalGender.NONE
+                        && hedgehog.getGender() == AnimalGender.NONE,
+                "genderless Extra animals were exposed as male");
+        helper.assertTrue(frog.getMaxHealth() == 3.0F && ferret.getMaxHealth() == 8.0F
+                        && hedgehog.getMaxHealth() == 8.0F && peacock.getMaxHealth() == 7.0F
+                        && doe.getMaxHealth() == 9.0F,
+                "Extra family health table differs from 1.12");
+        helper.assertTrue(Math.abs(ferret.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED) - 0.35D) < 0.0001D
+                        && Math.abs(peacock.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) - 1.5D) < 0.0001D,
+                "Extra speed/attack table differs from 1.12");
+        helper.assertTrue(frog.goalSelector.getAvailableGoals().stream().anyMatch(goal -> goal.getGoal() instanceof AnimaniaAvoidEntityGoal)
+                        && frog.goalSelector.getAvailableGoals().stream().noneMatch(goal -> goal.getGoal() instanceof com.animania.common.entity.goal.AnimaniaMateGoal),
+                "amphibian retained domestic breeding AI or lost avoidance AI");
+
+        var player = helper.makeMockPlayer();
+        dart.tick(); // legacy poisonTimer starts at two and becomes usable after its first living tick
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.ARROW));
+        helper.assertTrue(dart.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction()
+                        && player.getMainHandItem().is(Items.TIPPED_ARROW)
+                        && net.minecraft.world.item.alchemy.PotionUtils.getPotion(player.getMainHandItem())
+                        == net.minecraft.world.item.alchemy.Potions.POISON,
+                "dart frog did not convert an arrow into a poison arrow");
+        dart.push(player);
+        helper.assertTrue(player.hasEffect(net.minecraft.world.effect.MobEffects.POISON)
+                        && player.getEffect(net.minecraft.world.effect.MobEffects.POISON).getAmplifier() == 1,
+                "dart frog collision did not apply legacy poison II");
+        CompoundTag dartTag = new CompoundTag();
+        dart.addAdditionalSaveData(dartTag);
+        AnimaniaAnimalEntity loadedDart = createAnimal(helper, "dartfrog");
+        loadedDart.readAdditionalSaveData(dartTag);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.ARROW));
+        helper.assertTrue(!loadedDart.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction()
+                        && player.getMainHandItem().is(Items.ARROW),
+                "dart frog poison-arrow cooldown was not persisted");
+
+        player.setShiftKeyDown(false);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.MUTTON));
+        helper.assertTrue(ferret.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction()
+                        && ferret.isTamed() && player.getUUID().equals(ferret.getOwnerUUID()),
+                "configured ferret food did not tame and assign its owner");
+        player.setShiftKeyDown(true);
+        player.setPose(net.minecraft.world.entity.Pose.CROUCHING);
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        helper.assertTrue(ferret.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction()
+                        && AnimaniaAnimalEntity.hasCarriedAnimal(player),
+                "tamed ferret could not use the legacy shoulder-carry interaction");
+        AnimaniaAnimalEntity.clearCarriedAnimal(player);
+
+        hedgehog.setCustomName(net.minecraft.network.chat.Component.literal("Sanic"));
+        hedgehog.tick();
+        helper.assertTrue(hedgehog.hasEffect(net.minecraft.world.effect.MobEffects.GLOWING)
+                        && hedgehog.getEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED).getAmplifier() == 6,
+                "Sanic did not receive legacy glowing IV and speed VII");
+        float health = peacock.getHealth();
+        peacock.causeFallDamage(20.0F, 1.0F, helper.getLevel().damageSources().fall());
+        helper.assertTrue(peacock.getHealth() == health, "peafowl took fall damage despite the legacy no-fall override");
+
+        BlockPos wheelPos = helper.absolutePos(new BlockPos(6, 1, 1));
+        helper.getLevel().setBlock(wheelPos, ExtraContent.HAMSTER_WHEEL.get().defaultBlockState(), 3);
+        ExtraHamsterWheelBlockEntity wheel = (ExtraHamsterWheelBlockEntity) helper.getLevel().getBlockEntity(wheelPos);
+        var energy = wheel.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY)
+                .orElseThrow(() -> new IllegalStateException("wheel energy capability missing"));
+        energy.receiveEnergy(400, false);
+        CompoundTag wheelTag = wheel.saveWithoutMetadata();
+        ExtraHamsterWheelBlockEntity loadedWheel = new ExtraHamsterWheelBlockEntity(wheelPos,
+                ExtraContent.HAMSTER_WHEEL.get().defaultBlockState());
+        loadedWheel.load(wheelTag);
+        helper.assertTrue(loadedWheel.energyStored() == 400,
+                "hamster wheel truncated persisted energy to one generation tick");
+
+        CompoundTag runner = new CompoundTag();
+        createAnimal(helper, "hamster").addAdditionalSaveData(runner);
+        wheel.insertHamster(runner);
+        wheel.tryInsertFood(new ItemStack(ExtraContent.ITEM_ENTRIES.get("hamster_food").get()));
+        BlockPos receiverPos = wheelPos.east();
+        helper.getLevel().setBlock(receiverPos, net.minecraft.world.level.block.Blocks.BARREL.defaultBlockState(), 3);
+        TestEnergyReceiver receiver = new TestEnergyReceiver(receiverPos,
+                net.minecraft.world.level.block.Blocks.BARREL.defaultBlockState());
+        helper.getLevel().setBlockEntity(receiver);
+        wheel.serverTick();
+        helper.assertTrue(receiver.energy.getEnergyStored() > 0,
+                "running hamster wheel did not actively push FE into an adjacent receiver");
+        helper.succeed();
+    }
+    @GameTest(template = "empty")
     public static void supporterSneakFeedingUnlocksLegacyGoldenHamster(GameTestHelper helper) {
         AnimaniaAnimalEntity hamster = createAnimal(helper, "hamster");
         hamster.setVariantName("brown");
@@ -117,12 +209,12 @@ public final class AnimaniaExtraGameTests {
 
     @GameTest(template = "empty")
     public static void absentFarmOptionalFeedItemsLoadButNeverMatch(GameTestHelper helper) {
-        ResourceLocation farmEgg = ResourceLocation.fromNamespaceAndPath("animania_farm", "brown_egg");
+        ResourceLocation farmEgg = new ResourceLocation("animania_farm", "brown_egg");
         boolean farmLoaded = net.minecraftforge.fml.ModList.get().isLoaded("animania_farm");
         helper.assertTrue(ForgeRegistries.ITEMS.containsKey(farmEgg) == farmLoaded,
                 "optional Farm registry visibility disagreed with the actual addon set");
         var advancement = helper.getLevel().getServer().getAdvancements().getAdvancement(
-                ResourceLocation.fromNamespaceAndPath(AnimaniaExtra.MOD_ID, "animania/feed_ferret_grey"));
+                new ResourceLocation(AnimaniaExtra.MOD_ID, "animania/feed_ferret_grey"));
         helper.assertTrue(advancement != null, "ferret advancement failed to load without Farm installed");
         if (advancement == null) return;
         var criterion = advancement.getCriteria().get("ferret4");
@@ -132,11 +224,11 @@ public final class AnimaniaExtraGameTests {
         if (criterion == null || !(criterion.getTrigger() instanceof com.animania.common.advancement.FeedAnimalTrigger.Instance instance)) return;
         helper.assertTrue(instance.isOptional(), "deserialized optional criterion lost its marker");
         helper.assertFalse(instance.matches(new ItemStack(Items.EGG),
-                        ResourceLocation.fromNamespaceAndPath(AnimaniaExtra.MOD_ID, "ferret_grey")),
+                        new ResourceLocation(AnimaniaExtra.MOD_ID, "ferret_grey")),
                 "missing optional Farm food degraded into an any-food match");
         if (farmLoaded) {
             helper.assertTrue(instance.matches(new ItemStack(ForgeRegistries.ITEMS.getValue(farmEgg)),
-                            ResourceLocation.fromNamespaceAndPath(AnimaniaExtra.MOD_ID, "ferret_grey")),
+                            new ResourceLocation(AnimaniaExtra.MOD_ID, "ferret_grey")),
                     "installed optional Farm food did not become an exact ferret criterion match");
         }
         helper.succeed();
@@ -419,7 +511,7 @@ public final class AnimaniaExtraGameTests {
         helper.assertTrue(ExtraSounds.ALL.size() == 52, "Extra legacy sound ledger count changed");
         for (String id : ExtraSounds.ALL.keySet()) {
             helper.assertTrue(ForgeRegistries.SOUND_EVENTS.containsKey(
-                    ResourceLocation.fromNamespaceAndPath(AnimaniaExtra.MOD_ID, id)),
+                    new ResourceLocation(AnimaniaExtra.MOD_ID, id)),
                     "missing Extra sound registration: " + id);
         }
         helper.succeed();
@@ -441,7 +533,7 @@ public final class AnimaniaExtraGameTests {
         assertSmelting(helper, "raw_prime_rabbit_smelting", "raw_prime_rabbit", "cooked_prime_rabbit");
         assertSmelting(helper, "raw_peacock_smelting", "raw_peacock", "cooked_peacock");
         assertSmelting(helper, "raw_prime_peacock_smelting", "raw_prime_peacock", "cooked_prime_peacock");
-        var omelette = helper.getLevel().getRecipeManager().byKey(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+        var omelette = helper.getLevel().getRecipeManager().byKey(new net.minecraft.resources.ResourceLocation(
                 AnimaniaExtra.MOD_ID, "peacock_egg_blue_smelting"));
         boolean farmLoaded = net.minecraftforge.fml.ModList.get().isLoaded("animania_farm");
         helper.assertTrue(omelette.isPresent() == farmLoaded,
@@ -450,7 +542,7 @@ public final class AnimaniaExtraGameTests {
             var input = new net.minecraft.world.SimpleContainer(new ItemStack(ExtraContent.ITEM_ENTRIES.get("peacock_egg_blue").get()));
             helper.assertTrue(recipe.matches(input, helper.getLevel())
                             && ForgeRegistries.ITEMS.getKey(recipe.getResultItem(helper.getLevel().registryAccess()).getItem())
-                            .equals(ResourceLocation.fromNamespaceAndPath("animania_farm", "plain_omelette"))
+                            .equals(new ResourceLocation("animania_farm", "plain_omelette"))
                             && Math.abs(recipe.getExperience() - 0.3F) < 0.0001F && recipe.getCookingTime() == 200,
                     "Farm-conditional peacock omelette recipe changed input/output/time/experience");
         }
@@ -459,7 +551,7 @@ public final class AnimaniaExtraGameTests {
 
     private static void assertSmelting(GameTestHelper helper, String recipeId, String inputId, String outputId) {
         var found = helper.getLevel().getRecipeManager().byKey(
-                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(AnimaniaExtra.MOD_ID, recipeId)).orElse(null);
+                new net.minecraft.resources.ResourceLocation(AnimaniaExtra.MOD_ID, recipeId)).orElse(null);
         helper.assertTrue(found instanceof net.minecraft.world.item.crafting.AbstractCookingRecipe,
                 "missing legacy smelting recipe " + recipeId);
         if (!(found instanceof net.minecraft.world.item.crafting.AbstractCookingRecipe recipe)) return;
@@ -474,7 +566,7 @@ public final class AnimaniaExtraGameTests {
         var item = ExtraContent.ITEM_ENTRIES.get(itemId);
         helper.assertTrue(item != null && item.get().builtInRegistryHolder().is(net.minecraft.tags.TagKey.create(
                         net.minecraft.core.registries.Registries.ITEM,
-                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(namespace, path))),
+                        new net.minecraft.resources.ResourceLocation(namespace, path))),
                 itemId + " missing modern tag " + namespace + ":" + path);
     }
 
@@ -621,6 +713,37 @@ public final class AnimaniaExtraGameTests {
         loaded.load(nest.saveWithoutMetadata());
         helper.assertTrue(loaded.getItem(0).getCount() == 1 && loaded.birdVariant().equals("blue"),
                 "peafowl nest contents or owner variant failed NBT round-trip");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void onlyMalePeacockDropsTimedFeather(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_extra:onlyMalePeacockDropsTimedFeather");
+        AnimaniaAnimalEntity peahen = createAnimal(helper, "peahen_blue");
+        CompoundTag femaleTag = new CompoundTag();
+        peahen.addAdditionalSaveData(femaleTag);
+        femaleTag.putInt("AnimaniaFeatherDropTicks", 1);
+        peahen.readAdditionalSaveData(femaleTag);
+        peahen.moveTo(helper.absolutePos(new BlockPos(1, 1, 1)), 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(peahen);
+        peahen.tick();
+
+        AnimaniaAnimalEntity peacock = createAnimal(helper, "peacock_blue");
+        CompoundTag maleTag = new CompoundTag();
+        peacock.addAdditionalSaveData(maleTag);
+        maleTag.putInt("AnimaniaFeatherDropTicks", 1);
+        peacock.readAdditionalSaveData(maleTag);
+        peacock.moveTo(helper.absolutePos(new BlockPos(3, 1, 1)), 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(peacock);
+        peacock.tick();
+
+        var feathers = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                new net.minecraft.world.phys.AABB(helper.absolutePos(new BlockPos(2, 1, 1))).inflate(3.0D),
+                item -> net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item.getItem().getItem()) != null
+                        && net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item.getItem().getItem())
+                        .getPath().endsWith("peacock_feather"));
+        helper.assertTrue(feathers.size() == 1,
+                "only the male peacock should drop one feather; found " + feathers.size());
         helper.succeed();
     }
 
@@ -994,6 +1117,29 @@ public final class AnimaniaExtraGameTests {
         if (id.equals("frog")) return variant.equals("default") || variant.equals("green");
         if (id.endsWith("_lop")) return java.util.Set.of("black", "brown", "golden", "olive", "patch_black", "patch_brown", "patch_grey").contains(variant);
         return variant.equals("default");
+    }
+
+    private static final class TestEnergyReceiver extends net.minecraft.world.level.block.entity.BlockEntity {
+        private final net.minecraftforge.energy.EnergyStorage energy = new net.minecraftforge.energy.EnergyStorage(1000);
+        private final net.minecraftforge.common.util.LazyOptional<net.minecraftforge.energy.IEnergyStorage> capability =
+                net.minecraftforge.common.util.LazyOptional.of(() -> energy);
+
+        private TestEnergyReceiver(BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+            super(net.minecraft.world.level.block.entity.BlockEntityType.BARREL, pos, state);
+        }
+
+        @Override
+        public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+                net.minecraftforge.common.capabilities.Capability<T> requested, Direction side) {
+            return requested == net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY
+                    ? capability.cast() : super.getCapability(requested, side);
+        }
+
+        @Override
+        public void invalidateCaps() {
+            super.invalidateCaps();
+            capability.invalidate();
+        }
     }
 
     private AnimaniaExtraGameTests() { }

@@ -14,13 +14,13 @@ final class AnimaniaMudLayerTest {
         assertTexture("sow_duroc", "pig_muddy.png");
         assertTexture("hog_hampshire", "pig_muddy_hampshire.png");
         assertTexture("piglet_yorkshire", "piglet_muddy.png");
-        assertNull(AnimaniaMudLayer.textureFor(ResourceLocation.fromNamespaceAndPath("animania_farm", "cow_angus")));
-        assertNull(AnimaniaMudLayer.textureFor(ResourceLocation.fromNamespaceAndPath("animania_extra", "hamster")));
+        assertNull(AnimaniaMudLayer.textureFor(new ResourceLocation("animania_farm", "cow_angus")));
+        assertNull(AnimaniaMudLayer.textureFor(new ResourceLocation("animania_extra", "hamster")));
     }
 
     private static void assertTexture(String entity, String filename) throws Exception {
         ResourceLocation texture = AnimaniaMudLayer.textureFor(
-                ResourceLocation.fromNamespaceAndPath("animania_farm", entity));
+                new ResourceLocation("animania_farm", entity));
         assertNotNull(texture);
         assertTrue(texture.getPath().endsWith(filename));
         String resource = "assets/" + texture.getNamespace() + "/" + texture.getPath();

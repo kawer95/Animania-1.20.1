@@ -15,6 +15,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,9 +27,16 @@ import java.util.List;
 public final class CatsDogsPetSeller {
     public static final DeferredRegister<VillagerProfession> PROFESSIONS =
             DeferredRegister.create(ForgeRegistries.VILLAGER_PROFESSIONS, AnimaniaCatsDogs.MOD_ID);
+    public static final DeferredRegister<PoiType> POI_TYPES =
+            DeferredRegister.create(ForgeRegistries.POI_TYPES, AnimaniaCatsDogs.MOD_ID);
+    public static final ResourceKey<PoiType> PET_SELLER_POI_KEY = ResourceKey.create(Registries.POINT_OF_INTEREST_TYPE,
+            new ResourceLocation(AnimaniaCatsDogs.MOD_ID, "pet_seller"));
+    public static final RegistryObject<PoiType> PET_SELLER_POI = POI_TYPES.register("pet_seller", () ->
+            new PoiType(java.util.Set.copyOf(CatsDogsContent.PET_BOWL.get().getStateDefinition().getPossibleStates()), 1, 1));
     public static final RegistryObject<VillagerProfession> PET_SELLER = PROFESSIONS.register("pet_seller", () ->
-            new VillagerProfession("pet_seller", holder -> false, holder -> false,
-                    ImmutableSet.of(), ImmutableSet.of(), SoundEvents.VILLAGER_WORK_LEATHERWORKER));
+            new VillagerProfession("pet_seller", holder -> holder.is(PET_SELLER_POI_KEY),
+                    holder -> holder.is(PET_SELLER_POI_KEY), ImmutableSet.of(), ImmutableSet.of(),
+                    SoundEvents.VILLAGER_WORK_LEATHERWORKER));
 
     private CatsDogsPetSeller() { }
 
@@ -52,7 +63,7 @@ public final class CatsDogsPetSeller {
         add(trades, 1, "labrador", false, 20, 30);
         add(trades, 2, "pomeranian", false, 15, 25);
         add(trades, 3, "poodle", false, 15, 25);
-        add(trades, 3, "pug", false, 15, 25);
+        add(trades, 1, "pug", false, 15, 25);
     }
 
     private static void add(Int2ObjectMap<List<VillagerTrades.ItemListing>> trades, int level,

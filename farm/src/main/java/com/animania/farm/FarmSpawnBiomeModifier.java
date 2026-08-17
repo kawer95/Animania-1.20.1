@@ -101,6 +101,11 @@ public final class FarmSpawnBiomeModifier implements BiomeModifier {
         };
     }
 
+    static boolean matchesConfiguredBiome(String id, Holder<Biome> biome) {
+        var configured = FarmConfig.BIOME_TYPES.get(id.equals("hive") ? "hiveValidBiomeTypes" : biomeKey(id));
+        return configured != null && LegacyBiomeMatcher.matches(biome, list(configured));
+    }
+
     private static String pascal(String value) {
         StringBuilder result = new StringBuilder();
         for (String part : value.split("_")) {

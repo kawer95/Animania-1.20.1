@@ -7,7 +7,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,7 +22,6 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.registries.ForgeRegistries;
 
 /** Cheese-mould block with a real storage block entity and automation path. */
 public final class FarmCheeseMoldBlock extends AnimaniaContainerBlock {
@@ -56,19 +54,26 @@ public final class FarmCheeseMoldBlock extends AnimaniaContainerBlock {
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof FarmCheeseMoldBlockEntity mold)) return InteractionResult.PASS;
         ItemStack held = player.getItemInHand(hand);
-        if (isMilkBottle(held) && mold.getItem(0).isEmpty()) {
-            if (level.isClientSide) return InteractionResult.SUCCESS;
-            mold.setItem(0, new ItemStack(held.getItem()));
-            if (!player.getAbilities().instabuild) {
-                held.shrink(1);
-                if (!player.addItem(new ItemStack(Items.GLASS_BOTTLE))) player.drop(new ItemStack(Items.GLASS_BOTTLE), false);
+        if (player.isShiftKeyDown()) {
+            if (!level.isClientSide) {
+                int percent = mold.getItem(0).isEmpty()
+                        ? Math.min(100, Math.round(mold.processTicks() * 100.0F / Math.max(1, FarmConfig.CHEESE_MATURITY_TIME.get())))
+                        : 100;
+                player.displayClientMessage(net.minecraft.network.chat.Component.literal(percent + "%"), true);
             }
-            return InteractionResult.CONSUME;
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+        if (!mold.getItem(0).isEmpty()) {
+            if (!level.isClientSide) {
+                ItemStack output = mold.removeItemNoUpdate(0);
+                if (!player.addItem(output)) player.drop(output, false);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
         IFluidHandlerItem handler = FluidUtil.getFluidHandler(held).orElse(null);
         if (handler != null) {
             FluidStack fluid = handler.getFluidInTank(0);
-            if (isAnimaniaMilk(fluid)) {
+            if (!fluid.isEmpty() && fluid.getAmount() >= 1000) {
                 if (level.isClientSide) return InteractionResult.SUCCESS;
                 boolean filled = mold.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.UP).map(target -> {
                     int accepted = target.fill(fluid.copy(), IFluidHandler.FluidAction.SIMULATE);
@@ -83,18 +88,9 @@ public final class FarmCheeseMoldBlock extends AnimaniaContainerBlock {
                 return InteractionResult.CONSUME;
             }
         }
-        return super.use(state, level, pos, player, hand, hit);
-    }
-
-    private static boolean isMilkBottle(ItemStack stack) {
-        var id = ForgeRegistries.ITEMS.getKey(stack.getItem());
-        return id != null && AnimaniaFarm.MOD_ID.equals(id.getNamespace()) && id.getPath().equals("milk_bottle");
-    }
-
-    private static boolean isAnimaniaMilk(FluidStack stack) {
-        if (stack == null || stack.isEmpty()) return false;
-        var id = ForgeRegistries.FLUIDS.getKey(stack.getFluid());
-        return id != null && AnimaniaFarm.MOD_ID.equals(id.getNamespace()) && id.getPath().startsWith("milk_");
+        // The 1.12 mould was operated directly in-world.  Do not expose the
+        // generic storage menu for an empty hand or for rejected containers.
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     private static void replaceHeld(Player player, InteractionHand hand, ItemStack replacement) {

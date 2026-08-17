@@ -12,8 +12,8 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
- * Server-authoritative cheese processing. Both milk bottles and the modern
- * Forge fluid buckets are accepted, and the output retains the legacy milk
+ * Server-authoritative cheese processing. Modern Forge fluid containers are
+ * accepted, and the output retains the legacy milk
  * family so automation does not collapse all cheese variants to one item.
  */
 public final class FarmCheeseMoldBlockEntity extends AnimaniaStorageBlockEntity implements com.animania.api.IAnimaniaProbeBlock {
@@ -53,24 +53,7 @@ public final class FarmCheeseMoldBlockEntity extends AnimaniaStorageBlockEntity 
                 return;
             }
         }
-        if (input.isEmpty()) {
-            processTicks = 0;
-            return;
-        }
-        String outputId = outputFor(input.getItem());
-        if (outputId == null) {
-            processTicks = 0;
-            return;
-        }
-        Item output = ForgeRegistries.ITEMS.getValue(new ResourceLocation(AnimaniaFarm.MOD_ID, outputId));
-        if (output == null) {
-            processTicks = 0;
-            return;
-        }
-        if (++processTicks >= maturityTicks()) {
-            processTicks = 0;
-            setItem(0, new ItemStack(output));
-        }
+        processTicks = 0;
     }
 
     private void syncVisualVariant() {
@@ -88,7 +71,6 @@ public final class FarmCheeseMoldBlockEntity extends AnimaniaStorageBlockEntity 
             if (id != null) {
                 String path = id.getPath();
                 if (path.equals("salt")) return FarmCheeseMoldBlock.Variant.SALT;
-                if (path.equals("milk_bottle")) return FarmCheeseMoldBlock.Variant.FRIESIAN_MILK;
                 FarmCheeseMoldBlock.Variant cheese = familyVariant(path, true);
                 if (cheese != null) return cheese;
             }
@@ -144,19 +126,6 @@ public final class FarmCheeseMoldBlockEntity extends AnimaniaStorageBlockEntity 
                     fluidCapability.getFluid().getDisplayName(), fluidCapability.getFluidAmount()));
         }
         return java.util.List.copyOf(lines);
-    }
-
-    private static String outputFor(Item item) {
-        ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
-        if (id == null || !AnimaniaFarm.MOD_ID.equals(id.getNamespace())) return null;
-        String path = id.getPath();
-        if (path.equals("milk_bottle")) return "friesian_cheese_wedge";
-        if (path.contains("holstein")) return "holstein_cheese_wheel";
-        if (path.contains("friesian") || path.equals("cow_bucket_milk")) return "friesian_cheese_wheel";
-        if (path.contains("jersey")) return "jersey_cheese_wheel";
-        if (path.contains("goat")) return "goat_cheese_wheel";
-        if (path.contains("sheep")) return "sheep_cheese_wheel";
-        return null;
     }
 
     private static String outputForFluid(FluidStack fluid) {

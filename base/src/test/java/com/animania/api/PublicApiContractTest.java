@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PublicApiContractTest {
-    private static final ResourceLocation TYPE = ResourceLocation.fromNamespaceAndPath("contract_addon", "test_animal");
+    private static final ResourceLocation TYPE = new ResourceLocation("contract_addon", "test_animal");
 
     @Test
     void stableAnimalContractExposesEveryPublishedGameplayState() {

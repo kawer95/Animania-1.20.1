@@ -93,7 +93,7 @@ public final class AnimaniaFindFoodGoal extends Goal {
         if (!(animal.level().getBlockEntity(pos) instanceof AnimaniaStorageBlockEntity storage)) return null;
         for (int slot = 0; slot < storage.getContainerSize(); slot++) {
             ItemStack stack = storage.getItem(slot);
-            if (!stack.isEmpty() && animal.acceptsFood(stack) && AnimaniaConfig.matchesTroughFood(stack)) {
+            if (!stack.isEmpty() && animal.acceptsFood(stack) && storageAcceptsFood(pos, stack)) {
                 return Kind.STORAGE_ITEM;
             }
         }
@@ -119,7 +119,7 @@ public final class AnimaniaFindFoodGoal extends Goal {
         if (!(animal.level().getBlockEntity(target) instanceof AnimaniaStorageBlockEntity storage)) return false;
         for (int slot = 0; slot < storage.getContainerSize(); slot++) {
             ItemStack stored = storage.getItem(slot);
-            if (stored.isEmpty() || !animal.acceptsFood(stored) || !AnimaniaConfig.matchesTroughFood(stored)) continue;
+            if (stored.isEmpty() || !animal.acceptsFood(stored) || !storageAcceptsFood(target, stored)) continue;
             if (!animal.feed(stored.copyWithCount(1))) return false;
             animal.setHunger(100);
             if (configured(AnimaniaConfig.PLANTS_REMOVED_AFTER_EATING, true)) storage.removeItem(slot, 1);
@@ -173,6 +173,15 @@ public final class AnimaniaFindFoodGoal extends Goal {
     private boolean isPig() {
         String path = animal.registryPath();
         return path.startsWith("sow_") || path.startsWith("hog_") || path.startsWith("piglet_");
+    }
+
+    private boolean storageAcceptsFood(BlockPos pos, ItemStack stack) {
+        ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(animal.level().getBlockState(pos).getBlock());
+        // The legacy pet bowl owns its own configurable food list. Requiring the
+        // Base trough list as well incorrectly rejects valid cat/dog food.
+        if (blockId != null && blockId.getNamespace().equals("animania_catsdogs")
+                && blockId.getPath().equals("pet_bowl")) return true;
+        return AnimaniaConfig.matchesTroughFood(stack);
     }
 
     private static boolean isSlop(net.minecraftforge.fluids.FluidStack stack) { return isSlop(stack.getFluid()); }

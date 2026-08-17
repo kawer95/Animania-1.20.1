@@ -16,6 +16,6 @@ final class AnimaniaMooshroomLayerTest {
     }
 
     private static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath("animania_farm", path);
+        return new ResourceLocation("animania_farm", path);
     }
 }

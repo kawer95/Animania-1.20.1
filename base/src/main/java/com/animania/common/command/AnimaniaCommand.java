@@ -46,13 +46,21 @@ public final class AnimaniaCommand {
                 if (!(entity instanceof IConvertable convertable)) continue;
                 Entity replacement = convertable.convertToVanilla();
                 if (replacement == null) continue;
-                entity.discard();
-                level.addFreshEntity(replacement);
-                converted++;
+                // Keep the source until Forge confirms that the replacement
+                // entered the world. Events or UUID conflicts may reject it.
+                if (replaceAfterSuccessfulSpawn(level, entity, replacement)) converted++;
             }
         }
         int convertedCount = converted;
         source.sendSuccess(() -> Component.translatable("commands.animania.tovanilla.success", convertedCount), true);
         return converted;
+    }
+
+    /** Transactional replacement primitive shared with the Forge regression test. */
+    public static boolean replaceAfterSuccessfulSpawn(ServerLevel level, Entity source, Entity replacement) {
+        if (level == null || source == null || replacement == null || !source.isAlive()) return false;
+        if (!level.addFreshEntity(replacement)) return false;
+        source.discard();
+        return true;
     }
 }

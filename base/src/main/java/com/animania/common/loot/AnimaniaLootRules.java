@@ -40,7 +40,7 @@ public final class AnimaniaLootRules {
     public static ItemStack woolDrop(AnimaniaAnimalEntity animal) {
         if (animal == null || animal.isSheared() || !isSheep(animal)) return ItemStack.EMPTY;
         DyeColor color = DyeColor.byId(animal.getWoolColor());
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath("minecraft", color.getName() + "_wool");
+        ResourceLocation id = new ResourceLocation("minecraft", color.getName() + "_wool");
         var item = ForgeRegistries.ITEMS.getValue(id);
         return new ItemStack(item == null ? Items.WHITE_WOOL : item);
     }

@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 /** Exact native reconstruction of 1.12's sixteen-part {@code ModelRendererBall}. */
 public final class AnimaniaHamsterBallModel {
     public static final ModelLayerLocation LAYER = new ModelLayerLocation(
-            ResourceLocation.fromNamespaceAndPath("animania", "hamster_ball"), "main");
+            new ResourceLocation("animania", "hamster_ball"), "main");
 
     private AnimaniaHamsterBallModel() { }
 

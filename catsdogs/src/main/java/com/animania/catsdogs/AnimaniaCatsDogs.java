@@ -62,10 +62,10 @@ public final class AnimaniaCatsDogs {
         CatsDogsContent.ITEMS.register(bus);
         CatsDogsContent.BLOCKS.register(bus);
         CatsDogsContent.BLOCK_ENTITIES.register(bus);
+        CatsDogsPetSeller.POI_TYPES.register(bus);
         CatsDogsPetSeller.PROFESSIONS.register(bus);
         CatsDogsTab.TABS.register(bus);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CatsDogsConfig.SPEC);
-        AnimaniaApi.registerTamingRequirement(MOD_ID, () -> CatsDogsConfig.REQUIRE_TAMING_FOR_BREEDING.get());
         AnimaniaSleepProfiles.register(MOD_ID, AnimaniaCatsDogs::sleepProfile);
         AnimaniaApi.registerFoodMatcher(MOD_ID, (id, stack) -> {
             String path = id.getPath();
@@ -99,7 +99,16 @@ public final class AnimaniaCatsDogs {
     }
 
     private void attributes(EntityAttributeCreationEvent event) {
-        ENTITIES.values().forEach(type -> event.put((EntityType<? extends LivingEntity>) type.get(), AnimaniaAnimalEntity.createAttributes().build()));
+        ENTITIES.forEach((id, type) -> {
+            var attributes = AnimaniaAnimalEntity.createAttributes()
+                    .add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH,
+                            id.startsWith("tom_") || id.startsWith("male_") ? 20.0D
+                                    : id.startsWith("kitten_") || id.startsWith("puppy_") ? 12.0D : 18.0D)
+                    .add(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED,
+                            id.startsWith("kitten_") || id.startsWith("puppy_") ? 0.315D : 0.3D)
+                    .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE, 2.5D);
+            event.put((EntityType<? extends LivingEntity>) type.get(), attributes.build());
+        });
     }
 
     private void spawnPlacements(SpawnPlacementRegisterEvent event) {
@@ -176,8 +185,7 @@ public final class AnimaniaCatsDogs {
             replacement.setSitting(((Wolf) vanilla).isOrderedToSit());
         }
         replacement.setPersistenceRequired();
-        event.getLevel().addFreshEntity(replacement);
-        event.setCanceled(true);
+        if (event.getLevel().addFreshEntity(replacement)) event.setCanceled(true);
     }
 
     private static boolean replaceWolves() {

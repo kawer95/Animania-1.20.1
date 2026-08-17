@@ -21,105 +21,105 @@ import com.animania.client.model.LegacyRenderTransform;
 public final class FarmLegacyModelLayers {
     public static final Map<String, ModelLayerLocation> LAYERS = new LinkedHashMap<>();
     static {
-        LAYERS.put("buck_alpine", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "buck_alpine"), "main"));
-        LAYERS.put("buck_angora", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "buck_angora"), "main"));
-        LAYERS.put("buck_fainting", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "buck_fainting"), "main"));
-        LAYERS.put("buck_kiko", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "buck_kiko"), "main"));
-        LAYERS.put("buck_kinder", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "buck_kinder"), "main"));
-        LAYERS.put("buck_nigerian_dwarf", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "buck_nigerian_dwarf"), "main"));
-        LAYERS.put("buck_pygmy", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "buck_pygmy"), "main"));
-        LAYERS.put("bull_angus", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "bull_angus"), "main"));
-        LAYERS.put("bull_friesian", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "bull_friesian"), "main"));
-        LAYERS.put("bull_hereford", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "bull_hereford"), "main"));
-        LAYERS.put("bull_highland", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "bull_highland"), "main"));
-        LAYERS.put("bull_holstein", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "bull_holstein"), "main"));
-        LAYERS.put("bull_jersey", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "bull_jersey"), "main"));
-        LAYERS.put("bull_longhorn", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "bull_longhorn"), "main"));
-        LAYERS.put("bull_mooshroom", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "bull_mooshroom"), "main"));
-        LAYERS.put("calf_angus", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "calf_angus"), "main"));
-        LAYERS.put("calf_friesian", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "calf_friesian"), "main"));
-        LAYERS.put("calf_hereford", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "calf_hereford"), "main"));
-        LAYERS.put("calf_highland", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "calf_highland"), "main"));
-        LAYERS.put("calf_holstein", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "calf_holstein"), "main"));
-        LAYERS.put("calf_jersey", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "calf_jersey"), "main"));
-        LAYERS.put("calf_longhorn", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "calf_longhorn"), "main"));
-        LAYERS.put("calf_mooshroom", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "calf_mooshroom"), "main"));
-        LAYERS.put("chick_leghorn", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "chick_leghorn"), "main"));
-        LAYERS.put("chick_orpington", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "chick_orpington"), "main"));
-        LAYERS.put("chick_plymouth_rock", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "chick_plymouth_rock"), "main"));
-        LAYERS.put("chick_rhode_island_red", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "chick_rhode_island_red"), "main"));
-        LAYERS.put("chick_wyandotte", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "chick_wyandotte"), "main"));
-        LAYERS.put("cow_angus", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "cow_angus"), "main"));
-        LAYERS.put("cow_friesian", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "cow_friesian"), "main"));
-        LAYERS.put("cow_hereford", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "cow_hereford"), "main"));
-        LAYERS.put("cow_highland", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "cow_highland"), "main"));
-        LAYERS.put("cow_holstein", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "cow_holstein"), "main"));
-        LAYERS.put("cow_jersey", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "cow_jersey"), "main"));
-        LAYERS.put("cow_longhorn", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "cow_longhorn"), "main"));
-        LAYERS.put("cow_mooshroom", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "cow_mooshroom"), "main"));
-        LAYERS.put("doe_alpine", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "doe_alpine"), "main"));
-        LAYERS.put("doe_angora", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "doe_angora"), "main"));
-        LAYERS.put("doe_fainting", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "doe_fainting"), "main"));
-        LAYERS.put("doe_kiko", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "doe_kiko"), "main"));
-        LAYERS.put("doe_kinder", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "doe_kinder"), "main"));
-        LAYERS.put("doe_nigerian_dwarf", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "doe_nigerian_dwarf"), "main"));
-        LAYERS.put("doe_pygmy", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "doe_pygmy"), "main"));
-        LAYERS.put("ewe_dorper", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ewe_dorper"), "main"));
-        LAYERS.put("ewe_dorset", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ewe_dorset"), "main"));
-        LAYERS.put("ewe_friesian", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ewe_friesian"), "main"));
-        LAYERS.put("ewe_jacob", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ewe_jacob"), "main"));
-        LAYERS.put("ewe_merino", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ewe_merino"), "main"));
-        LAYERS.put("ewe_suffolk", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ewe_suffolk"), "main"));
-        LAYERS.put("foal_draft", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "foal_draft"), "main"));
-        LAYERS.put("hen_leghorn", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hen_leghorn"), "main"));
-        LAYERS.put("hen_orpington", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hen_orpington"), "main"));
-        LAYERS.put("hen_plymouth_rock", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hen_plymouth_rock"), "main"));
-        LAYERS.put("hen_rhode_island_red", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hen_rhode_island_red"), "main"));
-        LAYERS.put("hen_wyandotte", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hen_wyandotte"), "main"));
-        LAYERS.put("hog_duroc", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hog_duroc"), "main"));
-        LAYERS.put("hog_hampshire", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hog_hampshire"), "main"));
-        LAYERS.put("hog_large_black", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hog_large_black"), "main"));
-        LAYERS.put("hog_large_white", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hog_large_white"), "main"));
-        LAYERS.put("hog_old_spot", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hog_old_spot"), "main"));
-        LAYERS.put("hog_yorkshire", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "hog_yorkshire"), "main"));
-        LAYERS.put("kid_alpine", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "kid_alpine"), "main"));
-        LAYERS.put("kid_angora", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "kid_angora"), "main"));
-        LAYERS.put("kid_fainting", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "kid_fainting"), "main"));
-        LAYERS.put("kid_kiko", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "kid_kiko"), "main"));
-        LAYERS.put("kid_kinder", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "kid_kinder"), "main"));
-        LAYERS.put("kid_nigerian_dwarf", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "kid_nigerian_dwarf"), "main"));
-        LAYERS.put("kid_pygmy", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "kid_pygmy"), "main"));
-        LAYERS.put("lamb_dorper", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "lamb_dorper"), "main"));
-        LAYERS.put("lamb_dorset", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "lamb_dorset"), "main"));
-        LAYERS.put("lamb_friesian", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "lamb_friesian"), "main"));
-        LAYERS.put("lamb_jacob", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "lamb_jacob"), "main"));
-        LAYERS.put("lamb_merino", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "lamb_merino"), "main"));
-        LAYERS.put("lamb_suffolk", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "lamb_suffolk"), "main"));
-        LAYERS.put("mare_draft", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "mare_draft"), "main"));
-        LAYERS.put("piglet_duroc", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "piglet_duroc"), "main"));
-        LAYERS.put("piglet_hampshire", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "piglet_hampshire"), "main"));
-        LAYERS.put("piglet_large_black", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "piglet_large_black"), "main"));
-        LAYERS.put("piglet_large_white", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "piglet_large_white"), "main"));
-        LAYERS.put("piglet_old_spot", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "piglet_old_spot"), "main"));
-        LAYERS.put("piglet_yorkshire", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "piglet_yorkshire"), "main"));
-        LAYERS.put("ram_dorper", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ram_dorper"), "main"));
-        LAYERS.put("ram_dorset", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ram_dorset"), "main"));
-        LAYERS.put("ram_friesian", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ram_friesian"), "main"));
-        LAYERS.put("ram_jacob", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ram_jacob"), "main"));
-        LAYERS.put("ram_merino", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ram_merino"), "main"));
-        LAYERS.put("ram_suffolk", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "ram_suffolk"), "main"));
-        LAYERS.put("rooster_leghorn", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "rooster_leghorn"), "main"));
-        LAYERS.put("rooster_orpington", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "rooster_orpington"), "main"));
-        LAYERS.put("rooster_plymouth_rock", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "rooster_plymouth_rock"), "main"));
-        LAYERS.put("rooster_rhode_island_red", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "rooster_rhode_island_red"), "main"));
-        LAYERS.put("rooster_wyandotte", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "rooster_wyandotte"), "main"));
-        LAYERS.put("sow_duroc", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "sow_duroc"), "main"));
-        LAYERS.put("sow_hampshire", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "sow_hampshire"), "main"));
-        LAYERS.put("sow_large_black", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "sow_large_black"), "main"));
-        LAYERS.put("sow_large_white", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "sow_large_white"), "main"));
-        LAYERS.put("sow_old_spot", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "sow_old_spot"), "main"));
-        LAYERS.put("sow_yorkshire", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "sow_yorkshire"), "main"));
-        LAYERS.put("stallion_draft", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_farm", "stallion_draft"), "main"));
+        LAYERS.put("buck_alpine", new ModelLayerLocation(new ResourceLocation("animania_farm", "buck_alpine"), "main"));
+        LAYERS.put("buck_angora", new ModelLayerLocation(new ResourceLocation("animania_farm", "buck_angora"), "main"));
+        LAYERS.put("buck_fainting", new ModelLayerLocation(new ResourceLocation("animania_farm", "buck_fainting"), "main"));
+        LAYERS.put("buck_kiko", new ModelLayerLocation(new ResourceLocation("animania_farm", "buck_kiko"), "main"));
+        LAYERS.put("buck_kinder", new ModelLayerLocation(new ResourceLocation("animania_farm", "buck_kinder"), "main"));
+        LAYERS.put("buck_nigerian_dwarf", new ModelLayerLocation(new ResourceLocation("animania_farm", "buck_nigerian_dwarf"), "main"));
+        LAYERS.put("buck_pygmy", new ModelLayerLocation(new ResourceLocation("animania_farm", "buck_pygmy"), "main"));
+        LAYERS.put("bull_angus", new ModelLayerLocation(new ResourceLocation("animania_farm", "bull_angus"), "main"));
+        LAYERS.put("bull_friesian", new ModelLayerLocation(new ResourceLocation("animania_farm", "bull_friesian"), "main"));
+        LAYERS.put("bull_hereford", new ModelLayerLocation(new ResourceLocation("animania_farm", "bull_hereford"), "main"));
+        LAYERS.put("bull_highland", new ModelLayerLocation(new ResourceLocation("animania_farm", "bull_highland"), "main"));
+        LAYERS.put("bull_holstein", new ModelLayerLocation(new ResourceLocation("animania_farm", "bull_holstein"), "main"));
+        LAYERS.put("bull_jersey", new ModelLayerLocation(new ResourceLocation("animania_farm", "bull_jersey"), "main"));
+        LAYERS.put("bull_longhorn", new ModelLayerLocation(new ResourceLocation("animania_farm", "bull_longhorn"), "main"));
+        LAYERS.put("bull_mooshroom", new ModelLayerLocation(new ResourceLocation("animania_farm", "bull_mooshroom"), "main"));
+        LAYERS.put("calf_angus", new ModelLayerLocation(new ResourceLocation("animania_farm", "calf_angus"), "main"));
+        LAYERS.put("calf_friesian", new ModelLayerLocation(new ResourceLocation("animania_farm", "calf_friesian"), "main"));
+        LAYERS.put("calf_hereford", new ModelLayerLocation(new ResourceLocation("animania_farm", "calf_hereford"), "main"));
+        LAYERS.put("calf_highland", new ModelLayerLocation(new ResourceLocation("animania_farm", "calf_highland"), "main"));
+        LAYERS.put("calf_holstein", new ModelLayerLocation(new ResourceLocation("animania_farm", "calf_holstein"), "main"));
+        LAYERS.put("calf_jersey", new ModelLayerLocation(new ResourceLocation("animania_farm", "calf_jersey"), "main"));
+        LAYERS.put("calf_longhorn", new ModelLayerLocation(new ResourceLocation("animania_farm", "calf_longhorn"), "main"));
+        LAYERS.put("calf_mooshroom", new ModelLayerLocation(new ResourceLocation("animania_farm", "calf_mooshroom"), "main"));
+        LAYERS.put("chick_leghorn", new ModelLayerLocation(new ResourceLocation("animania_farm", "chick_leghorn"), "main"));
+        LAYERS.put("chick_orpington", new ModelLayerLocation(new ResourceLocation("animania_farm", "chick_orpington"), "main"));
+        LAYERS.put("chick_plymouth_rock", new ModelLayerLocation(new ResourceLocation("animania_farm", "chick_plymouth_rock"), "main"));
+        LAYERS.put("chick_rhode_island_red", new ModelLayerLocation(new ResourceLocation("animania_farm", "chick_rhode_island_red"), "main"));
+        LAYERS.put("chick_wyandotte", new ModelLayerLocation(new ResourceLocation("animania_farm", "chick_wyandotte"), "main"));
+        LAYERS.put("cow_angus", new ModelLayerLocation(new ResourceLocation("animania_farm", "cow_angus"), "main"));
+        LAYERS.put("cow_friesian", new ModelLayerLocation(new ResourceLocation("animania_farm", "cow_friesian"), "main"));
+        LAYERS.put("cow_hereford", new ModelLayerLocation(new ResourceLocation("animania_farm", "cow_hereford"), "main"));
+        LAYERS.put("cow_highland", new ModelLayerLocation(new ResourceLocation("animania_farm", "cow_highland"), "main"));
+        LAYERS.put("cow_holstein", new ModelLayerLocation(new ResourceLocation("animania_farm", "cow_holstein"), "main"));
+        LAYERS.put("cow_jersey", new ModelLayerLocation(new ResourceLocation("animania_farm", "cow_jersey"), "main"));
+        LAYERS.put("cow_longhorn", new ModelLayerLocation(new ResourceLocation("animania_farm", "cow_longhorn"), "main"));
+        LAYERS.put("cow_mooshroom", new ModelLayerLocation(new ResourceLocation("animania_farm", "cow_mooshroom"), "main"));
+        LAYERS.put("doe_alpine", new ModelLayerLocation(new ResourceLocation("animania_farm", "doe_alpine"), "main"));
+        LAYERS.put("doe_angora", new ModelLayerLocation(new ResourceLocation("animania_farm", "doe_angora"), "main"));
+        LAYERS.put("doe_fainting", new ModelLayerLocation(new ResourceLocation("animania_farm", "doe_fainting"), "main"));
+        LAYERS.put("doe_kiko", new ModelLayerLocation(new ResourceLocation("animania_farm", "doe_kiko"), "main"));
+        LAYERS.put("doe_kinder", new ModelLayerLocation(new ResourceLocation("animania_farm", "doe_kinder"), "main"));
+        LAYERS.put("doe_nigerian_dwarf", new ModelLayerLocation(new ResourceLocation("animania_farm", "doe_nigerian_dwarf"), "main"));
+        LAYERS.put("doe_pygmy", new ModelLayerLocation(new ResourceLocation("animania_farm", "doe_pygmy"), "main"));
+        LAYERS.put("ewe_dorper", new ModelLayerLocation(new ResourceLocation("animania_farm", "ewe_dorper"), "main"));
+        LAYERS.put("ewe_dorset", new ModelLayerLocation(new ResourceLocation("animania_farm", "ewe_dorset"), "main"));
+        LAYERS.put("ewe_friesian", new ModelLayerLocation(new ResourceLocation("animania_farm", "ewe_friesian"), "main"));
+        LAYERS.put("ewe_jacob", new ModelLayerLocation(new ResourceLocation("animania_farm", "ewe_jacob"), "main"));
+        LAYERS.put("ewe_merino", new ModelLayerLocation(new ResourceLocation("animania_farm", "ewe_merino"), "main"));
+        LAYERS.put("ewe_suffolk", new ModelLayerLocation(new ResourceLocation("animania_farm", "ewe_suffolk"), "main"));
+        LAYERS.put("foal_draft", new ModelLayerLocation(new ResourceLocation("animania_farm", "foal_draft"), "main"));
+        LAYERS.put("hen_leghorn", new ModelLayerLocation(new ResourceLocation("animania_farm", "hen_leghorn"), "main"));
+        LAYERS.put("hen_orpington", new ModelLayerLocation(new ResourceLocation("animania_farm", "hen_orpington"), "main"));
+        LAYERS.put("hen_plymouth_rock", new ModelLayerLocation(new ResourceLocation("animania_farm", "hen_plymouth_rock"), "main"));
+        LAYERS.put("hen_rhode_island_red", new ModelLayerLocation(new ResourceLocation("animania_farm", "hen_rhode_island_red"), "main"));
+        LAYERS.put("hen_wyandotte", new ModelLayerLocation(new ResourceLocation("animania_farm", "hen_wyandotte"), "main"));
+        LAYERS.put("hog_duroc", new ModelLayerLocation(new ResourceLocation("animania_farm", "hog_duroc"), "main"));
+        LAYERS.put("hog_hampshire", new ModelLayerLocation(new ResourceLocation("animania_farm", "hog_hampshire"), "main"));
+        LAYERS.put("hog_large_black", new ModelLayerLocation(new ResourceLocation("animania_farm", "hog_large_black"), "main"));
+        LAYERS.put("hog_large_white", new ModelLayerLocation(new ResourceLocation("animania_farm", "hog_large_white"), "main"));
+        LAYERS.put("hog_old_spot", new ModelLayerLocation(new ResourceLocation("animania_farm", "hog_old_spot"), "main"));
+        LAYERS.put("hog_yorkshire", new ModelLayerLocation(new ResourceLocation("animania_farm", "hog_yorkshire"), "main"));
+        LAYERS.put("kid_alpine", new ModelLayerLocation(new ResourceLocation("animania_farm", "kid_alpine"), "main"));
+        LAYERS.put("kid_angora", new ModelLayerLocation(new ResourceLocation("animania_farm", "kid_angora"), "main"));
+        LAYERS.put("kid_fainting", new ModelLayerLocation(new ResourceLocation("animania_farm", "kid_fainting"), "main"));
+        LAYERS.put("kid_kiko", new ModelLayerLocation(new ResourceLocation("animania_farm", "kid_kiko"), "main"));
+        LAYERS.put("kid_kinder", new ModelLayerLocation(new ResourceLocation("animania_farm", "kid_kinder"), "main"));
+        LAYERS.put("kid_nigerian_dwarf", new ModelLayerLocation(new ResourceLocation("animania_farm", "kid_nigerian_dwarf"), "main"));
+        LAYERS.put("kid_pygmy", new ModelLayerLocation(new ResourceLocation("animania_farm", "kid_pygmy"), "main"));
+        LAYERS.put("lamb_dorper", new ModelLayerLocation(new ResourceLocation("animania_farm", "lamb_dorper"), "main"));
+        LAYERS.put("lamb_dorset", new ModelLayerLocation(new ResourceLocation("animania_farm", "lamb_dorset"), "main"));
+        LAYERS.put("lamb_friesian", new ModelLayerLocation(new ResourceLocation("animania_farm", "lamb_friesian"), "main"));
+        LAYERS.put("lamb_jacob", new ModelLayerLocation(new ResourceLocation("animania_farm", "lamb_jacob"), "main"));
+        LAYERS.put("lamb_merino", new ModelLayerLocation(new ResourceLocation("animania_farm", "lamb_merino"), "main"));
+        LAYERS.put("lamb_suffolk", new ModelLayerLocation(new ResourceLocation("animania_farm", "lamb_suffolk"), "main"));
+        LAYERS.put("mare_draft", new ModelLayerLocation(new ResourceLocation("animania_farm", "mare_draft"), "main"));
+        LAYERS.put("piglet_duroc", new ModelLayerLocation(new ResourceLocation("animania_farm", "piglet_duroc"), "main"));
+        LAYERS.put("piglet_hampshire", new ModelLayerLocation(new ResourceLocation("animania_farm", "piglet_hampshire"), "main"));
+        LAYERS.put("piglet_large_black", new ModelLayerLocation(new ResourceLocation("animania_farm", "piglet_large_black"), "main"));
+        LAYERS.put("piglet_large_white", new ModelLayerLocation(new ResourceLocation("animania_farm", "piglet_large_white"), "main"));
+        LAYERS.put("piglet_old_spot", new ModelLayerLocation(new ResourceLocation("animania_farm", "piglet_old_spot"), "main"));
+        LAYERS.put("piglet_yorkshire", new ModelLayerLocation(new ResourceLocation("animania_farm", "piglet_yorkshire"), "main"));
+        LAYERS.put("ram_dorper", new ModelLayerLocation(new ResourceLocation("animania_farm", "ram_dorper"), "main"));
+        LAYERS.put("ram_dorset", new ModelLayerLocation(new ResourceLocation("animania_farm", "ram_dorset"), "main"));
+        LAYERS.put("ram_friesian", new ModelLayerLocation(new ResourceLocation("animania_farm", "ram_friesian"), "main"));
+        LAYERS.put("ram_jacob", new ModelLayerLocation(new ResourceLocation("animania_farm", "ram_jacob"), "main"));
+        LAYERS.put("ram_merino", new ModelLayerLocation(new ResourceLocation("animania_farm", "ram_merino"), "main"));
+        LAYERS.put("ram_suffolk", new ModelLayerLocation(new ResourceLocation("animania_farm", "ram_suffolk"), "main"));
+        LAYERS.put("rooster_leghorn", new ModelLayerLocation(new ResourceLocation("animania_farm", "rooster_leghorn"), "main"));
+        LAYERS.put("rooster_orpington", new ModelLayerLocation(new ResourceLocation("animania_farm", "rooster_orpington"), "main"));
+        LAYERS.put("rooster_plymouth_rock", new ModelLayerLocation(new ResourceLocation("animania_farm", "rooster_plymouth_rock"), "main"));
+        LAYERS.put("rooster_rhode_island_red", new ModelLayerLocation(new ResourceLocation("animania_farm", "rooster_rhode_island_red"), "main"));
+        LAYERS.put("rooster_wyandotte", new ModelLayerLocation(new ResourceLocation("animania_farm", "rooster_wyandotte"), "main"));
+        LAYERS.put("sow_duroc", new ModelLayerLocation(new ResourceLocation("animania_farm", "sow_duroc"), "main"));
+        LAYERS.put("sow_hampshire", new ModelLayerLocation(new ResourceLocation("animania_farm", "sow_hampshire"), "main"));
+        LAYERS.put("sow_large_black", new ModelLayerLocation(new ResourceLocation("animania_farm", "sow_large_black"), "main"));
+        LAYERS.put("sow_large_white", new ModelLayerLocation(new ResourceLocation("animania_farm", "sow_large_white"), "main"));
+        LAYERS.put("sow_old_spot", new ModelLayerLocation(new ResourceLocation("animania_farm", "sow_old_spot"), "main"));
+        LAYERS.put("sow_yorkshire", new ModelLayerLocation(new ResourceLocation("animania_farm", "sow_yorkshire"), "main"));
+        LAYERS.put("stallion_draft", new ModelLayerLocation(new ResourceLocation("animania_farm", "stallion_draft"), "main"));
     }
     private FarmLegacyModelLayers() {}
     public static LayerDefinition create(String id) {
@@ -253,7 +253,9 @@ public final class FarmLegacyModelLayers {
             case "bull_angus", "bull_hereford", "bull_jersey" -> 1.4F;
             case "bull_friesian", "bull_holstein", "bull_mooshroom" -> 1.3F;
             case "bull_highland", "bull_longhorn" -> 1.5F;
-            case "calf_angus", "calf_friesian", "calf_hereford", "calf_highland", "calf_holstein", "calf_jersey", "calf_longhorn", "calf_mooshroom", "chick_leghorn", "chick_orpington", "chick_plymouth_rock", "chick_rhode_island_red", "chick_wyandotte", "foal_draft", "hen_leghorn", "hen_orpington", "hen_plymouth_rock", "hen_rhode_island_red", "hen_wyandotte", "mare_draft", "piglet_duroc", "piglet_yorkshire", "rooster_leghorn", "rooster_orpington", "rooster_plymouth_rock", "rooster_rhode_island_red", "rooster_wyandotte", "sow_yorkshire", "stallion_draft" -> 1.0F;
+            case "calf_angus", "calf_friesian", "calf_hereford", "calf_highland", "calf_holstein", "calf_jersey", "calf_longhorn", "calf_mooshroom", "chick_leghorn", "chick_orpington", "chick_plymouth_rock", "chick_rhode_island_red", "chick_wyandotte", "foal_draft", "hen_leghorn", "hen_orpington", "hen_plymouth_rock", "hen_rhode_island_red", "hen_wyandotte", "piglet_duroc", "piglet_yorkshire", "rooster_leghorn", "rooster_orpington", "rooster_plymouth_rock", "rooster_rhode_island_red", "rooster_wyandotte", "sow_yorkshire" -> 1.0F;
+            case "mare_draft" -> 0.72F;
+            case "stallion_draft" -> 0.85F;
             case "cow_angus", "cow_hereford", "cow_jersey", "cow_mooshroom" -> 1.34F;
             case "cow_friesian", "cow_holstein" -> 1.24F;
             case "cow_highland", "cow_longhorn" -> 1.44F;
@@ -320,7 +322,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.583229F, -12.807576F, 1.101219F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.786377F, -11.869566F, 0.403786F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.381264F, -12.464386F, 0.655113F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.403786F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.403786F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_buck_angora() {
@@ -396,7 +398,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.583229F, -12.807576F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.786377F, -11.869566F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.381264F, -12.464386F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_buck_kiko() {
@@ -429,7 +431,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.452748F, -12.880184F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.654986F, -11.944884F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.250449F, -12.538164F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_buck_kinder() {
@@ -458,7 +460,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.452748F, -12.880184F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.654986F, -11.944884F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.250449F, -12.538164F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_buck_nigerian_dwarf() {
@@ -491,7 +493,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.56572F, -12.715151F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.767958F, -11.779851F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.363421F, -12.373131F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.243717F, -16.943951F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.243717F, -16.943951F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_buck_pygmy() {
@@ -524,7 +526,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -12.178659F, -11.542464F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -9.356652F, -10.638784F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.952115F, -11.232064F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.847955F, -15.782614F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.847955F, -15.782614F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_bull() {
@@ -877,7 +879,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.583229F, -12.807576F, 1.101219F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.786377F, -11.869566F, 0.403786F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.381264F, -12.464386F, 0.655113F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.403786F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.403786F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_doe_angora() {
@@ -953,7 +955,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.583229F, -12.807576F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.786377F, -11.869566F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.381264F, -12.464386F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_doe_kiko() {
@@ -984,7 +986,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.452748F, -12.880184F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.654986F, -11.944884F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.250449F, -12.538164F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_doe_kinder() {
@@ -1015,7 +1017,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.452748F, -12.880184F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.654986F, -11.944884F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.250449F, -12.538164F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_doe_nigerian_dwarf() {
@@ -1041,7 +1043,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.56572F, -12.715151F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.767958F, -11.779851F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.363421F, -12.373131F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.243717F, -16.943951F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.243717F, -16.943951F, 0.402815F, 0.0F, 0.0F));
         PartDefinition udder = root.addOrReplaceChild("udder", CubeListBuilder.create().texOffs(4, 11).addBox(-3.0F, -2.0F, -3.0F, 6.0F, 4.0F, 6.0F), PartPose.offsetAndRotation(0.0F, 16.36405F, 17.24187F, 0.0F, 0.0F, 0.0F));
         PartDefinition udder1 = root.addOrReplaceChild("udder1", CubeListBuilder.create().texOffs(9, 16).addBox(-0.5F, -0.5F, -0.5F, 1.0F, 1.0F, 1.0F), PartPose.offsetAndRotation(2.0F, 18.86405F, 15.24187F, 0.0F, 0.0F, 0.0F));
         PartDefinition udder2 = root.addOrReplaceChild("udder2", CubeListBuilder.create().texOffs(9, 16).addBox(-0.5F, -0.5F, -0.5F, 1.0F, 1.0F, 1.0F), PartPose.offsetAndRotation(-2.0F, 18.86405F, 15.24187F, 0.0F, 0.0F, 0.0F));
@@ -1077,7 +1079,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -12.178659F, -11.542464F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -9.356652F, -10.638784F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.952115F, -11.232064F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.847955F, -15.782614F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.847955F, -15.782614F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_dorper_sheep() {
@@ -1623,7 +1625,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.583229F, -12.807576F, 1.101219F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.786377F, -11.869566F, 0.403786F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.381264F, -12.464386F, 0.655113F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.403786F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.403786F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_kid_angora() {
@@ -1686,7 +1688,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.583229F, -12.807576F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.786377F, -11.869566F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.381264F, -12.464386F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.257122F, -17.032186F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_kid_kiko() {
@@ -1712,7 +1714,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.452748F, -12.880184F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.654986F, -11.944884F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.250449F, -12.538164F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_kid_kinder() {
@@ -1738,7 +1740,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.452748F, -12.880184F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.654986F, -11.944884F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.250449F, -12.538164F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.130745F, -17.108984F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_kid_nigerian_dwarf() {
@@ -1764,7 +1766,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -11.56572F, -12.715151F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -8.767958F, -11.779851F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.363421F, -12.373131F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.243717F, -16.943951F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.243717F, -16.943951F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_kid_pygmy() {
@@ -1790,7 +1792,7 @@ public final class FarmLegacyModelLayers {
         PartDefinition snout1 = head_node.addOrReplaceChild("snout1", CubeListBuilder.create().texOffs(11, 76).addBox(-1.5F, 0.0F, -5.5F, 3.0F, 2.0F, 6.0F), PartPose.offsetAndRotation(-0.01F, -12.178659F, -11.542464F, 1.100248F, 0.0F, 0.0F));
         PartDefinition snout2 = head_node.addOrReplaceChild("snout2", CubeListBuilder.create().texOffs(10, 96).addBox(-2.0F, -0.5F, -5.0F, 4.0F, 3.0F, 6.0F), PartPose.offsetAndRotation(0.0F, -9.356652F, -10.638784F, 0.402815F, 0.0F, 0.0F));
         PartDefinition snout3 = head_node.addOrReplaceChild("snout3", CubeListBuilder.create().texOffs(9, 86).addBox(-1.5F, 0.0F, -5.0F, 3.0F, 2.0F, 5.0F), PartPose.offsetAndRotation(0.0F, -10.952115F, -11.232064F, 0.654142F, 0.0F, 0.0F));
-        PartDefinition nose = root.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.847955F, -15.782614F, 0.402815F, 0.0F, 0.0F));
+        PartDefinition nose = head_node.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(40, 91).addBox(-1.0F, 0.0F, 0.0F, 2.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.0F, -7.847955F, -15.782614F, 0.402815F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 128);
     }
     private static LayerDefinition model_merino_ewe() {

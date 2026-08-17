@@ -42,9 +42,9 @@ public final class AnimaniaBaseGameTests {
     public static void germanShepherdHerdsFarmRuminantsWhenAllAddonsAreInstalled(GameTestHelper helper) {
         AnimaniaGameTestEvidence.mark("animania:germanShepherdHerdsFarmRuminantsWhenAllAddonsAreInstalled");
         var sheepType = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getValue(
-                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("animania_farm", "ewe_dorper"));
+                new net.minecraft.resources.ResourceLocation("animania_farm", "ewe_dorper"));
         var shepherdType = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getValue(
-                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("animania_catsdogs", "male_german_shepherd"));
+                new net.minecraft.resources.ResourceLocation("animania_catsdogs", "male_german_shepherd"));
         helper.assertTrue(sheepType != null && shepherdType != null,
                 "full-addon fixture is missing the farm sheep or German shepherd registry entry");
         if (sheepType == null || shepherdType == null) return;
@@ -121,10 +121,10 @@ public final class AnimaniaBaseGameTests {
         helper.assertTrue(AnimaniaSounds.ZAP.isPresent() && AnimaniaSounds.COMBO.isPresent(),
                 "legacy Base sound RegistryObjects were not resolved");
         helper.assertTrue(net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.containsKey(
-                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("animania", "zap")),
+                        new net.minecraft.resources.ResourceLocation("animania", "zap")),
                 "animania:zap is absent from the live Forge sound registry");
         helper.assertTrue(net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.containsKey(
-                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("animania", "combo")),
+                        new net.minecraft.resources.ResourceLocation("animania", "combo")),
                 "animania:combo is absent from the live Forge sound registry");
         helper.succeed();
     }
@@ -281,6 +281,15 @@ public final class AnimaniaBaseGameTests {
                 "trough did not create its persisted companion block");
         helper.assertTrue(helper.getLevel().getBlockState(companion).getValue(AnimaniaInvisibleBlock.CONTROLLER) == Direction.WEST,
                 "companion block did not point back to the trough controller");
+        var companionCollision = helper.getLevel().getBlockState(companion)
+                .getCollisionShape(helper.getLevel(), companion);
+        helper.assertTrue(!companionCollision.isEmpty(),
+                "trough companion had no collision shape");
+        var collisionBounds = companionCollision.bounds();
+        helper.assertTrue(Math.abs(collisionBounds.getXsize() - 1.0D) < 0.0001D
+                        && Math.abs(collisionBounds.getYsize() - 0.3D) < 0.0001D
+                        && Math.abs(collisionBounds.getZsize() - 0.8D) < 0.0001D,
+                "trough companion collision did not cover the full second half");
         helper.assertTrue(helper.getLevel().getBlockEntity(companion) instanceof AnimaniaBlocks.InvisibleTroughProxyEntity,
                 "trough companion did not create its capability proxy block entity");
         var proxy = (AnimaniaBlocks.InvisibleTroughProxyEntity) helper.getLevel().getBlockEntity(companion);
@@ -294,6 +303,11 @@ public final class AnimaniaBaseGameTests {
                         && !proxy.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.UP).isPresent(),
                 "trough companion ignored allowTroughAutomation=false");
         AnimaniaConfig.ALLOW_TROUGH_AUTOMATION.set(previousAutomation);
+        helper.getLevel().removeBlock(companion, false);
+        helper.assertTrue(((AnimaniaTroughBlock) AnimaniaBlocks.TROUGH.get())
+                        .ensureCompanion(helper.getLevel(), pos, state)
+                        && helper.getLevel().getBlockState(companion).is(AnimaniaBlocks.INVISIBLE_BLOCK.get()),
+                "existing trough did not restore a missing companion collision block");
         helper.getLevel().destroyBlock(pos, false);
         helper.assertTrue(helper.getLevel().getBlockState(companion).isAir(), "breaking the trough left an orphan companion block");
         helper.succeed();
@@ -367,6 +381,8 @@ public final class AnimaniaBaseGameTests {
         AnimaniaBlocks.NestEntity nest = (AnimaniaBlocks.NestEntity) helper.getLevel().getBlockEntity(nestPos);
         var handler = nest.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve().orElseThrow();
         helper.assertTrue(handler.insertItem(0, new ItemStack(Items.DIRT), false).getCount() == 1, "nest accepted a non-egg item");
+        helper.assertTrue(!nest.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).isPresent(),
+                "nest exposed sided automation despite the legacy insert rejection rule");
         handler.insertItem(0, new ItemStack(Items.EGG, 3), false);
         var player = helper.makeMockPlayer();
         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);

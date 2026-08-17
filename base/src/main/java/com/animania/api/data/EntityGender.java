@@ -19,7 +19,8 @@ public enum EntityGender {
         Objects.requireNonNull(randomThree, "randomThree");
         return switch (this) {
             case FEMALE -> AnimalGender.FEMALE;
-            case MALE, NONE -> AnimalGender.MALE;
+            case MALE -> AnimalGender.MALE;
+            case NONE -> AnimalGender.NONE;
             case CHILD -> AnimalGender.CHILD;
             case RANDOM -> switch (Math.floorMod(randomThree.getAsInt(), 3)) {
                 case 0 -> AnimalGender.MALE;

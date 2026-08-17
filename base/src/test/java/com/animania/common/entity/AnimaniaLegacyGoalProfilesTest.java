@@ -22,15 +22,15 @@ class AnimaniaLegacyGoalProfilesTest {
         assertProfile("animania_extra", "hamster", 1.4D, 1.1D, true, false);
         assertProfile("animania_extra", "hedgehog", 1.5D, 1.0D, true, true);
         assertProfile("animania_extra", "ferret_grey", 1.5D, 1.2D, true, true);
-        assertProfile("animania_extra", "peacock_blue", 1.4D, 1.0D, false, true);
+        assertProfile("animania_extra", "peacock_blue", 1.4D, 1.0D, true, true);
         assertProfile("animania_extra", "doe_rex", 2.5D, 1.8D, true, true);
 
         assertProfile("animania_catsdogs", "queen_siamese", 1.5D, 1.2D, true, true);
         assertProfile("animania_catsdogs", "male_husky", 1.5D, 1.2D, true, true);
 
-        assertTrue(AnimaniaLegacyGoalProfiles.resolve("animania_extra", "dartfrog").isEmpty());
-        assertTrue(AnimaniaLegacyGoalProfiles.resolve("animania_extra", "toad").isEmpty());
-        assertTrue(AnimaniaLegacyGoalProfiles.resolve("animania_extra", "frog").isEmpty());
+        assertProfile("animania_extra", "dartfrog", 2.2D, 0.6D, true, false);
+        assertProfile("animania_extra", "toad", 2.2D, 0.6D, true, false);
+        assertProfile("animania_extra", "frog", 2.2D, 0.6D, true, false);
 
         assertTrue(AnimaniaSmallCreatureFloatGoal.supports("animania_farm", "chick_leghorn"));
         assertTrue(AnimaniaSmallCreatureFloatGoal.supports("animania_extra", "hamster"));

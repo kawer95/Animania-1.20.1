@@ -13,6 +13,22 @@ import java.util.List;
 
 /** Runtime wrapper for the breed-specific native layers converted from 1.12. */
 public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEntity> {
+    /** ModelPeacock.render() in 1.12 rendered every fan root with scale / 3. */
+    private static final float LEGACY_PEACOCK_FAN_RENDER_SCALE = 1.0F / 3.0F;
+    /**
+     * ModelDraftHorseMare/Stallion.render() in 1.12 rendered this complete
+     * saddle assembly only while isHorseSaddled() was true.  The converted
+     * 1.20 layers keep the parts as root children, so their visibility must be
+     * restored explicitly instead of letting the generic root render draw
+     * them for every horse.
+     */
+    private static final String[] LEGACY_HORSE_SADDLE_PARTS = {
+            "saddle_base", "saddle_base2", "saddle_base3", "saddle",
+            "saddle2", "saddle3", "saddle4", "saddle5", "saddle6",
+            "footstrap", "foot1", "foot2", "foot3", "foot4",
+            "footstrap2", "foot1a", "foot2a", "foot3a", "foot4a",
+            "saddle7", "saddle_hump", "saddle_hump2", "strap1", "strap2", "strap3"
+    };
     private final ModelPart root;
     private final List<ModelPart> heads;
     private final List<ModelPart> leftLegs;
@@ -22,6 +38,8 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
     private final List<ModelPart> bodies;
     private final List<ModelPart> privateParts;
     private final List<ModelPart> coloredParts;
+    private final List<ModelPart> fanNodes;
+    private final List<ModelPart> saddleParts;
     private final List<ResolvedPose> sittingPose;
     private final List<ResolvedPose> sleepingPose;
     private final ModelPart petLookPart;
@@ -49,6 +67,12 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
         this.bodies = resolve(root, profile.bodies());
         this.privateParts = resolve(root, profile.privateParts());
         this.coloredParts = resolve(root, profile.coloredParts());
+        // Only the male peacock layer owns these four roots.  Resolving the
+        // paths here lets the shared model preserve the old renderer's local
+        // scale without changing peahen/peachick geometry.
+        this.fanNodes = resolve(root, new String[]{
+                "fan_node_a", "fan_node_b", "fan_node_c", "fan_node_d"});
+        this.saddleParts = resolve(root, LEGACY_HORSE_SADDLE_PARTS);
         this.sittingPose = resolvePose(root, sittingPose);
         this.sleepingPose = resolvePose(root, petAnimation.sleepingPose());
         List<ModelPart> look = resolve(root, new String[]{petAnimation.lookPart()});
@@ -80,19 +104,50 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
             showPrivateParts = false;
         }
         for (ModelPart part : privateParts) part.visible = showPrivateParts;
+        // The 1.12 horse models guarded every saddle/stirrup part with
+        // isHorseSaddled().  Without this gate the converted root pass draws
+        // a saddle on every wild horse even though its synced saddle state is
+        // false and riding is correctly rejected.
+        for (ModelPart part : saddleParts) part.visible = entity.isSaddled();
         hideGoatHornBudArtifacts(entity);
         if (entity.isPigAnimal()) applyPigRestPose(entity.registryPath(), showPrivateParts);
-        if (petAnimation.active() && petLookPart != null && !entity.isSleeping()
+        if (isRabbitId(entity.registryPath())) {
+            // The 1.12 rabbit models reset Neck1 in setRotationAngles after
+            // their constructor pose is written.  The generated 1.20 layer
+            // keeps that constructor pose (-0.7740535 radians), which makes
+            // every rabbit look upward unless the runtime reset is restored.
+            // The old models also put the look yaw on Neck1, not on the two
+            // head children, and did this even while the renderer was laying
+            // the rabbit down to sleep.
+            ModelPart neck = child("neck1");
+            if (neck != null) {
+                neck.xRot = 0.0F;
+                neck.yRot = netHeadYaw * Mth.DEG_TO_RAD;
+            }
+        } else if (petAnimation.active() && petLookPart != null && !entity.isSleeping()
                 && (petAnimation.lookWhileSitting() || !entity.isSitting())) {
             petLookPart.xRot = headPitch * petAnimation.pitchScale() + petAnimation.pitchOffset();
             petLookPart.yRot = netHeadYaw * petAnimation.yawScale();
-        } else if (!petAnimation.active()) {
+        } else if (!petAnimation.active() && !entity.isSleeping()) {
             float headX = headPitch * Mth.DEG_TO_RAD;
             float headY = netHeadYaw * Mth.DEG_TO_RAD;
             heads.forEach(part -> { part.xRot += headX; part.yRot += headY; });
         }
 
         if (!entity.isSleeping()) {
+            // The standard 1.12 dog models assign a small standing offset to
+            // every first leg segment in setRotationAngles, immediately
+            // before adding the walking stride.  The converted layers keep
+            // each breed's constructor pose, so relying on that baked value
+            // leaves some breeds (notably Great Dane/Bloodhound) at 0 degrees
+            // while others retain a different constructor angle.  Set the
+            // runtime base first, then add the same 0.6 * 1.4 stride used by
+            // the legacy models. Sitting poses are applied below and replace
+            // this value just as the 1.12 code did.
+            if (usesStandardDogGait(entity.registryPath())) {
+                leftLegs.forEach(part -> part.xRot = 0.06981317F);
+                rightLegs.forEach(part -> part.xRot = 0.06981317F);
+            }
             float stride = Mth.cos(limbSwing * 0.6662F) * petAnimation.strideScale() * limbSwingAmount;
             leftLegs.forEach(part -> part.xRot += stride);
             rightLegs.forEach(part -> part.xRot -= stride);
@@ -105,13 +160,17 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
                         * 0.15F * 3.141593F;
                 tails.forEach(part -> part.yRot += tailYaw);
             } else if (!entity.isPigAnimal()) {
-                // Pig tails are an authored curled rest-pose in the legacy
-                // models, not the generic idle-tail animation.
+                // The 1.12 pig/piglet models only reset tail1/tail1a to their
+                // authored curled pose; they contain no idle sin/cos wag.
+                // Keep the generic cycle off for pigs so the port matches the
+                // original rather than inventing a new tail animation.
                 tails.forEach(part -> part.yRot += Mth.sin(ageInTicks * 0.12F) * 0.18F);
             }
         }
         float flap = Mth.sin(ageInTicks * 0.55F) * (0.08F + limbSwingAmount * 0.45F);
-        for (int i = 0; i < wings.size(); i++) wings.get(i).zRot += (i & 1) == 0 ? flap : -flap;
+        if (!entity.isSleeping()) {
+            for (int i = 0; i < wings.size(); i++) wings.get(i).zRot += (i & 1) == 0 ? flap : -flap;
+        }
 
         if (entity.isHamster()) setupHamsterPose(entity, ageInTicks);
         else if (entity.isSitting()) applyPose(sittingPose);
@@ -128,8 +187,7 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
             heads.forEach(part -> part.xRot -= 0.35F);
             bodies.forEach(part -> part.xRot += 0.08F);
         } else if (entity.isSleeping() && !petAnimation.active()) {
-            bodies.forEach(part -> part.zRot += 0.12F);
-            heads.forEach(part -> part.xRot += 0.35F);
+            applyLegacySleepingPose(entity);
         } else if (entity.getPlayGoal() != null && entity.isPlaying()) {
             bodies.forEach(part -> part.y += Mth.sin(ageInTicks * 0.7F) * 0.8F);
             tails.forEach(part -> part.yRot += Mth.sin(ageInTicks * 0.8F) * 0.45F);
@@ -139,6 +197,14 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
             heads.forEach(part -> part.xRot += 0.75F + Mth.sin(ageInTicks * 0.18F) * 0.08F);
         } else if (entity.getHunger() < 25) {
             heads.forEach(part -> part.xRot += 0.35F + Mth.sin(ageInTicks * 0.45F) * 0.12F);
+        }
+        if (entity.getCrowDuration() > 0 && entity.registryPath().startsWith("rooster_")) {
+            ModelPart neck = child("neck");
+            if (neck != null) {
+                int duration = entity.getCrowDuration();
+                neck.xRot = duration < 10 ? -(duration * 0.005F)
+                        : duration >= 40 ? -0.5742105F + duration * 0.005F : -0.5742105F;
+            }
         }
     }
 
@@ -249,19 +315,192 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
         if (part != null) part.visible = false;
     }
 
+    /**
+     * Recreates the part rotations that the 1.12 Java models applied while
+     * their renderer was laying the animal down.  The modern port originally
+     * kept only a small generic tilt, so the synchronized sleeping flag was
+     * visible in tooltips but cattle, sheep, goats and horses remained
+     * standing.  The generated layers retain the original part names, which
+     * lets this shared model cover every breed without duplicating models.
+     */
+    private void applyLegacySleepingPose(AnimaniaAnimalEntity entity) {
+        String id = entity.registryPath();
+        float timer = Mth.clamp(entity.getSleepTimer(), -0.55F, 0.0F);
+
+        if (id.startsWith("bull_") || id.startsWith("cow_") || id.startsWith("calf_")) {
+            String[] legs = id.startsWith("cow_")
+                    ? new String[]{"leg1", "leg2", "leg3", "leg4"}
+                    : new String[]{"leg0", "leg1", "leg2", "leg3"};
+            setXRotation(child(legs[0]), timer * -1.8F);
+            setXRotation(child(legs[1]), timer * -1.8F);
+            setXRotation(child(legs[2]), timer * 1.7F);
+            setXRotation(child(legs[3]), timer * 1.75F);
+            float body = Mth.HALF_PI + (timer > -0.28F ? -timer / 3.0F : timer / 3.0F);
+            bodies.forEach(part -> part.xRot = body);
+            float headFactor = id.startsWith("cow_") ? -2.8F : 2.8F;
+            heads.forEach(part -> part.yRot = timer * headFactor);
+            return;
+        }
+
+        if (id.startsWith("ewe_") || id.startsWith("lamb_") || id.startsWith("ram_")) {
+            rotateSleepParts(timer * -1.8F,
+                    "left_front_leg", "right_front_leg", "left_front_leg_wool", "right_front_leg_wool");
+            rotateSleepParts(timer * 1.7F,
+                    "left_back_leg", "right_back_leg", "left_back_leg_wool", "right_back_leg_wool");
+            float headFactor = id.contains("dorper") ? -2.8F : id.startsWith("ram_") ? 4.0F : -4.5F;
+            heads.forEach(part -> part.yRot = timer * headFactor);
+            float body = timer > -0.28F ? -timer / 3.0F : timer / 3.0F;
+            bodies.forEach(part -> part.xRot = body);
+            return;
+        }
+
+        if (isGoatId(id)) {
+            rotateSleepParts(timer * -1.8F,
+                    "front_leg__l", "front_leg__r", "front_leg_wool__l", "front_leg_wool__r");
+            rotateSleepParts(timer * 1.7F,
+                    "back_leg__l", "back_leg__r", "back_leg_wool__l", "back_leg_wool__r");
+            float headFactor = id.startsWith("doe_") && !id.equals("doe_angora") ? 2.8F : -2.8F;
+            heads.forEach(part -> part.yRot = timer * headFactor);
+            float body = timer > -0.28F ? -timer / 3.0F : timer / 3.0F;
+            final float bodyRotation = id.equals("kid_kinder") ? body + Mth.HALF_PI : body;
+            bodies.forEach(part -> part.xRot = bodyRotation);
+            return;
+        }
+
+        if (id.startsWith("foal_") || id.startsWith("mare_") || id.startsWith("stallion_")) {
+            rotateSleepParts(timer * -1.8F, "front_left_muscle", "front_right_muscle");
+            rotateSleepParts(timer * 1.7F, "back_left_muscle");
+            rotateSleepParts(timer * 1.75F, "back_right_muscle");
+            heads.forEach(part -> part.yRot = timer * (id.startsWith("stallion_") ? -2.8F : 2.8F));
+            float body = timer > -0.28F ? -timer / 3.0F : timer / 3.0F;
+            bodies.forEach(part -> part.xRot = body);
+            return;
+        }
+
+        // Pigs, birds and the extra-addon small animals use renderer-only
+        // sleeping transforms in the original code; their model parts must
+        // not receive the old generic tilt or wing flapping.
+        if (id.startsWith("piglet_") || id.startsWith("hog_") || id.startsWith("sow_")
+                || id.startsWith("chick_") || id.startsWith("hen_") || id.startsWith("rooster_")
+                || isRabbitId(id)
+                || id.startsWith("peachick_") || id.startsWith("peacock_") || id.startsWith("peahen_")
+                || id.startsWith("ferret_") || id.startsWith("hamster") || id.startsWith("hedgehog")) {
+            if (id.startsWith("peacock_")) {
+                rotateSleepParts(-1.5F, "fan_node_a", "fan_node_b", "fan_node_c", "fan_node_d");
+            }
+            return;
+        }
+
+        // Preserve a visible pose for third-party legacy profiles that do not
+        // yet have a dedicated renderer mapping.
+        bodies.forEach(part -> part.zRot += 0.12F);
+        heads.forEach(part -> part.xRot += 0.35F);
+    }
+
+    private void rotateSleepParts(float value, String... paths) {
+        for (String path : paths) setXRotation(child(path), value);
+    }
+
+    private static boolean isGoatId(String id) {
+        if (!(id.startsWith("buck_") || id.startsWith("doe_") || id.startsWith("kid_"))) return false;
+        return id.endsWith("_alpine") || id.endsWith("_angora") || id.endsWith("_fainting")
+                || id.endsWith("_kiko") || id.endsWith("_kinder") || id.endsWith("_nigerian_dwarf")
+                || id.endsWith("_pygmy");
+    }
+
+    private static boolean isRabbitId(String id) {
+        return id.startsWith("kit_")
+                || ((id.startsWith("buck_") || id.startsWith("doe_")) && !isGoatId(id));
+    }
+
+    private static void setXRotation(ModelPart part, float value) {
+        if (part != null) part.xRot = value;
+    }
+
+    /**
+     * IDs whose 1.12 models used the shared standard-dog gait.  The smaller
+     * Chihuahua/Corgi/Dachshund/Pomeranian/Pug models have different leg
+     * formulas and must retain their breed-specific animation profiles.
+     */
+    private static boolean usesStandardDogGait(String id) {
+        if (!(id.startsWith("female_") || id.startsWith("male_") || id.startsWith("puppy_"))) return false;
+        return id.endsWith("_blood_hound") || id.endsWith("_collie") || id.endsWith("_fox")
+                || id.endsWith("_german_shepherd") || id.endsWith("_great_dane")
+                || id.endsWith("_greyhound") || id.endsWith("_husky") || id.endsWith("_labrador")
+                || id.endsWith("_poodle") || id.endsWith("_wolf");
+    }
+
+    /**
+     * Renders the model body normally and the 1.12 peacock fan roots at their
+     * original per-render scale.  ModelPart has no equivalent of the old
+     * ModelRenderer.render(scale / 3), so the fan roots must be isolated from
+     * the normal root pass and rendered under a temporary PoseStack scale.
+     */
+    private void renderRootWithLegacyFanScale(PoseStack pose, VertexConsumer consumer,
+                                              int packedLight, int packedOverlay,
+                                              float red, float green, float blue, float alpha) {
+        if (fanNodes.isEmpty()) {
+            root.render(pose, consumer, packedLight, packedOverlay, red, green, blue, alpha);
+            return;
+        }
+
+        boolean[] visible = new boolean[fanNodes.size()];
+        boolean[] skipDraw = new boolean[fanNodes.size()];
+        for (int i = 0; i < fanNodes.size(); i++) {
+            ModelPart fan = fanNodes.get(i);
+            visible[i] = fan.visible;
+            skipDraw[i] = fan.skipDraw;
+            // The ordinary root pass must not draw the fan roots.  They are
+            // rendered below with the legacy scale, so this is only a
+            // temporary visibility change.
+            fan.visible = false;
+        }
+        try {
+            root.render(pose, consumer, packedLight, packedOverlay, red, green, blue, alpha);
+            pose.pushPose();
+            try {
+                pose.scale(LEGACY_PEACOCK_FAN_RENDER_SCALE,
+                        LEGACY_PEACOCK_FAN_RENDER_SCALE,
+                        LEGACY_PEACOCK_FAN_RENDER_SCALE);
+                for (int i = 0; i < fanNodes.size(); i++) {
+                    if (!visible[i]) continue;
+                    ModelPart fan = fanNodes.get(i);
+                    // ModelPart.render() checks both flags.  Restore them for
+                    // this explicit pass, otherwise the fan would disappear
+                    // after being hidden from the ordinary root pass (and
+                    // would remain skipped during a coloured second pass).
+                    fan.visible = true;
+                    fan.skipDraw = false;
+                    fan.render(pose, consumer, packedLight, packedOverlay,
+                            red, green, blue, alpha);
+                    fan.visible = false;
+                }
+            } finally {
+                pose.popPose();
+            }
+        } finally {
+            for (int i = 0; i < fanNodes.size(); i++) {
+                fanNodes.get(i).visible = visible[i];
+                fanNodes.get(i).skipDraw = skipDraw[i];
+            }
+        }
+    }
+
     @Override
     public void renderToBuffer(PoseStack pose, VertexConsumer consumer, int packedLight, int packedOverlay,
                                float red, float green, float blue, float alpha) {
         if (coloredParts.isEmpty()) {
-            root.render(pose, consumer, packedLight, packedOverlay, red, green, blue, alpha);
+            renderRootWithLegacyFanScale(pose, consumer, packedLight, packedOverlay,
+                    red, green, blue, alpha);
             return;
         }
         try {
             coloredParts.forEach(part -> part.skipDraw = true);
-            root.render(pose, consumer, packedLight, packedOverlay, red, green, blue, alpha);
+            renderRootWithLegacyFanScale(pose, consumer, packedLight, packedOverlay,
+                    red, green, blue, alpha);
             root.getAllParts().forEach(part -> part.skipDraw = true);
             coloredParts.forEach(part -> part.skipDraw = false);
-            root.render(pose, consumer, packedLight, packedOverlay,
+            renderRootWithLegacyFanScale(pose, consumer, packedLight, packedOverlay,
                     red * woolRed, green * woolGreen, blue * woolBlue, alpha);
         } finally {
             root.getAllParts().forEach(part -> part.skipDraw = false);

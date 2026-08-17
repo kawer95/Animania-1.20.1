@@ -26,6 +26,25 @@ class FarmRegistryTest {
     }
 
     @Test
+    void everyFarmEntityHasItsPinnedLegacyPhysicalProfile() {
+        assertEquals(102, FarmLegacyIds.ALL.size());
+        for (String id : FarmLegacyIds.ALL) {
+            FarmAnimalProfile profile = assertDoesNotThrow(() -> FarmAnimalProfile.forId(id), id);
+            assertTrue(profile.width() > 0.0F && profile.height() > 0.0F, id);
+            assertTrue(profile.maxHealth() > 0.0D && profile.movementSpeed() > 0.0D, id);
+        }
+        assertEquals(new FarmAnimalProfile(24.0D, 0.20D, 4.0D, 1.6F, 1.8F),
+                FarmAnimalProfile.forId("bull_angus"));
+        assertEquals(new FarmAnimalProfile(6.0D, 0.29D, 1.5D, 0.5F, 0.7F),
+                FarmAnimalProfile.forId("hen_leghorn"));
+        assertEquals(new FarmAnimalProfile(15.0D, 0.265D, 0.0D, 1.6F, 1.3F),
+                FarmAnimalProfile.forId("doe_alpine"));
+        assertEquals(new FarmAnimalProfile(15.0D, 0.265D, 0.0D, 1.1F, 1.2F),
+                FarmAnimalProfile.forId("doe_nigerian_dwarf"));
+        assertEquals(2.5F, FarmAnimalProfile.forId("wagon").width());
+    }
+
+    @Test
     void everyAnimalEggHasItsExactLegacyTintPair() {
         FarmLegacyIds.ALL.stream().filter(id -> !FarmLegacyIds.isVehicle(id))
                 .forEach(id -> assertNotNull(LegacyEggColors.forEntity(id), id));
@@ -82,6 +101,19 @@ class FarmRegistryTest {
     }
 
     @Test
+    void everyGoatMuzzleIsAttachedToTheAnimatedHeadNode() {
+        FarmLegacyIds.ALL.stream()
+                .filter(id -> id.startsWith("buck_") || id.startsWith("doe_") || id.startsWith("kid_"))
+                .forEach(id -> {
+                    ModelPart root = FarmLegacyModelLayers.create(id).bakeRoot();
+                    assertTrue(root.hasChild("head_node"), id + " lost its head node");
+                    assertTrue(root.getChild("head_node").hasChild("nose"),
+                            id + " nose is not attached to the animated head");
+                    assertFalse(root.hasChild("nose"), id + " retained a root-level floating nose");
+                });
+    }
+
+    @Test
     void legacyColoredWoolPartsRemainDedicatedTintPasses() {
         for (String id : java.util.List.of("ewe_dorset", "ram_merino", "ewe_suffolk", "ram_friesian")) {
             var profile = FarmLegacyModelLayers.profile(id);
@@ -126,6 +158,25 @@ class FarmRegistryTest {
         assertNull(com.animania.common.item.LegacyRawFoodProfile.forItemId("cooked_prime_beef"));
     }
 
+    @Test
+    void adultHorseLayersRetainTheCompleteLegacySaddleAssembly() {
+        String[] saddleParts = {
+                "saddle_base", "saddle_base2", "saddle_base3", "saddle",
+                "saddle2", "saddle3", "saddle4", "saddle5", "saddle6",
+                "footstrap", "foot1", "foot2", "foot3", "foot4",
+                "footstrap2", "foot1a", "foot2a", "foot3a", "foot4a",
+                "saddle7", "saddle_hump", "saddle_hump2", "strap1", "strap2", "strap3"
+        };
+        for (String id : java.util.List.of("mare_draft", "stallion_draft")) {
+            ModelPart root = FarmLegacyModelLayers.create(id).bakeRoot();
+            for (String part : saddleParts) {
+                assertTrue(root.hasChild(part), id + " lost saddle part " + part);
+            }
+        }
+        assertFalse(FarmLegacyModelLayers.create("foal_draft").bakeRoot().hasChild("saddle_base"),
+                "foal model should not expose the adult saddle assembly");
+    }
+
     private static void assertProfilePaths(ModelPart root, com.animania.client.model.LegacyAnimationProfile profile,
                                            String id) {
         java.util.stream.Stream.of(profile.heads(), profile.leftLegs(), profile.rightLegs(), profile.tails(),
@@ -142,4 +193,10 @@ class FarmRegistryTest {
         }
         return true;
     }
+    @Test
+    void draftHorseRenderScaleMatchesLegacyAdultRenderers() {
+        assertEquals(0.72F, FarmLegacyModelLayers.scale("mare_draft"));
+        assertEquals(0.85F, FarmLegacyModelLayers.scale("stallion_draft"));
+    }
+
 }

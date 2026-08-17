@@ -32,6 +32,6 @@ public final class AnimaniaConversion {
     }
 
     private static ResourceLocation mc(String path) {
-        return ResourceLocation.fromNamespaceAndPath("minecraft", path);
+        return new ResourceLocation("minecraft", path);
     }
 }

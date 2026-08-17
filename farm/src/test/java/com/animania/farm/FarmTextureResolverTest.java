@@ -35,7 +35,7 @@ final class FarmTextureResolverTest {
 
     private static void assertTexture(String id, String variant, boolean sheared) {
         ResourceLocation texture = LegacyAnimalTextures.resolve(
-                ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, id), variant, sheared);
+                new ResourceLocation(AnimaniaFarm.MOD_ID, id), variant, sheared);
         String resource = "assets/" + texture.getNamespace() + "/" + texture.getPath();
         try (InputStream stream = FarmTextureResolverTest.class.getClassLoader().getResourceAsStream(resource)) {
             assertNotNull(stream, id + " -> " + resource);

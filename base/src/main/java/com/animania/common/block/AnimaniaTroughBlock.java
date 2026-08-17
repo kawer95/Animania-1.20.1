@@ -53,6 +53,9 @@ public final class AnimaniaTroughBlock extends BaseEntityBlock {
     @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return state.getValue(FACING).getAxis() == Direction.Axis.Z ? NORTH_SOUTH : EAST_WEST;
     }
+    @Override public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return getShape(state, level, pos, context);
+    }
 
     @Override public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
         Direction facing = context.getHorizontalDirection();
@@ -62,8 +65,18 @@ public final class AnimaniaTroughBlock extends BaseEntityBlock {
     }
 
     @Override public void setPlacedBy(Level level, BlockPos pos, BlockState state, net.minecraft.world.entity.LivingEntity placer, ItemStack stack) {
-        if (!level.isClientSide) level.setBlock(companionPos(pos, state),
-                AnimaniaBlocks.INVISIBLE_BLOCK.get().defaultBlockState().setValue(AnimaniaInvisibleBlock.CONTROLLER, state.getValue(FACING).getOpposite()), 3);
+        ensureCompanion(level, pos, state);
+    }
+
+    /** Restore the companion block for old saves without overwriting a real block. */
+    public boolean ensureCompanion(Level level, BlockPos pos, BlockState state) {
+        if (level.isClientSide) return false;
+        BlockPos companion = companionPos(pos, state);
+        BlockState existing = level.getBlockState(companion);
+        if (existing.is(AnimaniaBlocks.INVISIBLE_BLOCK.get())) return false;
+        if (!existing.isAir()) return false;
+        return level.setBlock(companion, AnimaniaBlocks.INVISIBLE_BLOCK.get().defaultBlockState()
+                .setValue(AnimaniaInvisibleBlock.CONTROLLER, state.getValue(FACING).getOpposite()), 3);
     }
 
     @Override public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean moving) {
@@ -77,7 +90,10 @@ public final class AnimaniaTroughBlock extends BaseEntityBlock {
 
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new AnimaniaBlocks.TroughEntity(pos, state); }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return level.isClientSide ? null : createTickerHelper(type, AnimaniaBlocks.TROUGH_BE.get(), (l, p, s, be) -> be.serverTick());
+        return level.isClientSide ? null : createTickerHelper(type, AnimaniaBlocks.TROUGH_BE.get(), (l, p, s, be) -> {
+            ensureCompanion(l, p, s);
+            be.serverTick();
+        });
     }
 
     @Override public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {

@@ -27,7 +27,7 @@ final class CatsDogsTextureResolverTest {
 
     private static void assertTexture(String id, String variant) {
         ResourceLocation texture = LegacyAnimalTextures.resolve(
-                ResourceLocation.fromNamespaceAndPath(AnimaniaCatsDogs.MOD_ID, id), variant, false);
+                new ResourceLocation(AnimaniaCatsDogs.MOD_ID, id), variant, false);
         String resource = "assets/" + texture.getNamespace() + "/" + texture.getPath();
         try (InputStream stream = CatsDogsTextureResolverTest.class.getClassLoader().getResourceAsStream(resource)) {
             assertNotNull(stream, id + " (" + variant + ") -> " + resource);

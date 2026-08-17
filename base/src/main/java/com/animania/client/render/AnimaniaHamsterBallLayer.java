@@ -16,7 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 
 /** Renders the translucent cage without coupling Base to Extra's Java code. */
 public final class AnimaniaHamsterBallLayer extends RenderLayer<AnimaniaAnimalEntity, LegacyAnimalModel> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    private static final ResourceLocation TEXTURE = new ResourceLocation(
             "animania_extra", "textures/entity/rodents/hamster_ball.png");
     private final ModelPart ball;
     private static final float[][] LEGACY_COLORS = {

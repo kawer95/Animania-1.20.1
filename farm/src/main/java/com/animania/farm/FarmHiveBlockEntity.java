@@ -46,17 +46,22 @@ public final class FarmHiveBlockEntity extends AnimaniaStorageBlockEntity implem
     @Override
     public void serverTick() {
         if (level == null) return;
+        if (isWild() && level.random.nextInt(10) == 0) {
+            level.getEntitiesOfClass(net.minecraft.world.entity.player.Player.class,
+                    new net.minecraft.world.phys.AABB(worldPosition).inflate(1.5D)).forEach(player -> {
+                        if (level.random.nextInt(3) == 0) sting(player);
+                    });
+        }
         if (--nextHoney > 0) return;
-        nextHoney = isWild() ? FarmConfig.HIVE_WILD_HONEY_RATE.get() : FarmConfig.HIVE_PLAYER_HONEY_RATE.get();
+        nextHoney = (isWild() ? FarmConfig.HIVE_WILD_HONEY_RATE.get() : FarmConfig.HIVE_PLAYER_HONEY_RATE.get())
+                + level.random.nextInt(100);
+        if (!FarmSpawnBiomeModifier.matchesConfiguredBiome("hive", level.getBiome(worldPosition))) {
+            setChanged();
+            return;
+        }
         var registration = FarmFluids.ALL.get("animania_honey");
         if (registration != null && registration.source.isPresent()) {
             honeyTank.fill(new FluidStack(registration.source.get(), 25), IFluidHandler.FluidAction.EXECUTE);
-        }
-        if (isWild()) {
-            level.getEntitiesOfClass(net.minecraft.world.entity.player.Player.class,
-                    new net.minecraft.world.phys.AABB(worldPosition).inflate(1.5D)).forEach(player -> {
-                        if (level.random.nextInt(40) == 0) sting(player);
-                    });
         }
         setChanged();
     }

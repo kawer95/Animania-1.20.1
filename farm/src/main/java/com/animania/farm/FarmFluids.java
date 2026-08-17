@@ -75,11 +75,11 @@ public final class FarmFluids {
     }
 
     public static ResourceLocation stillTexture(String id) {
-        return ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "fluids/" + id + "_still");
+        return new ResourceLocation(AnimaniaFarm.MOD_ID, "fluids/" + id + "_still");
     }
 
     public static ResourceLocation flowingTexture(String id) {
-        return ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "fluids/" + id + "_flow");
+        return new ResourceLocation(AnimaniaFarm.MOD_ID, "fluids/" + id + "_flow");
     }
 
     public static final class FluidRegistration {

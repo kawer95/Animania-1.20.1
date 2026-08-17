@@ -41,7 +41,7 @@ public final class AnimaniaCarryRenderer {
         if (state == null || player.level() == null) return;
         ResourceLocation id;
         try {
-            id = ResourceLocation.parse(state.type());
+            id = new ResourceLocation(state.type());
         } catch (IllegalArgumentException ignored) {
             return;
         }

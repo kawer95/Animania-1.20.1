@@ -93,7 +93,8 @@ public final class CatsDogsPetBowlBlock extends AnimaniaContainerBlock {
                 stack.shrink(1);
                 itemEntity.setItem(stack);
             } else if (isWaterContainer(stack) && fillFromItemEntity(bowl, itemEntity)) {
-                itemEntity.setItem(stack);
+                // fillFromItemEntity replaces the consumed container. Do not
+                // overwrite that bucket/bottle with the now-empty old stack.
             }
         } else if (entity instanceof AnimaniaAnimalEntity animal && animal.getHunger() < 100 && !bowl.getItem(0).isEmpty()) {
             ItemStack food = bowl.getItem(0);
@@ -147,9 +148,10 @@ public final class CatsDogsPetBowlBlock extends AnimaniaContainerBlock {
     private static boolean fillFromItemEntity(CatsDogsPetBowlBlockEntity bowl, ItemEntity entity) {
         ItemStack stack = entity.getItem();
         if (stack.is(Items.WATER_BUCKET) || stack.is(AnimaniaItems.WATER_BOTTLE.get())) {
+            boolean bucket = stack.is(Items.WATER_BUCKET);
             if (!fillWater(bowl)) return false;
             stack.shrink(1);
-            if (stack.isEmpty()) stack = new ItemStack(stack.is(Items.WATER_BUCKET) ? Items.BUCKET : Items.GLASS_BOTTLE);
+            if (stack.isEmpty()) stack = new ItemStack(bucket ? Items.BUCKET : Items.GLASS_BOTTLE);
             entity.setItem(stack);
             return true;
         }

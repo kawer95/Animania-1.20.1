@@ -29,8 +29,20 @@ public final class AnimaniaNetwork {
     /** Broadcast the authoritative carry state so every client can render it. */
     public static void syncCarried(net.minecraft.server.level.ServerPlayer player) {
         if (player == null) return;
+        syncCarried(player, net.minecraftforge.network.PacketDistributor.ALL.noArg());
+    }
+
+    /** Send one subject's carry state to one newly tracking client. */
+    public static void syncCarriedTo(net.minecraft.server.level.ServerPlayer subject,
+                                     net.minecraft.server.level.ServerPlayer recipient) {
+        if (subject == null || recipient == null) return;
+        syncCarried(subject, net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> recipient));
+    }
+
+    private static void syncCarried(net.minecraft.server.level.ServerPlayer player,
+                                    net.minecraftforge.network.PacketDistributor.PacketTarget target) {
         boolean carrying = com.animania.common.entity.AnimaniaAnimalEntity.hasCarriedAnimal(player);
-        CHANNEL.send(net.minecraftforge.network.PacketDistributor.ALL.noArg(),
+        CHANNEL.send(target,
                 new CarriedAnimalSyncPacket(player.getUUID(), carrying,
                         carrying ? com.animania.common.entity.AnimaniaAnimalEntity.carriedAnimalType(player) : "",
                         carrying ? com.animania.common.entity.AnimaniaAnimalEntity.carriedAnimalData(player)

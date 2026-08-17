@@ -8,6 +8,9 @@ import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -90,13 +93,10 @@ public final class AnimaniaFindWaterGoal extends Goal {
             }
         } else {
             FluidState fluid = animal.level().getFluidState(target);
-            if (fluid.is(FluidTags.WATER) && fluid.isSource()) {
+            if (isDrinkableNaturalWater(target, fluid)) {
                 animal.setThirst(100);
                 if (!halfAmount() && configured(AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING, true)) {
-                    // Level.removeBlock deliberately restores the position's
-                    // FluidState, so it cannot consume a source block. The
-                    // 1.12 behavior was setBlockToAir and must stay explicit.
-                    animal.level().setBlock(target, Blocks.AIR.defaultBlockState(), 3);
+                    consumeNaturalWater(target);
                 }
             }
         }
@@ -127,7 +127,7 @@ public final class AnimaniaFindWaterGoal extends Goal {
             } else {
                 FluidState fluid = animal.level().getFluidState(pos);
                 var biome = animal.level().getBiome(pos);
-                match = fluid.is(FluidTags.WATER) && fluid.isSource()
+                match = isDrinkableNaturalWater(pos, fluid)
                         && (!enforceBiomeRules || (!biome.is(BiomeTags.IS_OCEAN) && !biome.is(BiomeTags.IS_BEACH)));
             }
             if (!match) continue;
@@ -135,6 +135,38 @@ public final class AnimaniaFindWaterGoal extends Goal {
             if (distance < bestDistance) { best = pos.immutable(); bestDistance = distance; }
         }
         return best;
+    }
+
+    /**
+     * A bucket can only take a source fluid.  Waterlogged blocks expose the
+     * same source FluidState as a water block, so they are valid drinking
+     * targets as well; the host block is handled separately when the source is
+     * consumed.
+     */
+    private boolean isDrinkableNaturalWater(BlockPos pos, FluidState fluid) {
+        BlockState state = animal.level().getBlockState(pos);
+        return fluid.is(FluidTags.WATER) && fluid.isSource()
+                && (state.getBlock() instanceof LiquidBlock || isWaterlogged(state));
+    }
+
+    /**
+     * Consume water with bucket semantics: remove a standalone source block,
+     * or clear only WATERLOGGED on a slab/stair/etc.  Never replace a
+     * waterlogged host with air.
+     */
+    private void consumeNaturalWater(BlockPos pos) {
+        BlockState state = animal.level().getBlockState(pos);
+        if (!isDrinkableNaturalWater(pos, animal.level().getFluidState(pos))) return;
+        if (isWaterlogged(state)) {
+            animal.level().setBlock(pos, state.setValue(BlockStateProperties.WATERLOGGED, false), 3);
+        } else if (state.getBlock() instanceof LiquidBlock) {
+            animal.level().setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        }
+    }
+
+    private static boolean isWaterlogged(BlockState state) {
+        return state.hasProperty(BlockStateProperties.WATERLOGGED)
+                && state.getValue(BlockStateProperties.WATERLOGGED);
     }
 
     private boolean halfAmount() {

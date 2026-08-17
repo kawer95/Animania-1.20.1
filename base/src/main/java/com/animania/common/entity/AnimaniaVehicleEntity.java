@@ -242,7 +242,7 @@ public class AnimaniaVehicleEntity extends Entity implements Container, MenuProv
     private void playHitchSound(String id) {
         if (level().isClientSide) return;
         net.minecraft.sounds.SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(
-                ResourceLocation.fromNamespaceAndPath("animania_farm", id));
+                new ResourceLocation("animania_farm", id));
         if (sound != null) level().playSound(null, blockPosition(), sound,
                 net.minecraft.sounds.SoundSource.NEUTRAL, 0.7F, 1.5F);
     }

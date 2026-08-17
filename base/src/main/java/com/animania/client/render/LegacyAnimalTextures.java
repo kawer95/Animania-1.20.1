@@ -20,12 +20,12 @@ public final class LegacyAnimalTextures {
                         case "animania_extra" -> extra(path, variant);
                         default -> catsDogs(path, variant);
                     });
-            default -> ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "textures/entity/" + path + ".png");
+            default -> new ResourceLocation(id.getNamespace(), "textures/entity/" + path + ".png");
         };
     }
 
     private static ResourceLocation legacy(String namespace, String path) {
-        return ResourceLocation.fromNamespaceAndPath(namespace, "textures/entity/" + path + ".png");
+        return new ResourceLocation(namespace, "textures/entity/" + path + ".png");
     }
 
     private static String farm(String id, String variant, boolean sheared) {

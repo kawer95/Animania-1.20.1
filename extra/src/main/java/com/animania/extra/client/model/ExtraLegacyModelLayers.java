@@ -17,59 +17,59 @@ import com.animania.client.model.LegacyAnimationProfile;
 public final class ExtraLegacyModelLayers {
     public static final Map<String, ModelLayerLocation> LAYERS = new LinkedHashMap<>();
     static {
-        LAYERS.put("buck_chinchilla", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "buck_chinchilla"), "main"));
-        LAYERS.put("buck_cottontail", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "buck_cottontail"), "main"));
-        LAYERS.put("buck_dutch", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "buck_dutch"), "main"));
-        LAYERS.put("buck_havana", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "buck_havana"), "main"));
-        LAYERS.put("buck_jack", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "buck_jack"), "main"));
-        LAYERS.put("buck_lop", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "buck_lop"), "main"));
-        LAYERS.put("buck_new_zealand", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "buck_new_zealand"), "main"));
-        LAYERS.put("buck_rex", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "buck_rex"), "main"));
-        LAYERS.put("dartfrog", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "dartfrog"), "main"));
-        LAYERS.put("doe_chinchilla", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "doe_chinchilla"), "main"));
-        LAYERS.put("doe_cottontail", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "doe_cottontail"), "main"));
-        LAYERS.put("doe_dutch", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "doe_dutch"), "main"));
-        LAYERS.put("doe_havana", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "doe_havana"), "main"));
-        LAYERS.put("doe_jack", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "doe_jack"), "main"));
-        LAYERS.put("doe_lop", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "doe_lop"), "main"));
-        LAYERS.put("doe_new_zealand", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "doe_new_zealand"), "main"));
-        LAYERS.put("doe_rex", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "doe_rex"), "main"));
-        LAYERS.put("ferret_grey", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "ferret_grey"), "main"));
-        LAYERS.put("ferret_white", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "ferret_white"), "main"));
-        LAYERS.put("frog", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "frog"), "main"));
-        LAYERS.put("hamster", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "hamster"), "main"));
-        LAYERS.put("hedgehog", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "hedgehog"), "main"));
-        LAYERS.put("hedgehog_albino", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "hedgehog_albino"), "main"));
-        LAYERS.put("kit_chinchilla", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "kit_chinchilla"), "main"));
-        LAYERS.put("kit_cottontail", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "kit_cottontail"), "main"));
-        LAYERS.put("kit_dutch", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "kit_dutch"), "main"));
-        LAYERS.put("kit_havana", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "kit_havana"), "main"));
-        LAYERS.put("kit_jack", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "kit_jack"), "main"));
-        LAYERS.put("kit_lop", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "kit_lop"), "main"));
-        LAYERS.put("kit_new_zealand", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "kit_new_zealand"), "main"));
-        LAYERS.put("kit_rex", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "kit_rex"), "main"));
-        LAYERS.put("peachick_blue", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peachick_blue"), "main"));
-        LAYERS.put("peachick_charcoal", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peachick_charcoal"), "main"));
-        LAYERS.put("peachick_opal", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peachick_opal"), "main"));
-        LAYERS.put("peachick_peach", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peachick_peach"), "main"));
-        LAYERS.put("peachick_purple", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peachick_purple"), "main"));
-        LAYERS.put("peachick_taupe", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peachick_taupe"), "main"));
-        LAYERS.put("peachick_white", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peachick_white"), "main"));
-        LAYERS.put("peacock_blue", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peacock_blue"), "main"));
-        LAYERS.put("peacock_charcoal", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peacock_charcoal"), "main"));
-        LAYERS.put("peacock_opal", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peacock_opal"), "main"));
-        LAYERS.put("peacock_peach", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peacock_peach"), "main"));
-        LAYERS.put("peacock_purple", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peacock_purple"), "main"));
-        LAYERS.put("peacock_taupe", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peacock_taupe"), "main"));
-        LAYERS.put("peacock_white", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peacock_white"), "main"));
-        LAYERS.put("peahen_blue", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peahen_blue"), "main"));
-        LAYERS.put("peahen_charcoal", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peahen_charcoal"), "main"));
-        LAYERS.put("peahen_opal", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peahen_opal"), "main"));
-        LAYERS.put("peahen_peach", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peahen_peach"), "main"));
-        LAYERS.put("peahen_purple", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peahen_purple"), "main"));
-        LAYERS.put("peahen_taupe", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peahen_taupe"), "main"));
-        LAYERS.put("peahen_white", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "peahen_white"), "main"));
-        LAYERS.put("toad", new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("animania_extra", "toad"), "main"));
+        LAYERS.put("buck_chinchilla", new ModelLayerLocation(new ResourceLocation("animania_extra", "buck_chinchilla"), "main"));
+        LAYERS.put("buck_cottontail", new ModelLayerLocation(new ResourceLocation("animania_extra", "buck_cottontail"), "main"));
+        LAYERS.put("buck_dutch", new ModelLayerLocation(new ResourceLocation("animania_extra", "buck_dutch"), "main"));
+        LAYERS.put("buck_havana", new ModelLayerLocation(new ResourceLocation("animania_extra", "buck_havana"), "main"));
+        LAYERS.put("buck_jack", new ModelLayerLocation(new ResourceLocation("animania_extra", "buck_jack"), "main"));
+        LAYERS.put("buck_lop", new ModelLayerLocation(new ResourceLocation("animania_extra", "buck_lop"), "main"));
+        LAYERS.put("buck_new_zealand", new ModelLayerLocation(new ResourceLocation("animania_extra", "buck_new_zealand"), "main"));
+        LAYERS.put("buck_rex", new ModelLayerLocation(new ResourceLocation("animania_extra", "buck_rex"), "main"));
+        LAYERS.put("dartfrog", new ModelLayerLocation(new ResourceLocation("animania_extra", "dartfrog"), "main"));
+        LAYERS.put("doe_chinchilla", new ModelLayerLocation(new ResourceLocation("animania_extra", "doe_chinchilla"), "main"));
+        LAYERS.put("doe_cottontail", new ModelLayerLocation(new ResourceLocation("animania_extra", "doe_cottontail"), "main"));
+        LAYERS.put("doe_dutch", new ModelLayerLocation(new ResourceLocation("animania_extra", "doe_dutch"), "main"));
+        LAYERS.put("doe_havana", new ModelLayerLocation(new ResourceLocation("animania_extra", "doe_havana"), "main"));
+        LAYERS.put("doe_jack", new ModelLayerLocation(new ResourceLocation("animania_extra", "doe_jack"), "main"));
+        LAYERS.put("doe_lop", new ModelLayerLocation(new ResourceLocation("animania_extra", "doe_lop"), "main"));
+        LAYERS.put("doe_new_zealand", new ModelLayerLocation(new ResourceLocation("animania_extra", "doe_new_zealand"), "main"));
+        LAYERS.put("doe_rex", new ModelLayerLocation(new ResourceLocation("animania_extra", "doe_rex"), "main"));
+        LAYERS.put("ferret_grey", new ModelLayerLocation(new ResourceLocation("animania_extra", "ferret_grey"), "main"));
+        LAYERS.put("ferret_white", new ModelLayerLocation(new ResourceLocation("animania_extra", "ferret_white"), "main"));
+        LAYERS.put("frog", new ModelLayerLocation(new ResourceLocation("animania_extra", "frog"), "main"));
+        LAYERS.put("hamster", new ModelLayerLocation(new ResourceLocation("animania_extra", "hamster"), "main"));
+        LAYERS.put("hedgehog", new ModelLayerLocation(new ResourceLocation("animania_extra", "hedgehog"), "main"));
+        LAYERS.put("hedgehog_albino", new ModelLayerLocation(new ResourceLocation("animania_extra", "hedgehog_albino"), "main"));
+        LAYERS.put("kit_chinchilla", new ModelLayerLocation(new ResourceLocation("animania_extra", "kit_chinchilla"), "main"));
+        LAYERS.put("kit_cottontail", new ModelLayerLocation(new ResourceLocation("animania_extra", "kit_cottontail"), "main"));
+        LAYERS.put("kit_dutch", new ModelLayerLocation(new ResourceLocation("animania_extra", "kit_dutch"), "main"));
+        LAYERS.put("kit_havana", new ModelLayerLocation(new ResourceLocation("animania_extra", "kit_havana"), "main"));
+        LAYERS.put("kit_jack", new ModelLayerLocation(new ResourceLocation("animania_extra", "kit_jack"), "main"));
+        LAYERS.put("kit_lop", new ModelLayerLocation(new ResourceLocation("animania_extra", "kit_lop"), "main"));
+        LAYERS.put("kit_new_zealand", new ModelLayerLocation(new ResourceLocation("animania_extra", "kit_new_zealand"), "main"));
+        LAYERS.put("kit_rex", new ModelLayerLocation(new ResourceLocation("animania_extra", "kit_rex"), "main"));
+        LAYERS.put("peachick_blue", new ModelLayerLocation(new ResourceLocation("animania_extra", "peachick_blue"), "main"));
+        LAYERS.put("peachick_charcoal", new ModelLayerLocation(new ResourceLocation("animania_extra", "peachick_charcoal"), "main"));
+        LAYERS.put("peachick_opal", new ModelLayerLocation(new ResourceLocation("animania_extra", "peachick_opal"), "main"));
+        LAYERS.put("peachick_peach", new ModelLayerLocation(new ResourceLocation("animania_extra", "peachick_peach"), "main"));
+        LAYERS.put("peachick_purple", new ModelLayerLocation(new ResourceLocation("animania_extra", "peachick_purple"), "main"));
+        LAYERS.put("peachick_taupe", new ModelLayerLocation(new ResourceLocation("animania_extra", "peachick_taupe"), "main"));
+        LAYERS.put("peachick_white", new ModelLayerLocation(new ResourceLocation("animania_extra", "peachick_white"), "main"));
+        LAYERS.put("peacock_blue", new ModelLayerLocation(new ResourceLocation("animania_extra", "peacock_blue"), "main"));
+        LAYERS.put("peacock_charcoal", new ModelLayerLocation(new ResourceLocation("animania_extra", "peacock_charcoal"), "main"));
+        LAYERS.put("peacock_opal", new ModelLayerLocation(new ResourceLocation("animania_extra", "peacock_opal"), "main"));
+        LAYERS.put("peacock_peach", new ModelLayerLocation(new ResourceLocation("animania_extra", "peacock_peach"), "main"));
+        LAYERS.put("peacock_purple", new ModelLayerLocation(new ResourceLocation("animania_extra", "peacock_purple"), "main"));
+        LAYERS.put("peacock_taupe", new ModelLayerLocation(new ResourceLocation("animania_extra", "peacock_taupe"), "main"));
+        LAYERS.put("peacock_white", new ModelLayerLocation(new ResourceLocation("animania_extra", "peacock_white"), "main"));
+        LAYERS.put("peahen_blue", new ModelLayerLocation(new ResourceLocation("animania_extra", "peahen_blue"), "main"));
+        LAYERS.put("peahen_charcoal", new ModelLayerLocation(new ResourceLocation("animania_extra", "peahen_charcoal"), "main"));
+        LAYERS.put("peahen_opal", new ModelLayerLocation(new ResourceLocation("animania_extra", "peahen_opal"), "main"));
+        LAYERS.put("peahen_peach", new ModelLayerLocation(new ResourceLocation("animania_extra", "peahen_peach"), "main"));
+        LAYERS.put("peahen_purple", new ModelLayerLocation(new ResourceLocation("animania_extra", "peahen_purple"), "main"));
+        LAYERS.put("peahen_taupe", new ModelLayerLocation(new ResourceLocation("animania_extra", "peahen_taupe"), "main"));
+        LAYERS.put("peahen_white", new ModelLayerLocation(new ResourceLocation("animania_extra", "peahen_white"), "main"));
+        LAYERS.put("toad", new ModelLayerLocation(new ResourceLocation("animania_extra", "toad"), "main"));
     }
     private ExtraLegacyModelLayers() {}
     public static LayerDefinition create(String id) {
@@ -205,7 +205,7 @@ public final class ExtraLegacyModelLayers {
         PartDefinition front_leg_r_top = root.addOrReplaceChild("front_leg_r_top", CubeListBuilder.create().texOffs(24, 11).addBox(-0.5F, 0.0F, -0.5F, 1.0F, 2.0F, 1.0F), PartPose.offsetAndRotation(-2.5F, 19.97F, -4.5F, -0.542265F, -3.141593F, 0.0F));
         PartDefinition front_leg_r_middle = root.addOrReplaceChild("front_leg_r_middle", CubeListBuilder.create().texOffs(24, 14).addBox(-0.5F, 0.0F, 0.0F, 1.0F, 3.0F, 1.0F), PartPose.offsetAndRotation(-2.51F, 21.42505F, -3.039574F, 0.521095F, -3.141593F, 0.0F));
         PartDefinition front_foot_r = root.addOrReplaceChild("front_foot_r", CubeListBuilder.create().texOffs(23, 18).addBox(-0.5F, -1.0F, 0.0F, 1.0F, 1.0F, 2.0F), PartPose.offsetAndRotation(-2.51F, 24.02687F, -4.533063F, -0.0F, -3.141593F, 0.0F));
-        return LayerDefinition.create(mesh, 64, 32);
+        return LayerDefinition.create(mesh, 32, 32);
     }
     private static LayerDefinition model_hedgehog() {
         MeshDefinition mesh = new MeshDefinition();
@@ -477,7 +477,10 @@ public final class ExtraLegacyModelLayers {
         PartDefinition feather_d1b = fan_node_d.addOrReplaceChild("feather_d1b", CubeListBuilder.create().texOffs(31, 31).addBox(-6.5F, -8.5F, 0.0F, 13.0F, 13.0F, 0.0F), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, -0.296706F, 0.0F, -0.785398F));
         PartDefinition feather_d2 = fan_node_d.addOrReplaceChild("feather_d2", CubeListBuilder.create().texOffs(31, 31).addBox(-6.5F, -8.5F, 0.0F, 13.0F, 13.0F, 0.0F), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, -0.331613F, 0.0F, 1.570797F));
         PartDefinition feather_d2b = fan_node_d.addOrReplaceChild("feather_d2b", CubeListBuilder.create().texOffs(31, 31).addBox(-6.5F, -8.5F, 0.0F, 13.0F, 13.0F, 0.0F), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, -0.331613F, 0.0F, -1.570797F));
-        PartDefinition feather_d1 = root.addOrReplaceChild("feather_d1", CubeListBuilder.create().texOffs(31, 31).addBox(-6.5F, -8.5F, 0.0F, 13.0F, 13.0F, 0.0F), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, -0.296706F, 0.0F, 0.785398F));
+        // FeatherD1 is created in the 1.12 source but never attached to
+        // FanNodeD, so ModelPeacock.render() never draws it.  Keeping it as a
+        // direct root child would render an unscaled 13x13 feather at the
+        // peacock's origin, which appears as an oversized floating crest.
         PartDefinition wing1 = root.addOrReplaceChild("wing1", CubeListBuilder.create().texOffs(92, 2).addBox(-0.5F, -1.5F, -1.5F, 1.0F, 3.0F, 7.0F), PartPose.offsetAndRotation(-3.5F, 12.6603F, 0.117208F, -0.294729F, 0.0F, 0.0F));
         PartDefinition wing1a = wing1.addOrReplaceChild("wing1a", CubeListBuilder.create().texOffs(96, 2).addBox(-0.5F, -1.0F, 1.0F, 1.0F, 2.0F, 2.0F), PartPose.offsetAndRotation(0.01F, 0.30716F, 4.305964F, 0.0F, 0.0F, 0.0F));
         PartDefinition wing1b = wing1.addOrReplaceChild("wing1b", CubeListBuilder.create().texOffs(93, 2).addBox(-0.5F, -0.5F, -1.0F, 1.0F, 1.0F, 6.0F), PartPose.offsetAndRotation(0.02F, 1.91376F, -0.580962F, 0.0F, 0.0F, 0.0F));
@@ -648,6 +651,6 @@ public final class ExtraLegacyModelLayers {
         PartDefinition front_foot_l = root.addOrReplaceChild("front_foot_l", CubeListBuilder.create().texOffs(23, 18).addBox(-0.5F, -1.0F, 0.0F, 1.0F, 1.0F, 2.0F), PartPose.offsetAndRotation(2.49F, 24.03089F, -4.533064F, -0.0F, -3.141593F, 0.0F));
         PartDefinition hind_leg_l = root.addOrReplaceChild("hind_leg_l", CubeListBuilder.create().texOffs(20, 0).addBox(-1.0F, -1.0F, -2.0F, 2.0F, 2.0F, 4.0F), PartPose.offsetAndRotation(2.5F, 22.47402F, 0.0F, 0.302609F, -3.141593F, 0.0F));
         PartDefinition hind_foot_l = root.addOrReplaceChild("hind_foot_l", CubeListBuilder.create().texOffs(21, 6).addBox(-0.5F, -0.5F, -2.0F, 1.0F, 1.0F, 4.0F), PartPose.offsetAndRotation(2.5F, 23.47402F, -0.5F, -0.0F, -3.141593F, 0.0F));
-        return LayerDefinition.create(mesh, 64, 32);
+        return LayerDefinition.create(mesh, 32, 32);
     }
 }

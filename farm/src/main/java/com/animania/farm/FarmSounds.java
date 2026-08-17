@@ -21,7 +21,7 @@ public final class FarmSounds {
 
     private static void add(String id) {
         ALL.put(id, SOUNDS.register(id, () -> SoundEvent.createVariableRangeEvent(
-                ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, id))));
+                new ResourceLocation(AnimaniaFarm.MOD_ID, id))));
     }
 
     private FarmSounds() { }

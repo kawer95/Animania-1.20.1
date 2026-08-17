@@ -1,6 +1,7 @@
 package com.animania.extra.client.render;
 
 import com.animania.extra.ExtraHamsterWheelBlockEntity;
+import com.animania.extra.ExtraHamsterWheelKinematics;
 import com.animania.extra.client.model.ExtraLegacyPropModels;
 import com.animania.extra.client.model.ExtraNativeModelLayers;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -55,8 +56,9 @@ public final class ExtraHamsterWheelRenderer implements BlockEntityRenderer<Extr
         wheel.getAllParts().forEach(part -> part.skipDraw = !rotorParts.contains(part));
         pose.pushPose();
         pose.translate(0.0F, 13.0F / 16.0F, 0.0F);
-        float rotorAngle = entity.isRunning() && entity.getLevel() != null
-                ? -(entity.getLevel().getGameTime() + partialTick) * ((float) Math.PI / 40.0F) : 0.0F;
+        float rotorAngle = entity.getLevel() == null ? 0.0F
+                : ExtraHamsterWheelKinematics.rotorAngle(entity.getLevel().getGameTime(), partialTick,
+                        entity.isRunning());
         pose.mulPose(Axis.ZP.rotation(rotorAngle));
         pose.translate(0.0F, -13.0F / 16.0F, 0.0F);
         wheel.render(pose, wheelBuffer, packedLight, OverlayTexture.NO_OVERLAY);
@@ -66,8 +68,11 @@ public final class ExtraHamsterWheelRenderer implements BlockEntityRenderer<Extr
             pose.pushPose();
             pose.scale(0.5F, 0.5F, 0.5F);
             pose.translate(0.0D, 0.9D, 0.0D);
-            pose.mulPose(Axis.YP.rotationDegrees(-90.0F));
-            ResourceLocation hamsterTexture = ResourceLocation.fromNamespaceAndPath("animania_extra",
+            // Face against the moving lower rim. Keeping the old -90 yaw
+            // after the native coordinate conversion made the runner travel
+            // visually in the same direction as the belt.
+            pose.mulPose(Axis.YP.rotationDegrees(ExtraHamsterWheelKinematics.HAMSTER_YAW_DEGREES));
+            ResourceLocation hamsterTexture = new ResourceLocation("animania_extra",
                     "textures/entity/rodents/hamster_" + entity.hamsterVariant() + ".png");
             hamster.render(pose, buffers.getBuffer(RenderType.entityCutout(hamsterTexture)), packedLight, OverlayTexture.NO_OVERLAY);
             pose.popPose();

@@ -14,7 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public final class CatsDogsPetBowlModel {
     public static final ModelLayerLocation LAYER = new ModelLayerLocation(
-            ResourceLocation.fromNamespaceAndPath("animania_catsdogs", "pet_bowl_java"), "main");
+            new ResourceLocation("animania_catsdogs", "pet_bowl_java"), "main");
     private final ModelPart root;
 
     public CatsDogsPetBowlModel(ModelPart root) { this.root = root; }

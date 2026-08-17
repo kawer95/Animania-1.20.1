@@ -10,6 +10,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /** Guards against the empty hamster layer that previously rendered nothing. */
 final class ExtraModelLayerTest {
     @Test
+    void peacockLayerContainsAllLegacyFanRoots() {
+        ModelPart root = ExtraLegacyModelLayers.create("peacock_blue").bakeRoot();
+        assertTrue(root.hasChild("fan_node_a"));
+        assertTrue(root.hasChild("fan_node_b"));
+        assertTrue(root.hasChild("fan_node_c"));
+        assertTrue(root.hasChild("fan_node_d"));
+        assertTrue(root.getChild("fan_node_a").hasChild("feather_a"));
+        assertTrue(root.getChild("fan_node_b").hasChild("feather_b"));
+        assertTrue(root.getChild("fan_node_d").hasChild("feather_d1b"));
+        assertTrue(!root.hasChild("feather_d1"),
+                "the unparented 1.12 FeatherD1 must not render as an oversized root feather");
+    }
+
+    @Test
     void hamsterLayerContainsNativeGeometryAndAnimationParts() {
         ModelPart root = ExtraLegacyModelLayers.create("hamster").bakeRoot();
         assertTrue(root.hasChild("hamster_body"));

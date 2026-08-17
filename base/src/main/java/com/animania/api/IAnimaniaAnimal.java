@@ -65,6 +65,16 @@ public interface IAnimaniaAnimal {
 
     boolean isPregnant();
 
+    /** True when an adult female has completed its post-birth recovery. */
+    default boolean isFertile() {
+        return !isSterilized();
+    }
+
+    /** Remaining post-birth recovery time in server ticks. */
+    default int fertilityCooldownTicks() {
+        return 0;
+    }
+
     /** Number of server ticks already spent in the current pregnancy. */
     default int pregnancyTicks() {
         return 0;
@@ -85,6 +95,9 @@ public interface IAnimaniaAnimal {
     }
 
     default void setPregnant(boolean pregnant) {
+    }
+
+    default void setFertile(boolean fertile) {
     }
 
     default void setSterilized(boolean sterilized) {

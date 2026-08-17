@@ -160,7 +160,7 @@ public final class AnimaniaFarmGameTests {
 
     @GameTest(template = "empty")
     public static void nativeRecipeParsingAndCarvingKnifeRemainder(GameTestHelper helper) {
-        ResourceLocation cuttingId = ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "beef_cutting_1");
+        ResourceLocation cuttingId = new ResourceLocation(AnimaniaFarm.MOD_ID, "beef_cutting_1");
         var cutting = helper.getLevel().getRecipeManager().byKey(cuttingId);
         helper.assertTrue(cutting.isPresent(), "vanilla parser did not load the migrated shapeless cutting recipe");
         helper.assertTrue(cutting.orElseThrow().getSerializer()
@@ -290,6 +290,147 @@ public final class AnimaniaFarmGameTests {
         loaded.tick();
         helper.assertTrue(loaded.getHunger() == 0 && loaded.getThirst() == 0,
                 "expired legacy care timers did not clear fed/watered state");
+        helper.assertTrue(loaded.hasEffect(net.minecraft.world.effect.MobEffects.WEAKNESS)
+                        && loaded.getEffect(net.minecraft.world.effect.MobEffects.WEAKNESS).getAmplifier() == 1,
+                "fully hungry/thirsty animal did not receive legacy Weakness II");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void baseCareInteractionsRejectInvalidAndSleepingConsumption(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:baseCareInteractionsRejectInvalidAndSleepingConsumption");
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        cow.moveTo(helper.absolutePos(new BlockPos(1, 1, 1)), 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(cow);
+        var player = helper.makeMockPlayer();
+
+        cow.setThirst(0);
+        ItemStack poison = net.minecraft.world.item.alchemy.PotionUtils.setPotion(
+                new ItemStack(Items.POTION), net.minecraft.world.item.alchemy.Potions.POISON);
+        player.setItemInHand(InteractionHand.MAIN_HAND, poison);
+        helper.assertTrue(cow.mobInteract(player, InteractionHand.MAIN_HAND) == net.minecraft.world.InteractionResult.PASS,
+                "non-water potion was accepted as animal drinking water");
+        helper.assertTrue(cow.getThirst() == 0 && poison.getCount() == 1,
+                "non-water potion changed thirst or was consumed");
+
+        ItemStack water = net.minecraft.world.item.alchemy.PotionUtils.setPotion(
+                new ItemStack(Items.POTION), net.minecraft.world.item.alchemy.Potions.WATER);
+        player.setItemInHand(InteractionHand.MAIN_HAND, water);
+        helper.assertTrue(cow.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction(),
+                "water potion was rejected");
+        helper.assertTrue(cow.getThirst() == 100 && player.getMainHandItem().is(Items.GLASS_BOTTLE),
+                "water potion did not hydrate or return its glass bottle");
+
+        cow.setThirst(0);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.WATER_BUCKET));
+        helper.assertTrue(cow.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction()
+                        && player.getMainHandItem().is(Items.BUCKET),
+                "water bucket did not hydrate and return an empty bucket");
+
+        cow.setSleeping(true);
+        cow.setHunger(0);
+        ItemStack wheat = new ItemStack(Items.WHEAT, 2);
+        player.setItemInHand(InteractionHand.MAIN_HAND, wheat);
+        helper.assertTrue(cow.mobInteract(player, InteractionHand.MAIN_HAND) == net.minecraft.world.InteractionResult.PASS,
+                "sleeping animal accepted food");
+        helper.assertTrue(cow.getHunger() == 0 && wheat.getCount() == 2,
+                "sleeping animal changed hunger or consumed food");
+
+        int interval = AnimaniaConfig.HUNGER_INTERVAL.get();
+        AnimaniaAnimalEntity untouched = createAnimal(helper, "cow_angus");
+        untouched.setHunger(100);
+        // A direct GameTest invocation does not advance Entity#tickCount the
+        // way ServerLevel's entity ticker does, so place it on the exact
+        // configured boundary before exercising Animania's server tick.
+        untouched.tickCount = interval;
+        untouched.tick();
+        helper.assertTrue(untouched.getHunger() == 100,
+                "requireAnimalInteractionForAI did not protect an untouched animal's care meter");
+        untouched.markInteracted();
+        untouched.tickCount = interval * 2;
+        untouched.tick();
+        helper.assertTrue(untouched.getHunger() < 100,
+                "interacted animal did not resume configured hunger decay: hunger="
+                        + untouched.getHunger() + ", tickCount=" + untouched.tickCount
+                        + ", interacted=" + untouched.hasInteracted());
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void baseRandomEggRosterContainsOnlySpeciesEntities(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:baseRandomEggRosterContainsOnlySpeciesEntities");
+        var projectile = FarmContent.BROWN_EGG_PROJECTILE.get();
+        var roster = com.animania.common.AnimaniaItems.registeredAnimalTypes();
+        helper.assertFalse(roster.contains(projectile), "random egg roster still contains brown_egg_projectile");
+        helper.assertTrue(!roster.isEmpty(), "random egg roster is empty with all addons installed");
+        for (var type : roster) {
+            var created = type.create(helper.getLevel());
+            helper.assertTrue(created instanceof AnimaniaAnimalEntity,
+                    "random egg roster contains a non-animal type: " + ForgeRegistries.ENTITY_TYPES.getKey(type));
+            if (created != null) created.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void basePregnancyRecoveryLactationAndProductionTimersMatchLegacyUnits(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:basePregnancyRecoveryLactationAndProductionTimersMatchLegacyUnits");
+        int configuredGestation = AnimaniaConfig.GESTATION_TICKS.get();
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        cow.setPregnant(true);
+        helper.assertTrue(cow.gestationTicks() >= configuredGestation
+                        && cow.gestationTicks() < configuredGestation + 200,
+                "pregnancy ignored configured duration or legacy random spread: " + cow.gestationTicks());
+        int pregnancyBeforeTick = cow.pregnancyTicks();
+        cow.tick();
+        helper.assertTrue(cow.pregnancyTicks() == pregnancyBeforeTick + 1,
+                "pregnancy counter did not advance on a server tick: " + cow.pregnancyTicks());
+
+        CompoundTag recovery = new CompoundTag();
+        cow.addAdditionalSaveData(recovery);
+        recovery.putBoolean("AnimaniaPregnant", false);
+        recovery.putBoolean("Fertile", false);
+        recovery.putInt("AnimaniaFertilityCooldown", 1);
+        recovery.putBoolean("AnimaniaMilkReady", true);
+        recovery.putInt("AnimaniaLactationTicks", 1);
+        cow.readAdditionalSaveData(recovery);
+        cow.tick();
+        helper.assertTrue(cow.isFertile() && !cow.isMilkReady(),
+                "post-birth fertility/lactation timers did not expire in server ticks");
+
+        AnimaniaAnimalEntity sheep = createAnimal(helper, "ewe_dorper");
+        CompoundTag wool = new CompoundTag();
+        sheep.addAdditionalSaveData(wool);
+        wool.putBoolean("AnimaniaSheared", true);
+        wool.putInt("AnimaniaWoolRegrowthTicks", 2);
+        sheep.readAdditionalSaveData(wool);
+        sheep.tick();
+        helper.assertTrue(sheep.isSheared() && sheep.woolRegrowthTicks() == 1,
+                "wool timer did not decrement once per server tick");
+        sheep.tick();
+        helper.assertFalse(sheep.isSheared(), "wool did not regrow when the tick counter reached zero");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void baseFallAndTransactionalConversionRules(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:baseFallAndTransactionalConversionRules");
+        helper.assertTrue(AnimaniaAnimalEntity.legacyFallDamage(10, false, 0.45D) == 10,
+                "unleashed animal incorrectly received fall reduction");
+        helper.assertTrue(AnimaniaAnimalEntity.legacyFallDamage(10, true, 0.45D) == 4,
+                "leashed animal fall reduction did not apply to final damage");
+
+        AnimaniaAnimalEntity source = createAnimal(helper, "cow_angus");
+        source.moveTo(helper.absolutePos(new BlockPos(2, 1, 2)), 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(source);
+        Cow rejected = EntityType.COW.create(helper.getLevel());
+        helper.assertTrue(rejected != null, "vanilla replacement could not be constructed");
+        if (rejected == null) return;
+        rejected.setUUID(source.getUUID());
+        helper.assertFalse(com.animania.common.command.AnimaniaCommand.replaceAfterSuccessfulSpawn(
+                        helper.getLevel(), source, rejected),
+                "duplicate-UUID replacement unexpectedly entered the world");
+        helper.assertTrue(source.isAlive(), "failed vanilla conversion deleted the source animal");
         helper.succeed();
     }
 
@@ -510,6 +651,7 @@ public final class AnimaniaFarmGameTests {
         var cowBedConfig = FarmConfig.BED_BLOCKS.get("cowBed");
         String previousCowBed = cowBedConfig.get();
         cowBedConfig.set("animania:straw");
+        level.setWeatherParameters(6000, 0, false, false);
         level.setDayTime(14000L);
         BlockPos bed = new BlockPos(0, 0, 0);
         helper.setBlock(bed, AnimaniaBlocks.STRAW.get());
@@ -542,9 +684,9 @@ public final class AnimaniaFarmGameTests {
         // The GameTest server has no network clients. Reloading mirrors the
         // advancement listener registration in PlayerList's login path.
         player.getAdvancements().reload(manager);
-        var root = manager.getAdvancement(ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "animania/root"));
-        var angus = manager.getAdvancement(ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "animania/feed_cow_angus"));
-        var hereford = manager.getAdvancement(ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "animania/feed_cow_hereford"));
+        var root = manager.getAdvancement(new ResourceLocation(AnimaniaFarm.MOD_ID, "animania/root"));
+        var angus = manager.getAdvancement(new ResourceLocation(AnimaniaFarm.MOD_ID, "animania/feed_cow_angus"));
+        var hereford = manager.getAdvancement(new ResourceLocation(AnimaniaFarm.MOD_ID, "animania/feed_cow_hereford"));
         helper.assertTrue(root != null && angus != null && hereford != null,
                 "farm advancement tree did not load");
         if (root == null || angus == null || hereford == null) return;
@@ -555,7 +697,7 @@ public final class AnimaniaFarmGameTests {
                 "Angus bull criterion did not deserialize as FeedAnimalTrigger.Instance");
         if (bullCriterion == null || !(bullCriterion.getTrigger() instanceof FeedAnimalTrigger.Instance instance)) return;
         helper.assertTrue(instance.matches(new ItemStack(Items.WHEAT),
-                        ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "bull_angus")),
+                        new ResourceLocation(AnimaniaFarm.MOD_ID, "bull_angus")),
                 "deserialized Angus criterion rejects its exact entity and food");
         helper.assertTrue(instance.matchesPlayer(player),
                 "deserialized Angus criterion rejects the joining player predicate");
@@ -568,24 +710,24 @@ public final class AnimaniaFarmGameTests {
                 "Hereford feeding advancement was granted before gameplay");
 
         helper.assertFalse(FeedAnimalTrigger.INSTANCE.trigger(player, new ItemStack(Items.CARROT),
-                ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "bull_angus")),
+                new ResourceLocation(AnimaniaFarm.MOD_ID, "bull_angus")),
                 "wrong food matched a feed listener");
         helper.assertFalse(player.getAdvancements().getOrStartProgress(angus).isDone(),
                 "wrong food granted the Angus feeding advancement");
         helper.assertFalse(FeedAnimalTrigger.INSTANCE.trigger(player, new ItemStack(Items.WHEAT),
-                ResourceLocation.fromNamespaceAndPath("minecraft", "cow")),
+                new ResourceLocation("minecraft", "cow")),
                 "unregistered vanilla cow matched an Animania feed listener");
         helper.assertFalse(player.getAdvancements().getOrStartProgress(angus).isDone(),
                 "wrong breed granted the Angus feeding advancement");
 
         helper.assertTrue(FeedAnimalTrigger.INSTANCE.trigger(player, new ItemStack(Items.WHEAT),
-                ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "bull_angus")),
+                new ResourceLocation(AnimaniaFarm.MOD_ID, "bull_angus")),
                 "matching Angus feed action found no advancement listener");
         var angusProgress = player.getAdvancements().getOrStartProgress(angus);
         helper.assertTrue(angusProgress.isDone(),
                 "matching Angus feed action did not grant its advancement: " + angusProgress);
         helper.assertFalse(FeedAnimalTrigger.INSTANCE.trigger(player, new ItemStack(Items.WHEAT),
-                        ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "bull_angus")),
+                        new ResourceLocation(AnimaniaFarm.MOD_ID, "bull_angus")),
                 "completed Angus advancement left a stale feed listener attached");
         helper.assertFalse(player.getAdvancements().getOrStartProgress(hereford).isDone(),
                 "matching Angus feed action granted an unrelated advancement");
@@ -597,8 +739,8 @@ public final class AnimaniaFarmGameTests {
 
     @GameTest(template = "empty")
     public static void optionalFeedCriterionMatchesOnlyItsInstalledAddonItem(GameTestHelper helper) {
-        ResourceLocation animal = ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "bull_angus");
-        ResourceLocation brownEgg = ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "brown_egg");
+        ResourceLocation animal = new ResourceLocation(AnimaniaFarm.MOD_ID, "bull_angus");
+        ResourceLocation brownEgg = new ResourceLocation(AnimaniaFarm.MOD_ID, "brown_egg");
         var criterion = FeedAnimalTrigger.Instance.optional(animal, brownEgg);
         helper.assertTrue(criterion.isOptional(), "optional feed criterion lost its optional marker");
         helper.assertTrue(criterion.matches(new ItemStack(FarmContent.ITEM_ENTRIES.get("brown_egg").get()), animal),
@@ -606,7 +748,7 @@ public final class AnimaniaFarmGameTests {
         helper.assertFalse(criterion.matches(new ItemStack(Items.WHEAT), animal),
                 "optional criterion accepted the wrong installed item");
         helper.assertFalse(criterion.matches(new ItemStack(FarmContent.ITEM_ENTRIES.get("brown_egg").get()),
-                        ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, "bull_hereford")),
+                        new ResourceLocation(AnimaniaFarm.MOD_ID, "bull_hereford")),
                 "optional criterion accepted the wrong animal type");
         helper.succeed();
     }
@@ -627,7 +769,7 @@ public final class AnimaniaFarmGameTests {
         helper.assertTrue(FarmSounds.ALL.size() == 96, "Farm legacy sound ledger count changed");
         for (String id : FarmSounds.ALL.keySet()) {
             helper.assertTrue(ForgeRegistries.SOUND_EVENTS.containsKey(
-                    ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, id)),
+                    new ResourceLocation(AnimaniaFarm.MOD_ID, id)),
                     "missing Farm sound registration: " + id);
         }
         helper.succeed();
@@ -664,7 +806,7 @@ public final class AnimaniaFarmGameTests {
     private static void assertSmelting(GameTestHelper helper, String recipeId, net.minecraft.world.level.ItemLike input,
                                        net.minecraft.world.level.ItemLike output) {
         var found = helper.getLevel().getRecipeManager().byKey(
-                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(AnimaniaFarm.MOD_ID, recipeId)).orElse(null);
+                new net.minecraft.resources.ResourceLocation(AnimaniaFarm.MOD_ID, recipeId)).orElse(null);
         helper.assertTrue(found instanceof net.minecraft.world.item.crafting.AbstractCookingRecipe,
                 "missing legacy smelting recipe " + recipeId);
         if (!(found instanceof net.minecraft.world.item.crafting.AbstractCookingRecipe recipe)) return;
@@ -679,7 +821,7 @@ public final class AnimaniaFarmGameTests {
         var item = FarmContent.ITEM_ENTRIES.get(itemId);
         helper.assertTrue(item != null && item.get().builtInRegistryHolder().is(net.minecraft.tags.TagKey.create(
                         net.minecraft.core.registries.Registries.ITEM,
-                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(namespace, path))),
+                        new net.minecraft.resources.ResourceLocation(namespace, path))),
                 itemId + " missing modern tag " + namespace + ":" + path);
     }
 
@@ -798,14 +940,14 @@ public final class AnimaniaFarmGameTests {
             helper.assertFalse(FarmEggThrowHandler.shouldCancelEggUse(helper.getLevel(), player),
                     "enabled egg throwing was canceled when Extra rodents were absent");
             helper.assertTrue(FarmEggThrowHandler.isEggProtectingRodent(
-                            ResourceLocation.fromNamespaceAndPath("animania_extra", "ferret_white"))
+                            new ResourceLocation("animania_extra", "ferret_white"))
                             && FarmEggThrowHandler.isEggProtectingRodent(
-                            ResourceLocation.fromNamespaceAndPath("animania_extra", "ferret_grey"))
+                            new ResourceLocation("animania_extra", "ferret_grey"))
                             && FarmEggThrowHandler.isEggProtectingRodent(
-                            ResourceLocation.fromNamespaceAndPath("animania_extra", "hedgehog")),
+                            new ResourceLocation("animania_extra", "hedgehog")),
                     "legacy Extra rodent protection IDs were not recognized without a hard dependency");
             helper.assertFalse(FarmEggThrowHandler.isEggProtectingRodent(
-                            ResourceLocation.fromNamespaceAndPath("animania_extra", "hedgehog_albino")),
+                            new ResourceLocation("animania_extra", "hedgehog_albino")),
                     "egg handler broadened the old normal-hedgehog rule to unrelated variants");
         } finally {
             FarmConfig.ALLOW_EGG_THROWING.set(previous);
@@ -1148,6 +1290,47 @@ public final class AnimaniaFarmGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void animalsDrinkWaterloggedBlocksWithoutBreakingHost(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:generic_ai_drink_waterlogged_blocks");
+        boolean previousRemoveWater = AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING.get();
+        AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING.set(true);
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        BlockPos cowPos = helper.absolutePos(new BlockPos(0, 1, 0));
+        BlockPos waterloggedPos = helper.absolutePos(new BlockPos(3, 1, 0));
+        cow.moveTo(cowPos.getX() + 0.5D, cowPos.getY(), cowPos.getZ() + 0.5D, 0.0F, 0.0F);
+        cow.markInteracted();
+        cow.setThirst(0);
+        cow.setHunger(100);
+        helper.getLevel().addFreshEntity(cow);
+        BlockState waterlogged = Blocks.OAK_SLAB.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.SlabBlock.WATERLOGGED, true);
+        helper.getLevel().setBlock(waterloggedPos, waterlogged, 3);
+        try {
+            AnimaniaFindWaterGoal goal = new AnimaniaFindWaterGoal(cow, false, true, waterloggedPos::equals);
+            boolean found = false;
+            for (int attempt = 0; attempt < 500 && !found; attempt++) found = goal.canUse();
+            helper.assertTrue(found && waterloggedPos.equals(goal.target()),
+                    "animal did not select a waterlogged slab as natural water");
+            if (!found) return;
+            cow.moveTo(waterloggedPos.getX() + 1.0D, waterloggedPos.getY(), waterloggedPos.getZ() + 0.5D,
+                    0.0F, 0.0F);
+            goal.tick();
+            helper.assertTrue(cow.getThirst() == 100,
+                    "animal did not drink from the waterlogged slab; thirst=" + cow.getThirst());
+            BlockState remaining = helper.getLevel().getBlockState(waterloggedPos);
+            helper.assertTrue(remaining.is(Blocks.OAK_SLAB)
+                            && !remaining.getValue(net.minecraft.world.level.block.SlabBlock.WATERLOGGED)
+                            && helper.getLevel().getFluidState(waterloggedPos).isEmpty(),
+                    "bucket-style drinking did not preserve the dry slab: " + remaining
+                            + ", fluid=" + helper.getLevel().getFluidState(waterloggedPos));
+        } finally {
+            cow.discard();
+            AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING.set(previousRemoveWater);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void pigsDrinkTroughSlopAndHerbivoresConsumeFoodBlocks(GameTestHelper helper) {
         boolean previousRemovePlants = com.animania.common.config.AnimaniaConfig.PLANTS_REMOVED_AFTER_EATING.get();
         com.animania.common.config.AnimaniaConfig.PLANTS_REMOVED_AFTER_EATING.set(true);
@@ -1238,12 +1421,25 @@ public final class AnimaniaFarmGameTests {
 
     @GameTest(template = "empty")
     public static void vanillaCowReplacementRetainsWorldBoundarySemantics(GameTestHelper helper) {
+        Cow commandCow = EntityType.COW.create(helper.getLevel());
+        if (commandCow == null) {
+            helper.fail("vanilla command cow could not be constructed");
+            return;
+        }
+        commandCow.setUUID(UUID.randomUUID());
+        commandCow.moveTo(helper.absolutePos(new BlockPos(3, 1, 0)), 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(commandCow);
+        helper.assertFalse(commandCow.isRemoved(),
+                "non-natural vanilla cow was incorrectly replaced at the world boundary");
+
         Cow cow = EntityType.COW.create(helper.getLevel());
         if (cow == null) {
             helper.fail("vanilla cow could not be constructed");
             return;
         }
+        cow.setUUID(UUID.randomUUID());
         cow.moveTo(helper.absolutePos(new BlockPos(0, 1, 0)), 0.0F, 0.0F);
+        cow.getPersistentData().putBoolean("AnimaniaNaturalFarmSpawn", true);
         helper.getLevel().addFreshEntity(cow);
         helper.runAtTickTime(2, () -> {
             var entities = helper.getLevel().getEntitiesOfClass(AnimaniaAnimalEntity.class,
@@ -1254,8 +1450,11 @@ public final class AnimaniaFarmGameTests {
                         && (id.getPath().startsWith("cow_") || id.getPath().startsWith("bull_"));
             }), "vanilla cow was not replaced by a registered Animania cow");
             helper.assertTrue(helper.getLevel().getEntitiesOfClass(Cow.class,
-                    new AABB(helper.absolutePos(new BlockPos(0, 1, 0))).inflate(2.0D)).isEmpty(),
+                    new AABB(helper.absolutePos(new BlockPos(0, 1, 0))).inflate(1.0D)).isEmpty(),
                     "vanilla cow remained after replacement");
+            helper.assertFalse(commandCow.isRemoved(),
+                    "unmarked vanilla cow was removed after the natural-spawn replacement");
+            commandCow.discard();
             helper.succeed();
         });
     }
@@ -1647,11 +1846,17 @@ public final class AnimaniaFarmGameTests {
         EntityType<? extends AnimaniaAnimalEntity> henType = (EntityType<? extends AnimaniaAnimalEntity>) (EntityType<?>) AnimaniaFarm.ENTITIES.get("hen_leghorn").get();
         AnimaniaAnimalEntity hen = spawn(helper, henType, 3);
         hen.setGender(AnimalGender.FEMALE);
+        hen.setAge(0);
+        hen.setHunger(100);
+        hen.setThirst(100);
+        ((ServerLevel) helper.getLevel()).setDayTime(1000L);
         CompoundTag henTag = new CompoundTag();
         henTag.putInt("AnimaniaEggLayTicks", 1);
         hen.readAdditionalSaveData(henTag);
         hen.setGender(AnimalGender.FEMALE);
         hen.setAge(0);
+        hen.setHunger(100);
+        hen.setThirst(100);
         BlockPos nestPos = helper.absolutePos(new BlockPos(4, 1, 0));
         helper.getLevel().setBlock(nestPos, com.animania.common.AnimaniaBlocks.NEST.get().defaultBlockState(), 3);
         helper.assertTrue(hen.tryLayFarmEgg(false), "hen did not lay in a nearby nest when loose egg drops were disabled");
@@ -1664,6 +1869,8 @@ public final class AnimaniaFarmGameTests {
         hen.readAdditionalSaveData(henTag);
         hen.setGender(AnimalGender.FEMALE);
         hen.setAge(0);
+        hen.setHunger(100);
+        hen.setThirst(100);
         helper.assertTrue(hen.tryLayFarmEgg(true), "enabled loose hen egg laying did not produce an egg without a nest");
         helper.assertTrue(!helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
                 new AABB(helper.absolutePos(new BlockPos(3, 1, 0))).inflate(2.0D)).isEmpty(),
@@ -1829,6 +2036,8 @@ public final class AnimaniaFarmGameTests {
         int interval = AnimaniaConfig.CHILD_GROWTH_TICK.get();
         child.setAge(-interval);
         child.setHunger(0);
+        child.setCustomName(net.minecraft.network.chat.Component.literal("Kept Name"));
+        child.markInteracted();
         child.setNoAi(true);
         helper.getLevel().addFreshEntity(child);
         helper.runAtTickTime(interval + 5, () -> {
@@ -1841,11 +2050,19 @@ public final class AnimaniaFarmGameTests {
         helper.runAtTickTime(interval * 2 + 10, () -> {
                 var grown = helper.getLevel().getEntitiesOfClass(AnimaniaAnimalEntity.class,
                         new AABB(helper.absolutePos(new BlockPos(0, 1, 0))).inflate(10.0D));
-                helper.assertTrue(grown.stream().anyMatch(entity -> {
+                boolean preserved = grown.stream().anyMatch(entity -> {
                     var id = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
                     return id != null && ("cow_angus".equals(id.getPath()) || "bull_angus".equals(id.getPath()))
-                            && entity.isAdult();
-                }), "cared-for calf did not become an adult cow/bull registry entity");
+                            && entity.isAdult() && entity.hasInteracted() && entity.hasCustomName()
+                            && "Kept Name".equals(entity.getCustomName().getString());
+                });
+                String observed = grown.stream().map(entity -> {
+                    var id = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+                    return id + "[adult=" + entity.isAdult() + ",interacted=" + entity.hasInteracted()
+                            + ",name=" + (entity.hasCustomName() ? entity.getCustomName().getString() : "<none>") + "]";
+                }).collect(java.util.stream.Collectors.joining(", "));
+                helper.assertTrue(preserved,
+                        "cared-for calf did not preserve adult state; observed: " + observed);
                 helper.succeed();
         });
     }
@@ -1939,13 +2156,24 @@ public final class AnimaniaFarmGameTests {
             helper.fail("farm cheese mold did not create its block entity");
             return;
         }
-        mold.setItem(0, new ItemStack(FarmContent.ITEM_ENTRIES.get("milk_bottle").get()));
+        ItemStack rejectedBottle = new ItemStack(FarmContent.ITEM_ENTRIES.get("milk_bottle").get());
+        mold.setItem(0, rejectedBottle);
+        mold.serverTick();
+        helper.assertTrue(mold.getItem(0).is(FarmContent.ITEM_ENTRIES.get("milk_bottle").get())
+                        && mold.processTicks() == 0,
+                "cheese mold incorrectly accepted the removed milk-bottle shortcut");
+        mold.removeItemNoUpdate(0);
+        int filled = mold.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null)
+                .map(handler -> handler.fill(new net.minecraftforge.fluids.FluidStack(
+                                FarmFluids.MILK_FRIESIAN.source.get(), 1000),
+                        net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE)).orElse(0);
+        helper.assertTrue(filled == 1000, "cheese mold rejected 1000 mB of Friesian milk fluid");
         int originalMaturity = FarmConfig.CHEESE_MATURITY_TIME.get();
         FarmConfig.CHEESE_MATURITY_TIME.set(200);
         helper.runAtTickTime(205, () -> {
             FarmConfig.CHEESE_MATURITY_TIME.set(originalMaturity);
-            helper.assertTrue(mold.getItem(0).is(FarmContent.ITEM_ENTRIES.get("friesian_cheese_wedge").get()),
-                    "milk bottle did not process into legacy friesian cheese");
+            helper.assertTrue(mold.getItem(0).is(FarmContent.ITEM_ENTRIES.get("friesian_cheese_wheel").get()),
+                    "Friesian milk fluid did not process into the legacy Friesian cheese wheel");
             helper.succeed();
         });
     }
@@ -2079,11 +2307,13 @@ public final class AnimaniaFarmGameTests {
         BlockPos moldPos = helper.absolutePos(new BlockPos(1, 1, 0));
         helper.getLevel().setBlock(moldPos, FarmContent.CHEESE_MOLD.get().defaultBlockState(), 3);
         FarmCheeseMoldBlockEntity mold = (FarmCheeseMoldBlockEntity) helper.getLevel().getBlockEntity(moldPos);
-        mold.setItem(0, new ItemStack(FarmContent.ITEM_ENTRIES.get("milk_bottle").get()));
+        mold.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP)
+                .ifPresent(handler -> handler.fill(new net.minecraftforge.fluids.FluidStack(
+                                FarmFluids.MILK_HOLSTEIN.source.get(), 1000),
+                        net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE));
         mold.serverTick();
-        helper.assertTrue(probeKeys(mold.getAnimaniaProbeInfo()).containsAll(
-                        java.util.Set.of("jade.animania.aging", "jade.animania.item_count")),
-                "cheese mold probe lost item or aging progress");
+        helper.assertTrue(probeKeys(mold.getAnimaniaProbeInfo()).contains("jade.animania.aging"),
+                "cheese mold probe lost fluid-aging progress");
 
         BlockPos hivePos = helper.absolutePos(new BlockPos(2, 1, 0));
         helper.getLevel().setBlock(hivePos, FarmContent.HIVE.get().defaultBlockState(), 3);
@@ -2092,6 +2322,312 @@ public final class AnimaniaFarmGameTests {
                 FarmFluids.HONEY.source.get(), 250), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
         helper.assertTrue(probeKeys(hive.getAnimaniaProbeInfo()).contains("jade.animania.fluid_amount"),
                 "hive probe lost honey amount");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void allFarmAnimalProfilesApplyAtRuntime(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:allFarmAnimalProfilesApplyAtRuntime");
+        for (String id : FarmLegacyIds.ALL.stream().filter(value -> !FarmLegacyIds.VEHICLE_IDS.contains(value)).toList()) {
+            var profile = com.animania.farm.FarmAnimalProfile.forId(id);
+            var type = AnimaniaFarm.ENTITIES.get(id).get();
+            helper.assertTrue(Math.abs(type.getWidth() - profile.width()) < 0.0001F
+                            && Math.abs(type.getHeight() - profile.height()) < 0.0001F,
+                    id + " did not retain its 1.12 collision dimensions");
+            AnimaniaAnimalEntity animal = createAnimal(helper, id);
+            helper.assertTrue(Math.abs(animal.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH)
+                            - profile.maxHealth()) < 0.0001D,
+                    id + " did not receive its 1.12 max health");
+            helper.assertTrue(Math.abs(animal.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)
+                            - profile.movementSpeed()) < 0.0001D,
+                    id + " did not receive its 1.12 movement speed");
+            if (profile.attackDamage() > 0.0D) {
+                helper.assertTrue(Math.abs(animal.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE)
+                                - profile.attackDamage()) < 0.0001D,
+                        id + " did not receive its 1.12 attack damage");
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void farmPigRidingAndCarvingKnifeRestoreLegacyInteractions(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:farmPigRidingAndCarvingKnifeRestoreLegacyInteractions");
+        AnimaniaAnimalEntity pig = createAnimal(helper, "sow_duroc");
+        pig.setAge(0);
+        pig.setHunger(100);
+        pig.setThirst(100);
+        pig.moveTo(helper.absolutePos(new BlockPos(1, 1, 1)), 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(pig);
+        var rider = helper.makeMockPlayer();
+        rider.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.SADDLE));
+        helper.assertTrue(pig.mobInteract(rider, InteractionHand.MAIN_HAND).consumesAction() && pig.isSaddled(),
+                "adult Farm pig rejected its legacy saddle interaction");
+        rider.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CARROT_ON_A_STICK));
+        helper.assertTrue(pig.mobInteract(rider, InteractionHand.MAIN_HAND).consumesAction()
+                        && rider.getVehicle() == pig && pig.boost(),
+                "saddled Farm pig rejected carrot-on-a-stick riding or boost");
+        CompoundTag pigTag = new CompoundTag();
+        pig.addAdditionalSaveData(pigTag);
+        pig.setSaddled(false);
+        pig.readAdditionalSaveData(pigTag);
+        helper.assertTrue(pig.isSaddled(), "Farm pig saddle state did not survive NBT reload");
+
+        AnimaniaAnimalEntity bull = createAnimal(helper, "bull_angus");
+        bull.setAge(0);
+        helper.getLevel().addFreshEntity(bull);
+        ItemStack knifeStack = new ItemStack(FarmContent.ITEM_ENTRIES.get("carving_knife").get());
+        rider.setItemInHand(InteractionHand.MAIN_HAND, knifeStack);
+        int damage = knifeStack.getDamageValue();
+        helper.assertTrue(knifeStack.interactLivingEntity(rider, bull, InteractionHand.MAIN_HAND).consumesAction()
+                        && bull.isSterilized() && knifeStack.getDamageValue() == damage + 1,
+                "carving knife did not sterilize an adult Farm male and consume durability exactly once");
+        rider.stopRiding();
+        rider.discard();
+        pig.discard();
+        bull.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void saddledDraftHorseAcceptsPlayerControlInput(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:saddled_draft_horse_accepts_player_control");
+        AnimaniaAnimalEntity horse = createAnimal(helper, "mare_draft");
+        horse.setAge(0);
+        horse.setTamed(true);
+        horse.setSaddled(true);
+        horse.setHunger(100);
+        horse.setThirst(100);
+        helper.getLevel().setBlock(helper.absolutePos(new BlockPos(2, 0, 2)),
+                Blocks.STONE.defaultBlockState(), 3);
+        horse.moveTo(helper.absolutePos(new BlockPos(2, 1, 2)), 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(horse);
+        var rider = helper.makeMockPlayer();
+        helper.getLevel().addFreshEntity(rider);
+        rider.setYRot(0.0F);
+        rider.zza = 1.0F;
+        rider.xxa = 0.0F;
+        helper.assertTrue(rider.startRiding(horse, true),
+                "player could not mount a saddled draft horse");
+        helper.assertTrue(horse.getControllingPassenger() == rider,
+                "saddled draft horse did not expose the player as its controlling passenger");
+        helper.assertTrue(Math.abs(horse.getPassengersRidingOffset() - horse.getBbHeight() * 0.60D) < 0.0001D,
+                "mare draft horse did not retain the legacy 60 percent riding offset");
+        helper.assertTrue(horse.maxUpStep() >= 1.2F,
+                "draft horse did not retain the legacy one-block-plus step height");
+        helper.assertTrue(horse.getItem(0).is(Items.SADDLE),
+                "saddled draft horse did not expose its legacy saddle slot");
+        horse.setOnGround(true);
+        horse.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+        horse.onPlayerJump(90);
+        horse.handleStartJump(90);
+        helper.runAtTickTime(1, () -> {
+            helper.assertTrue(horse.getDeltaMovement().y > 0.2D,
+                    "saddled draft horse ignored the real riding jump pipeline");
+            helper.assertTrue(horse.getDeltaMovement().horizontalDistanceSqr() > 0.000001D,
+                    "saddled draft horse ignored forward rider input");
+            helper.assertTrue(horse.walkAnimation.isMoving(),
+                    "ridden draft horse moved without updating its walk animation");
+        });
+        helper.runAtTickTime(18, () -> {
+            helper.assertTrue(horse.getY() < helper.absolutePos(new BlockPos(2, 3, 2)).getY(),
+                    "ridden draft horse did not receive normal gravity after jumping");
+            rider.stopRiding();
+            rider.discard();
+            horse.discard();
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 80)
+    public static void saddledDraftHorseClimbsOneBlockWithNativeCollision(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:saddled_draft_horse_one_block_step");
+        AnimaniaAnimalEntity horse = createAnimal(helper, "mare_draft");
+        horse.setAge(0);
+        horse.setTamed(true);
+        horse.setSaddled(true);
+        horse.setHunger(100);
+        horse.setThirst(100);
+        BlockPos start = helper.absolutePos(new BlockPos(2, 1, 2));
+        BlockPos step = helper.absolutePos(new BlockPos(2, 1, 3));
+        for (int x = 1; x <= 3; x++) {
+            for (int z = 1; z <= 8; z++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, 0, z)),
+                        Blocks.STONE.defaultBlockState(), 3);
+            }
+        }
+        helper.getLevel().setBlock(step, Blocks.STONE.defaultBlockState(), 3);
+        horse.moveTo(start.getX() + 0.5D, start.getY(), start.getZ() + 0.05D, 0.0F, 0.0F);
+        horse.setOnGround(true);
+        horse.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+        helper.getLevel().addFreshEntity(horse);
+        var rider = helper.makeMockPlayer();
+        helper.getLevel().addFreshEntity(rider);
+        rider.setYRot(0.0F);
+        rider.zza = 1.0F;
+        helper.assertTrue(rider.startRiding(horse, true), "player could not mount step-test horse");
+        double initialZ = horse.getZ();
+        // A GameTest mock player is server-side and therefore cannot claim
+        // LivingEntity.isControlledByLocalInstance() like a real client. Use
+        // the same native Entity.move collision path once to exercise the
+        // horse's maxUpStep without pretending the server owns client input.
+        helper.runAtTickTime(1, () -> {
+            horse.setOnGround(true);
+            horse.move(net.minecraft.world.entity.MoverType.SELF,
+                    new net.minecraft.world.phys.Vec3(0.0D, 0.0D, 1.0D));
+            helper.assertTrue(horse.getZ() > initialZ + 0.50D,
+                    "ridden draft horse never crossed the one-block obstacle: z=" + horse.getZ()
+                            + ", initial=" + initialZ + ", y=" + horse.getY()
+                            + ", delta=" + horse.getDeltaMovement() + ", step=" + horse.maxUpStep());
+            helper.assertTrue(horse.getY() >= start.getY() + 0.9D,
+                    "ridden draft horse did not climb onto the one-block obstacle: " + horse.getY());
+            rider.stopRiding();
+            rider.discard();
+            horse.discard();
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty")
+    public static void farmProductionConversionsAndCrowStateFollowLegacyRules(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:farmProductionConversionsAndCrowStateFollowLegacyRules");
+        var player = helper.makeMockPlayer();
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        cow.setGender(AnimalGender.FEMALE);
+        cow.setAge(0);
+        cow.setHunger(100);
+        cow.setThirst(100);
+        cow.setMilkReady(true);
+        helper.getLevel().addFreshEntity(cow);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BUCKET));
+        helper.assertTrue(cow.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction()
+                        && cow.getThirst() == 0
+                        && player.getInventory().contains(new ItemStack(Items.MILK_BUCKET)),
+                "milking did not produce milk and consume the watered state");
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BUCKET));
+        var secondMilk = cow.mobInteract(player, InteractionHand.MAIN_HAND);
+        helper.assertTrue(!secondMilk.consumesAction()
+                        && player.getMainHandItem().is(Items.BUCKET)
+                        && player.getMainHandItem().getCount() == 1,
+                "unwatered cow could be milked repeatedly");
+
+        AnimaniaAnimalEntity mare = createAnimal(helper, "mare_draft");
+        mare.setGender(AnimalGender.FEMALE);
+        mare.setAge(0);
+        mare.setHunger(100);
+        mare.setThirst(100);
+        mare.setMilkReady(true);
+        helper.getLevel().addFreshEntity(mare);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BUCKET));
+        helper.assertFalse(mare.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction(),
+                "mare incorrectly exposed the cow/goat/sheep milking interaction");
+
+        AnimaniaAnimalEntity mooshroom = createAnimal(helper, "cow_mooshroom");
+        mooshroom.setGender(AnimalGender.FEMALE);
+        mooshroom.setAge(0);
+        mooshroom.setHunger(100);
+        mooshroom.setThirst(100);
+        mooshroom.setMilkReady(true);
+        mooshroom.moveTo(helper.absolutePos(new BlockPos(3, 1, 0)), 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(mooshroom);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOWL));
+        helper.assertTrue(mooshroom.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction()
+                        && mooshroom.getThirst() == 0
+                        && player.getInventory().contains(new ItemStack(Items.MUSHROOM_STEW)),
+                "Mooshroom cow did not produce stew and consume watered state");
+
+        AnimaniaAnimalEntity shearTarget = createAnimal(helper, "bull_mooshroom");
+        shearTarget.setAge(0);
+        shearTarget.moveTo(helper.absolutePos(new BlockPos(5, 1, 0)), 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(shearTarget);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.SHEARS));
+        helper.assertTrue(shearTarget.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction()
+                        && shearTarget.isRemoved()
+                        && !helper.getLevel().getEntitiesOfClass(AnimaniaAnimalEntity.class,
+                        shearTarget.getBoundingBox().inflate(1.0D), entity -> "bull_friesian".equals(entity.registryPath())).isEmpty(),
+                "adult Mooshroom bull did not transactionally convert to Friesian");
+
+        AnimaniaAnimalEntity pig = createAnimal(helper, "piglet_duroc");
+        pig.setCustomName(net.minecraft.network.chat.Component.literal("Storm Pig"));
+        pig.moveTo(helper.absolutePos(new BlockPos(7, 1, 0)), 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(pig);
+        pig.thunderHit((ServerLevel) helper.getLevel(), EntityType.LIGHTNING_BOLT.create(helper.getLevel()));
+        helper.assertTrue(pig.isRemoved() && !helper.getLevel().getEntitiesOfClass(
+                        net.minecraft.world.entity.monster.ZombifiedPiglin.class,
+                        new AABB(helper.absolutePos(new BlockPos(7, 1, 0))).inflate(1.0D),
+                        entity -> entity.isBaby() && entity.hasCustomName()
+                                && "Storm Pig".equals(entity.getCustomName().getString())).isEmpty(),
+                "lightning did not transactionally convert the Farm pig and preserve child/name state");
+
+        AnimaniaAnimalEntity rooster = createAnimal(helper, "rooster_leghorn");
+        CompoundTag crow = new CompoundTag();
+        crow.putInt("CrowDuration", 50);
+        rooster.readAdditionalSaveData(crow);
+        CompoundTag crowSaved = new CompoundTag();
+        rooster.addAdditionalSaveData(crowSaved);
+        helper.assertTrue(rooster.getCrowDuration() == 50 && crowSaved.getInt("CrowDuration") == 50,
+                "rooster crow animation duration did not synchronize and persist");
+        player.discard();
+        cow.discard();
+        mare.discard();
+        mooshroom.discard();
+        rooster.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void farmHiveAndHenSchedulersHonorBiomeAndCareGates(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:farmHiveAndHenSchedulersHonorBiomeAndCareGates");
+        ServerLevel level = (ServerLevel) helper.getLevel();
+        level.setDayTime(1000L);
+        AnimaniaAnimalEntity hen = createAnimal(helper, "hen_leghorn");
+        hen.setGender(AnimalGender.FEMALE);
+        hen.setAge(0);
+        hen.setHunger(0);
+        hen.setThirst(100);
+        CompoundTag due = new CompoundTag();
+        due.putInt("AnimaniaEggLayTicks", 1);
+        due.putBoolean("AnimaniaEggLayInitialized", true);
+        hen.readAdditionalSaveData(due);
+        hen.setGender(AnimalGender.FEMALE);
+        hen.setAge(0);
+        hen.setHunger(0);
+        hen.setThirst(100);
+        helper.getLevel().addFreshEntity(hen);
+        helper.assertFalse(hen.tryLayFarmEgg(true), "hungry hen ignored the legacy egg-laying care gate");
+        CompoundTag gated = new CompoundTag();
+        hen.addAdditionalSaveData(gated);
+        helper.assertTrue(gated.getInt("AnimaniaEggLayTicks") == 1,
+                "egg timer advanced while the hen failed a care gate");
+        hen.setHunger(100);
+        level.setDayTime(14000L);
+        helper.assertFalse(hen.tryLayFarmEgg(true), "hen laid an egg during the legacy night gate");
+        level.setDayTime(1000L);
+        helper.assertTrue(hen.tryLayFarmEgg(true), "fed/watered daytime hen failed its due egg lay");
+
+        BlockPos hivePos = helper.absolutePos(new BlockPos(4, 1, 0));
+        helper.getLevel().setBlock(hivePos, FarmContent.HIVE.get().defaultBlockState(), 3);
+        FarmHiveBlockEntity hive = (FarmHiveBlockEntity) helper.getLevel().getBlockEntity(hivePos);
+        var hiveBiomes = FarmConfig.BIOME_TYPES.get("hiveValidBiomeTypes");
+        java.util.List<? extends String> previousHiveBiomes = java.util.List.copyOf(hiveBiomes.get());
+        hiveBiomes.set(java.util.List.of("HOT", "COLD", "SPARSE", "DENSE", "WET", "DRY",
+                "CONIFEROUS", "SPOOKY", "DEAD", "LUSH", "MUSHROOM", "MAGICAL", "RARE", "PLATEAU",
+                "MODIFIED", "WATER", "DESERT", "PLAINS", "SWAMP", "SANDY", "SNOWY", "WASTELAND",
+                "MOUNTAIN", "OCEAN", "BEACH", "RIVER", "HILLS", "TAIGA", "JUNGLE", "FOREST",
+                "SAVANNA", "MESA"));
+        CompoundTag hiveDue = hive.saveWithFullMetadata();
+        hiveDue.putInt("NextHoney", 1);
+        hive.load(hiveDue);
+        int before = hive.honeyAmount();
+        hive.serverTick();
+        helper.assertTrue(hive.honeyAmount() == before + 25,
+                "hive did not produce exactly 25 mB in a configured biome");
+        CompoundTag reset = hive.saveWithFullMetadata();
+        int baseRate = FarmConfig.HIVE_PLAYER_HONEY_RATE.get();
+        helper.assertTrue(reset.getInt("NextHoney") >= baseRate && reset.getInt("NextHoney") < baseRate + 100,
+                "hive production timer did not reset to configured rate plus 0..99 jitter");
+        hiveBiomes.set(previousHiveBiomes);
+        hen.discard();
         helper.succeed();
     }
 
@@ -2129,6 +2665,16 @@ public final class AnimaniaFarmGameTests {
         if (!(created instanceof AnimaniaAnimalEntity animal)) {
             throw new IllegalStateException("farm animal could not be constructed: " + id);
         }
+        return animal;
+    }
+
+    private static AnimaniaAnimalEntity createExtraAnimal(GameTestHelper helper, String id) {
+        EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(
+                new ResourceLocation("animania_extra", id));
+        if (type == null || !(type.create(helper.getLevel()) instanceof AnimaniaAnimalEntity animal)) {
+            throw new IllegalStateException("extra animal could not be constructed: " + id);
+        }
+        animal.setAge(0);
         return animal;
     }
 

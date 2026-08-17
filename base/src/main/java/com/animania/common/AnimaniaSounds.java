@@ -14,7 +14,7 @@ public final class AnimaniaSounds {
     public static final RegistryObject<SoundEvent> COMBO = register("combo");
 
     private static RegistryObject<SoundEvent> register(String id) {
-        return SOUNDS.register(id, () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(Animania.MOD_ID, id)));
+        return SOUNDS.register(id, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(Animania.MOD_ID, id)));
     }
 
     private AnimaniaSounds() { }

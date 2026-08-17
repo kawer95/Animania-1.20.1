@@ -71,7 +71,58 @@ public final class AnimaniaCatsDogsGameTests {
             }
         }
         helper.assertTrue(executable >= 20, "pet seller trade table lost legacy cat/dog family coverage");
+        helper.assertTrue(trades.get(1).size() == 18, "Pug did not retain its legacy level-one trade tier");
+        var poi = CatsDogsPetSeller.PET_SELLER_POI.getHolder().orElseThrow();
+        helper.assertTrue(profession.heldJobSite().test(poi) && profession.acquirableJobSite().test(poi),
+                "pet seller profession cannot acquire or retain its registered bowl POI");
         trader.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void legacyPetAttributesFeedingBreedingAndFacilities(GameTestHelper helper) {
+        AnimaniaAnimalEntity male = createPet(helper, "male_labrador");
+        AnimaniaAnimalEntity female = createPet(helper, "female_labrador");
+        AnimaniaAnimalEntity puppy = createPet(helper, "puppy_labrador");
+        helper.assertTrue(male.getMaxHealth() == 20.0F && female.getMaxHealth() == 18.0F
+                        && puppy.getMaxHealth() == 12.0F,
+                "adult/child dog health attributes differ from 1.12");
+        helper.assertTrue(Math.abs(male.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED) - 0.3D) < 0.0001D
+                        && Math.abs(puppy.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED) - 0.315D) < 0.0001D
+                        && Math.abs(male.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) - 2.5D) < 0.0001D,
+                "dog movement/attack attributes differ from 1.12");
+
+        var owner = helper.makeMockPlayer();
+        male.setHunger(10);
+        owner.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BEEF, 2));
+        helper.assertTrue(male.mobInteract(owner, InteractionHand.MAIN_HAND).consumesAction()
+                        && male.isTamed() && owner.getUUID().equals(male.getOwnerUUID())
+                        && male.getHunger() == 30 && owner.getMainHandItem().getCount() == 1,
+                "configured dog food did not atomically tame, feed and consume once");
+
+        female.setHunger(10);
+        female.feed(new ItemStack(Items.BEEF));
+        female.setTamed(false);
+        male.setTamed(false);
+        helper.assertTrue(male.canBreedWith(female), "default config incorrectly requires pets to be tamed for breeding");
+
+        BlockPos litterPos = helper.absolutePos(new BlockPos(2, 1, 2));
+        var litter = CatsDogsContent.BLOCK_ENTRIES.get("litter_box").get();
+        helper.getLevel().setBlock(litterPos, litter.defaultBlockState(), 3);
+        AnimaniaAnimalEntity cat = createPet(helper, "queen_tabby");
+        cat.setThirst(9);
+        litter.entityInside(helper.getLevel().getBlockState(litterPos), helper.getLevel(), litterPos, cat);
+        helper.assertTrue(cat.getThirst() == 9 && !cat.isSleeping(),
+                "pet facility retained invented collision hydration/sleep behavior");
+
+        BlockPos bowlPos = helper.absolutePos(new BlockPos(4, 1, 2));
+        helper.getLevel().setBlock(bowlPos, CatsDogsContent.PET_BOWL.get().defaultBlockState(), 3);
+        var bucket = new net.minecraft.world.entity.item.ItemEntity(helper.getLevel(), bowlPos.getX() + 0.5D,
+                bowlPos.getY() + 0.2D, bowlPos.getZ() + 0.5D, new ItemStack(Items.WATER_BUCKET));
+        CatsDogsContent.PET_BOWL.get().entityInside(helper.getLevel().getBlockState(bowlPos), helper.getLevel(), bowlPos, bucket);
+        var bowl = (CatsDogsPetBowlBlockEntity) helper.getLevel().getBlockEntity(bowlPos);
+        helper.assertTrue(bucket.getItem().is(Items.BUCKET) && bowl.fluidAmount(stack -> stack.getFluid() == Fluids.WATER) == 1000,
+                "dropped water bucket did not return one empty bucket after filling the bowl");
         helper.succeed();
     }
 

@@ -10,7 +10,7 @@ final class LegacyAnimalTexturesTest {
     @Test
     void resolvesFarmTextureInFarmNamespace() {
         ResourceLocation actual = LegacyAnimalTextures.resolve(
-                ResourceLocation.fromNamespaceAndPath("animania_farm", "cow_angus"), "default", false);
+                new ResourceLocation("animania_farm", "cow_angus"), "default", false);
         assertEquals("animania_farm", actual.getNamespace());
         assertEquals("textures/entity/cows/cow_angus.png", actual.getPath());
     }
@@ -18,7 +18,7 @@ final class LegacyAnimalTexturesTest {
     @Test
     void resolvesExtraTextureInExtraNamespace() {
         ResourceLocation actual = LegacyAnimalTextures.resolve(
-                ResourceLocation.fromNamespaceAndPath("animania_extra", "hamster"), "black", false);
+                new ResourceLocation("animania_extra", "hamster"), "black", false);
         assertEquals("animania_extra", actual.getNamespace());
         assertEquals("textures/entity/rodents/hamster_black.png", actual.getPath());
     }
@@ -26,7 +26,7 @@ final class LegacyAnimalTexturesTest {
     @Test
     void resolvesCatsDogsTextureInCatsDogsNamespace() {
         ResourceLocation actual = LegacyAnimalTextures.resolve(
-                ResourceLocation.fromNamespaceAndPath("animania_catsdogs", "queen_tabby"), "default", false);
+                new ResourceLocation("animania_catsdogs", "queen_tabby"), "default", false);
         assertEquals("animania_catsdogs", actual.getNamespace());
         assertEquals("textures/entity/cats/tabby.png", actual.getPath());
     }

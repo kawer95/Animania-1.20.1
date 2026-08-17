@@ -237,12 +237,30 @@ public final class AnimaniaBlinkingLayer extends RenderLayer<AnimaniaAnimalEntit
         };
     }
 
+    /**
+     * The 1.12 LayerBlinking renderer also forced the eyelid overlay while an
+     * animal was in its sleeping pose.  It used the same two transition
+     * sentinels as the legacy sleep renderer: the overlay is visible when the
+     * pose starts (timer 0), once the animal is fully down (-0.55), and for a
+     * legacy save that still contains the old -100 sentinel.  Keep the
+     * 23,250 daytime cutoff so the modern layer has the same wake transition.
+     */
+    static boolean shouldRenderSleepingEyes(boolean sleeping, float sleepTimer, long dayTime) {
+        long currentTime = Math.floorMod(dayTime, 23999L);
+        return sleeping && currentTime < 23250L
+                && (sleepTimer == -100.0F || sleepTimer == 0.0F || sleepTimer <= -0.55F);
+    }
+
+    private static boolean shouldRenderSleepingEyes(AnimaniaAnimalEntity entity) {
+        return shouldRenderSleepingEyes(entity.isSleeping(), entity.getSleepTimer(), entity.level().getDayTime());
+    }
+
     @Override
     public void render(PoseStack poseStack, MultiBufferSource buffers, int packedLight,
                        AnimaniaAnimalEntity entity, float limbSwing, float limbSwingAmount,
                        float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
         int timer = entity.getBlinkTimer();
-        if (timer < 0 || timer >= 7) return;
+        if (!shouldRenderSleepingEyes(entity) && (timer < 0 || timer >= 7)) return;
         ResourceLocation[] textures = texturesFor(ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()));
         if (textures == null) return;
         int[] colors = colorsFor(ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()));

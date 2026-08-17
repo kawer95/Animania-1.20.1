@@ -38,7 +38,10 @@ import com.animania.common.entity.goal.AnimaniaOwnerHurtByTargetGoal;
 import com.animania.common.entity.goal.AnimaniaOwnerHurtTargetGoal;
 import com.animania.common.entity.goal.AnimaniaTargetNonTamedGoal;
 import com.animania.common.entity.goal.AnimaniaAvoidEntityGoal;
+import com.animania.common.entity.goal.AnimaniaCatAttackGoal;
+import com.animania.common.entity.goal.AnimaniaWatchFromSideGoal;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -51,16 +54,22 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.Container;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.PlayerRideableJumping;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.ai.goal.LeapAtTargetGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.FleeSunGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.monster.AbstractSkeleton;
 import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.animal.Rabbit;
@@ -72,12 +81,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PotionItem;
+import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.DifficultyInstance;
@@ -96,16 +113,24 @@ import java.util.concurrent.ThreadLocalRandom;
  * EntityType per legacy ID; this class carries the common state and behaviour
  * so variant and sex changes never require duplicated entity implementations.
  */
-public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBlinking, IConvertable {
+public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBlinking, IConvertable,
+        PlayerRideableJumping, Container, MenuProvider {
     private static final EntityDataAccessor<Byte> GENDER = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<String> VARIANT = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> HUNGER = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> THIRST = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> SLEEPING = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
+    /** Client-visible progress of the legacy 1.12 lie-down animation. */
+    private static final EntityDataAccessor<Float> SLEEP_TIMER = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> PLAYING = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> MUDDY = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> EATING_TICKS = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> PREGNANT = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
+    /** Elapsed pregnancy ticks; synced so Jade/TOP and clients see progress. */
+    private static final EntityDataAccessor<Integer> PREGNANCY_TICKS = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
+    /** Total duration selected when the pregnancy starts; synced with the elapsed counter. */
+    private static final EntityDataAccessor<Integer> PREGNANCY_DURATION = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> FERTILE = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> STERILIZED = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> SHEARED = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> TAMED = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
@@ -114,6 +139,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     private static final EntityDataAccessor<Optional<java.util.UUID>> MATE = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final EntityDataAccessor<Optional<java.util.UUID>> PARENT = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final EntityDataAccessor<Boolean> SADDLED = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
+    /** Synched riding-crop boost window; movement is client-authoritative while mounted. */
+    private static final EntityDataAccessor<Integer> RIDING_BOOST_TICKS = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> MILK_READY = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IN_BALL = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> BALL_COLOR = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
@@ -128,15 +155,27 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     private static final EntityDataAccessor<Float> GROWTH_PROGRESS = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> HAMSTER_FOOD_STACK = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> HAMSTER_STANDING = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> CROW_DURATION = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
     public static final String CARRIED_ENTITY_TAG = "AnimaniaCarriedEntity";
     public static final String CARRIED_ANIMAL_TAG = "AnimaniaCarriedAnimal";
     private int pregnancyTicks;
+    private int pregnancyDurationTicks;
+    private int fertilityCooldownTicks;
+    private int lactationTicks;
     private int playingTicks;
     private int woolRegrowthTicks;
     private int boostTicks;
+    /** The legacy horse chest's first slot is the saddle slot. */
+    private final NonNullList<ItemStack> horseItems = NonNullList.withSize(9, ItemStack.EMPTY);
+    /** Pending client ride-jump scale, matching AbstractHorse's 0.4..1.0 range. */
+    private float playerJumpPendingScale;
+    /** Local movement state used to prevent a charged jump from retriggering mid-air. */
+    private boolean riderJumping;
     private int starvationTicks;
     private boolean legacyNamedCombatConfigured;
     private int eggLayTicks;
+    private boolean eggLayInitialized;
+    private int featherDropTicks;
     private int fedTimer;
     private int wateredTimer;
     private int childGrowthTimer;
@@ -151,10 +190,11 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     private boolean interacted;
     private int hamsterStandTicks;
     private int hamsterEatTicks = 5000;
+    private int dartFrogPoisonTimer = 2;
 
     public AnimaniaAnimalEntity(EntityType<? extends AnimaniaAnimalEntity> type, Level level) {
         super(type, level);
-        this.setMaxUpStep(1.0f);
+        this.setMaxUpStep(legacyStepHeight());
         // Entity data is defined by the time the constructor returns.  Infer
         // the baseline sex from the legacy registration ID so natural spawns
         // are not all CHILD until their first save/reload.
@@ -226,7 +266,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                     && speciesKey(otherId.getPath()).equals(speciesKey(id.getPath()));
         }).size();
         if (nearby > 8) return null;
-        EntityType<?> raw = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.fromNamespaceAndPath(id.getNamespace(), relatedPath));
+        EntityType<?> raw = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(id.getNamespace(), relatedPath));
         if (raw == null) return null;
         Entity created = raw.create(server);
         if (!(created instanceof AnimaniaAnimalEntity companion)) return null;
@@ -257,6 +297,10 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     @Override
     protected void registerGoals() {
+        if (isAmphibian()) {
+            registerAmphibianGoals();
+            return;
+        }
         if (isHamster()) {
             registerHamsterGoals();
             return;
@@ -298,29 +342,102 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             goalSelector.addGoal(6, new AnimaniaWanderAvoidWaterGoal(this,
                     AnimaniaWanderAvoidWaterGoal.legacySpeed(this)));
         }
-        if (AnimaniaWatchClosestGoal.supports(this)) goalSelector.addGoal(7, new AnimaniaWatchClosestGoal(this));
+        if (isPeafowl() || isFarmChicken()) goalSelector.addGoal(5, new AnimaniaWatchFromSideGoal(this));
+        else if (AnimaniaWatchClosestGoal.supports(this)) goalSelector.addGoal(7, new AnimaniaWatchClosestGoal(this));
         if (AnimaniaLookIdleGoal.supports(this)) goalSelector.addGoal(8, new AnimaniaLookIdleGoal(this));
         // Cats and dogs retain the legacy companion combat intent while
         // remaining server-authoritative and opt-out through the shared rule.
         if (attacksAllowed() && isCompanionAnimal()) {
-            goalSelector.addGoal(4, new MeleeAttackGoal(this, isDogCompanion() ? 1.15D : 1.0D, true));
+            goalSelector.addGoal(4, isCatCompanion() ? new AnimaniaCatAttackGoal(this)
+                    : new MeleeAttackGoal(this, 1.15D, true));
             if (isCatCompanion()) goalSelector.addGoal(5, new LeapAtTargetGoal(this, 0.4F));
             targetSelector.addGoal(1, new AnimaniaHurtByTargetGoal(this));
             if (isDogCompanion()) {
                 targetSelector.addGoal(2, new AnimaniaOwnerHurtByTargetGoal(this));
                 targetSelector.addGoal(3, new AnimaniaOwnerHurtTargetGoal(this));
             }
-            targetSelector.addGoal(4, new AnimaniaNearestAttackableTargetGoal<>(this, AbstractSkeleton.class, true,
-                    target -> !isTamed()));
             if (isDogCompanion()) {
+                targetSelector.addGoal(4, new AnimaniaNearestAttackableTargetGoal<>(this, AbstractSkeleton.class, true,
+                        target -> true));
                 targetSelector.addGoal(5, new AnimaniaTargetNonTamedGoal<>(this, Sheep.class, true,
                         target -> true));
                 targetSelector.addGoal(6, new AnimaniaTargetNonTamedGoal<>(this, Rabbit.class, true,
                         target -> true));
+                if (registryPath().endsWith("_fox") || registryPath().endsWith("_wolf")) {
+                    targetSelector.addGoal(4, new AnimaniaTargetNonTamedGoal<>(this, Chicken.class, true,
+                            target -> true));
+                }
             } else {
-                targetSelector.addGoal(5, new AnimaniaTargetNonTamedGoal<>(this, Chicken.class, true,
+                targetSelector.addGoal(4, new AnimaniaTargetNonTamedGoal<>(this,
+                        net.minecraft.world.entity.monster.Silverfish.class, true,
                         target -> true));
+                targetSelector.addGoal(5, new AnimaniaTargetNonTamedGoal<>(this, AnimaniaAnimalEntity.class, true,
+                        target -> target.registryNamespace().equals("animania_extra")
+                                && (target.registryPath().startsWith("ferret_")
+                                || target.registryPath().startsWith("hedgehog")
+                                || target.registryPath().equals("frog") || target.registryPath().equals("dartfrog")
+                                || target.registryPath().equals("toad") || target.registryPath().startsWith("peachick_"))));
             }
+        }
+        if (attacksAllowed() && isFarmAnimal()) registerFarmCombat();
+        if (attacksAllowed() && isExtraPredator()) registerExtraPredatorCombat();
+    }
+
+    /** Restores the family combat tasks installed by the 1.12 Farm base classes. */
+    private void registerFarmCombat() {
+        targetSelector.addGoal(0, new AnimaniaHurtByTargetGoal(this));
+        String path = registryPath();
+        if (path.startsWith("bull_")) {
+            goalSelector.addGoal(0, new MeleeAttackGoal(this, 1.8D, false));
+        } else if (path.startsWith("cow_")) {
+            goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.2D, false));
+        } else if (path.startsWith("hen_")) {
+            goalSelector.addGoal(9, new LeapAtTargetGoal(this, 0.2F));
+            goalSelector.addGoal(10, new MeleeAttackGoal(this, 1.0D, true));
+        } else if (path.startsWith("rooster_")) {
+            goalSelector.addGoal(3, new LeapAtTargetGoal(this, 0.2F));
+            goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.0D, true));
+        }
+        if (path.startsWith("hen_") || path.startsWith("rooster_")) {
+            targetSelector.addGoal(2, new AnimaniaNearestAttackableTargetGoal<>(this, AnimaniaAnimalEntity.class,
+                    80, false, false, target -> target instanceof AnimaniaAnimalEntity animal
+                    && animal.registryNamespace().equals("animania_extra")
+                    && (animal.registryPath().equals("frog") || animal.registryPath().equals("toad"))));
+        }
+    }
+
+    private void registerAmphibianGoals() {
+        goalSelector.addGoal(0, new AnimaniaSmallCreatureFloatGoal(this));
+        goalSelector.addGoal(1, new AnimaniaPanicGoal(this, 2.2D));
+        goalSelector.addGoal(2, new AnimaniaAvoidEntityGoal<>(this, Player.class,
+                target -> !isNamedFrog("Pepe"), 6.0F, 1.5D, 1.5D, target -> true));
+        goalSelector.addGoal(3, new AnimaniaWanderAvoidWaterGoal(this, 0.6D));
+        goalSelector.addGoal(4, new AnimaniaWatchClosestGoal(this));
+        goalSelector.addGoal(5, new AnimaniaAvoidEntityGoal<>(this, AnimaniaAnimalEntity.class,
+                target -> target instanceof AnimaniaAnimalEntity animal && animal.isPeafowl(),
+                10.0F, 3.0D, 3.5D, target -> true));
+        goalSelector.addGoal(5, new AnimaniaAvoidEntityGoal<>(this, Chicken.class,
+                10.0F, 3.0D, 3.5D));
+    }
+
+    private void registerExtraPredatorCombat() {
+        if (registryPath().startsWith("ferret_") || registryPath().startsWith("hedgehog")) {
+            goalSelector.addGoal(5, new LeapAtTargetGoal(this, 0.2F));
+            goalSelector.addGoal(6, new MeleeAttackGoal(this, 1.0D, true));
+            targetSelector.addGoal(1, new AnimaniaHurtByTargetGoal(this));
+            targetSelector.addGoal(2, new AnimaniaNearestAttackableTargetGoal<>(this,
+                    net.minecraft.world.entity.monster.Silverfish.class, false));
+            targetSelector.addGoal(3, new AnimaniaNearestAttackableTargetGoal<>(this, AnimaniaAnimalEntity.class,
+                    false, target -> target instanceof AnimaniaAnimalEntity animal
+                    && (animal.registryPath().equals("frog") || animal.registryPath().equals("toad")
+                    || (registryPath().startsWith("ferret_") && animal.registryNamespace().equals("animania_farm")
+                    && animal.registryPath().startsWith("chick_")))));
+        } else if (isPeafowl()) {
+            goalSelector.addGoal(8, new LeapAtTargetGoal(this, 0.2F));
+            goalSelector.addGoal(9, new MeleeAttackGoal(this, 1.0D, true));
+            targetSelector.addGoal(0, new AnimaniaHurtByTargetGoal(this));
+            targetSelector.addGoal(2, new AnimaniaNearestAttackableTargetGoal<>(this, AnimaniaAnimalEntity.class,
+                    false, target -> target instanceof AnimaniaAnimalEntity animal && animal.isAmphibian()));
         }
     }
 
@@ -381,7 +498,20 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             special = com.animania.common.AnimaniaDamageSources.killerRabbit(level());
             amount = 5.0F;
         }
-        if (special == null) return super.doHurtTarget(target);
+        if (special == null) {
+            boolean result = super.doHurtTarget(target);
+            if (result && registryNamespace().equals("animania_farm") && registryPath().startsWith("bull_")
+                    && target instanceof net.minecraft.world.entity.LivingEntity living) {
+                setFighting(true);
+                setFightTimer(40);
+                living.knockback(1.0D, getX() - target.getX(), getZ() - target.getZ());
+            }
+            if (result && isPeafowl() && target instanceof AnimaniaAnimalEntity animal && animal.isAmphibian()) {
+                setHunger(100);
+                interacted = true;
+            }
+            return result;
+        }
         boolean first = target.hurt(special, amount);
         target.hurt(special, amount);
         if (first && target instanceof net.minecraft.world.entity.LivingEntity living) {
@@ -417,6 +547,12 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                 || id.getPath().startsWith("buck_") || id.getPath().startsWith("kit_"))) {
             goalSelector.addGoal(9, new AnimaniaAvoidEntityGoal<>(this, Wolf.class, 24.0F, 3.0D, 3.5D));
             goalSelector.addGoal(9, new AnimaniaAvoidEntityGoal<>(this, Monster.class, 16.0F, 2.2D, 2.2D));
+        } else if ("animania_extra".equals(id.getNamespace()) && id.getPath().startsWith("hedgehog")) {
+            goalSelector.addGoal(9, new AnimaniaAvoidEntityGoal<>(this, AnimaniaAnimalEntity.class,
+                    target -> target instanceof AnimaniaAnimalEntity animal
+                            && animal.registryNamespace().equals("animania_farm")
+                            && animal.registryPath().startsWith("rooster_"),
+                    10.0F, 1.2D, 1.5D, target -> true));
         }
     }
 
@@ -436,10 +572,14 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         entityData.define(HUNGER, 100);
         entityData.define(THIRST, 100);
         entityData.define(SLEEPING, false);
+        entityData.define(SLEEP_TIMER, 0.0F);
         entityData.define(PLAYING, false);
         entityData.define(MUDDY, false);
         entityData.define(EATING_TICKS, 0);
         entityData.define(PREGNANT, false);
+        entityData.define(PREGNANCY_TICKS, 0);
+        entityData.define(PREGNANCY_DURATION, 0);
+        entityData.define(FERTILE, true);
         entityData.define(STERILIZED, false);
         entityData.define(SHEARED, false);
         entityData.define(TAMED, false);
@@ -448,6 +588,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         entityData.define(MATE, Optional.empty());
         entityData.define(PARENT, Optional.empty());
         entityData.define(SADDLED, false);
+        entityData.define(RIDING_BOOST_TICKS, 0);
         entityData.define(MILK_READY, false);
         entityData.define(IN_BALL, false);
         entityData.define(BALL_COLOR, 0);
@@ -461,6 +602,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         entityData.define(GROWTH_PROGRESS, 1.0F);
         entityData.define(HAMSTER_FOOD_STACK, 0);
         entityData.define(HAMSTER_STANDING, false);
+        entityData.define(CROW_DURATION, 0);
     }
 
     @Override
@@ -471,14 +613,19 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         int legacyChildAge = !level().isClientSide && isChildRegistryId() ? getAge() : 0;
         super.tick();
         tickBlinkTimer();
+        if (isFoalEntity()) refreshDimensions();
         if (level().isClientSide) return;
         if (legacyChildAge < 0 && isChildRegistryId()) setAge(legacyChildAge);
-        entityData.set(GROWTH_PROGRESS, calculateGrowthProgress());
+        tickSleepTimer();
         if (isSitting() || isSleeping()) {
             getNavigation().stop();
             setDeltaMovement(0.0D, getDeltaMovement().y, 0.0D);
         }
         tickHamsterState();
+        tickAmphibianHop();
+        tickExtraNameEffects();
+        tickFarmNameEffects();
+        if (dartFrogPoisonTimer > 1) dartFrogPoisonTimer--;
         if (config(AnimaniaConfig.AMBIANCE_MODE, false)) {
             // Ambiance mode keeps the care meters full and disables all
             // starvation pressure while retaining the visible state fields.
@@ -489,14 +636,21 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             starvationTicks = 0;
         } else {
             boolean careTimersActive = !config(AnimaniaConfig.REQUIRE_ANIMAL_INTERACTION_FOR_AI, true) || interacted;
-            if (careTimersActive && fedTimer > 0 && --fedTimer == 0) setHunger(0);
-            if (careTimersActive && wateredTimer > 0 && --wateredTimer == 0) setThirst(0);
-            if (tickCount % Math.max(20, config(AnimaniaConfig.HUNGER_INTERVAL, 2400)) == 0) setHunger(getHunger() - 1);
-            if (tickCount % Math.max(20, config(AnimaniaConfig.THIRST_INTERVAL, 1800)) == 0) setThirst(getThirst() - 1);
+            if (careTimersActive) {
+                if (fedTimer > 0 && --fedTimer == 0) setHunger(0);
+                if (wateredTimer > 0 && --wateredTimer == 0) setThirst(0);
+                if (tickCount % Math.max(20, config(AnimaniaConfig.HUNGER_INTERVAL, 2400)) == 0) setHunger(getHunger() - 1);
+                if (tickCount % Math.max(20, config(AnimaniaConfig.THIRST_INTERVAL, 1800)) == 0) setThirst(getThirst() - 1);
+            }
+            if (getHunger() <= 0 && getThirst() <= 0) {
+                addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 2, 1, false, false));
+            } else if (getHunger() <= 0 || getThirst() <= 0) {
+                addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 2, 0, false, false));
+            }
             if (config(AnimaniaConfig.ANIMALS_STARVE, false) && (getHunger() <= 0 || getThirst() <= 0)) {
-                if (++starvationTicks >= Math.max(20, config(AnimaniaConfig.STARVATION_TIMER, 400))) {
+                if (!isSleeping() && ++starvationTicks >= Math.max(20, config(AnimaniaConfig.STARVATION_TIMER, 400))) {
                     starvationTicks = 0;
-                    hurt(level().damageSources().starve(), 1.0F);
+                    hurt(level().damageSources().starve(), 4.0F);
                 }
             } else {
                 starvationTicks = 0;
@@ -519,13 +673,28 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             if (inMud) enterMud();
             else if (isInWaterRainOrBubble()) setMuddy(false);
         }
-        if (boostTicks > 0) boostTicks--;
-        if (isSheared() && tickCount % 20 == 0 && --woolRegrowthTicks <= 0) setSheared(false);
-        if (isAdult() && config(AnimaniaConfig.BIRDS_DROP_FEATHERS, true) && tickCount > 0
-                && tickCount % Math.max(20, config(AnimaniaConfig.FEATHER_TIMER, 12000)) == 0) produceFeather();
+        if (boostTicks > 0) {
+            boostTicks--;
+            entityData.set(RIDING_BOOST_TICKS, boostTicks);
+        }
+        if (isSheared() && --woolRegrowthTicks <= 0) setSheared(false);
+        if (isAdult() && config(AnimaniaConfig.BIRDS_DROP_FEATHERS, true) && canDropFeather()) {
+            if (featherDropTicks <= 0) featherDropTicks = nextFeatherDropTicks();
+            if (--featherDropTicks <= 0) {
+                produceFeather();
+                featherDropTicks = nextFeatherDropTicks();
+            }
+        }
+        if (!isFertile() && fertilityCooldownTicks > 0 && --fertilityCooldownTicks == 0 && !isSterilized()) {
+            setFertile(true);
+        }
+        if (isMilkReady() && lactationTicks > 0 && --lactationTicks == 0) setMilkReady(false);
         if (isBaby() && isChildRegistryId() && getAge() < 0) {
             int interval = childGrowthInterval();
-            if (++childGrowthTimer >= interval && getHunger() > 0 && getThirst() > 0 && !isSleeping()) {
+            // The legacy timer is care-gated. Advancing it only while the
+            // animal is fed, watered and awake lets the client display the
+            // actual in-between-tick progress instead of jumping every step.
+            if (getHunger() > 0 && getThirst() > 0 && !isSleeping() && ++childGrowthTimer >= interval) {
                 childGrowthTimer = 0;
                 setAge(Math.min(0, getAge() + interval));
             }
@@ -536,8 +705,29 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         if (getAge() >= 0 && isChildRegistryId()) {
             growIntoAdultVariant();
         }
-        if (isPregnant() && ++pregnancyTicks >= pregnancyDuration()) giveBirth();
+        // Publish after the timer/age update so every server tick is visible to
+        // the client renderer and handbook rather than only at each interval.
+        entityData.set(GROWTH_PROGRESS, calculateGrowthProgress());
+        if (isPregnant()) {
+            setPregnancyTicks(pregnancyTicks + 1);
+            if (pregnancyTicks >= pregnancyDuration()) giveBirth();
+        }
         tickRoosterCrow();
+    }
+
+    /**
+     * The 1.12 renderers eased animals into their lying pose by moving this
+     * value from 0 to -0.55 while the sleeping flag stayed true.  The port
+     * retained the flag but dropped the timer, which left farm models in
+     * their standing pose even though WAILA reported “睡眠”.  Keep the
+     * timer server-authoritative so all clients render the same transition.
+     */
+    private void tickSleepTimer() {
+        if (isSleeping()) {
+            setSleepTimer(Math.max(-0.55F, getSleepTimer() - 0.01F));
+        } else if (getSleepTimer() != 0.0F) {
+            setSleepTimer(0.0F);
+        }
     }
 
     /** Restores the 1.12 cheek-pouch, alert-standing and self-heal cycle. */
@@ -566,6 +756,24 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         }
     }
 
+    private void tickExtraNameEffects() {
+        if (!registryNamespace().equals("animania_extra") || !registryPath().startsWith("hedgehog") || !hasCustomName()) return;
+        String name = getCustomName().getString();
+        if (name.equals("Sonic")) {
+            addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 2, 4, false, false));
+        } else if (name.equals("Sanic")) {
+            addEffect(new MobEffectInstance(MobEffects.GLOWING, 2, 3, false, false));
+            addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 2, 6, false, false));
+        }
+    }
+
+    private void tickAmphibianHop() {
+        if (!isAmphibian() || !onGround() || getNavigation().isDone() || random.nextInt(6) != 0) return;
+        Vec3 movement = getDeltaMovement();
+        setDeltaMovement(movement.x, 0.42D, movement.z);
+        hasImpulse = true;
+    }
+
     /** Client-synchronized 0..1 fraction of the legacy 0.00..0.85 child growth cycle. */
     public float growthProgress() {
         return entityData.get(GROWTH_PROGRESS);
@@ -573,7 +781,24 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     private float calculateGrowthProgress() {
         if (!isChildRegistryId() || getAge() >= 0) return 1.0F;
-        return net.minecraft.util.Mth.clamp(1.0F + (float) getAge() / childGrowthDuration(), 0.0F, 1.0F);
+        int interval = childGrowthInterval();
+        int remaining = Math.max(0, -getAge());
+        // getAge() stores the remaining legacy ticks and only changes at an
+        // interval boundary. Subtract the care timer from that remainder so
+        // the synchronized fraction advances every server tick in between.
+        int partial = Math.min(Math.max(0, childGrowthTimer), Math.max(0, interval - 1));
+        remaining = Math.max(0, remaining - partial);
+        return net.minecraft.util.Mth.clamp(1.0F - (float) remaining / childGrowthDuration(), 0.0F, 1.0F);
+    }
+
+    /** 1.12 foals changed their collision size continuously during growth. */
+    @Override
+    public EntityDimensions getDimensions(Pose pose) {
+        EntityDimensions base = super.getDimensions(pose);
+        if (!isFoalEntity() || pose != Pose.STANDING) return base;
+        float legacyAge = net.minecraft.util.Mth.clamp(calculateGrowthProgress() * 0.85F, 0.0F, 0.85F);
+        return EntityDimensions.scalable((1.0F + legacyAge) * 2.0F,
+                (1.35F + legacyAge) * 2.0F);
     }
 
     private void tickBlinkTimer() {
@@ -587,6 +812,10 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     /** Modern collision hook for the three fainting-goat registrations. */
     @Override
     public void push(Entity entity) {
+        if (!level().isClientSide && registryNamespace().equals("animania_extra")
+                && registryPath().equals("dartfrog") && entity instanceof Player player) {
+            player.addEffect(new MobEffectInstance(MobEffects.POISON, 200, 1, false, false));
+        }
         if (!level().isClientSide && isFaintingGoat() && entity instanceof Player player && player.isSprinting()) {
             setSpooked(true);
             setSpookedTimer(20);
@@ -625,6 +854,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     private void tickRoosterCrow() {
         if (!registryPath().startsWith("rooster_")) return;
+        if (getCrowDuration() > 0) entityData.set(CROW_DURATION, getCrowDuration() - 1);
         if (crowCooldown > 0) crowCooldown--;
         long time = level().getDayTime() % 24000L;
         if (crowCooldown > 0 || (time >= 500L && time <= 23250L)) return;
@@ -634,7 +864,21 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                     * (random.nextBoolean() ? 1.0F : -1.0F);
             level().playSound(null, blockPosition(), crow, getSoundSource(), 0.65F, 1.0F + modular);
         }
+        entityData.set(CROW_DURATION, 50);
         crowCooldown = 200 + random.nextInt(200);
+    }
+
+    public int getCrowDuration() {
+        return Math.max(0, entityData.get(CROW_DURATION));
+    }
+
+    @Override
+    protected void playStepSound(BlockPos pos, BlockState state) {
+        if (isHorseAnimal()) {
+            playSound(SoundEvents.HORSE_STEP, 0.20F, 0.8F);
+        } else {
+            super.playStepSound(pos, state);
+        }
     }
 
     @Override
@@ -673,6 +917,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         if (path.equals("frog")) return legacySound("frogliving1", "frogliving2", "frogliving3");
         if (path.equals("dartfrog")) return legacySound("dartfrogliving1", "dartfrogliving2", "dartfrogliving3", "dartfrogliving4");
         if (path.equals("toad")) return legacySound("toadliving1", "toadliving2", "toadliving3", "toadliving4");
+        if (isDogCompanion()) return SoundEvents.WOLF_AMBIENT;
+        if (isCatCompanion()) return SoundEvents.OCELOT_AMBIENT;
         return super.getAmbientSound();
     }
 
@@ -703,6 +949,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             return legacySound("rabbithurt1", "rabbithurt2");
         if (path.startsWith("peacock_") || path.startsWith("peahen_") || path.startsWith("peachick_"))
             return legacySound("peacockhurt1", "peacockhurt2");
+        if (isDogCompanion()) return SoundEvents.WOLF_HURT;
+        if (isCatCompanion()) return SoundEvents.OCELOT_HURT;
         return super.getHurtSound(source);
     }
 
@@ -713,6 +961,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         if (path.startsWith("rooster_")) return legacySound("death1", "death2");
         if (path.startsWith("bull_") || path.startsWith("cow_")) return legacySound("cowdeath1", "cowdeath2");
         if (path.equals("hamster")) return legacySound("hamsterhurt1");
+        if (isDogCompanion()) return SoundEvents.WOLF_DEATH;
+        if (isCatCompanion()) return SoundEvents.OCELOT_DEATH;
         SoundEvent hurt = getHurtSound(level().damageSources().generic());
         return hurt != null ? hurt : super.getDeathSound();
     }
@@ -726,7 +976,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         for (int attempt = 0; attempt < ids.length; attempt++) {
             String selected = ids[random.nextInt(ids.length)].toLowerCase(Locale.ROOT);
             SoundEvent event = ForgeRegistries.SOUND_EVENTS.getValue(
-                    ResourceLocation.fromNamespaceAndPath(namespace, selected));
+                    new ResourceLocation(namespace, selected));
             if (event != null) return event;
         }
         return null;
@@ -751,18 +1001,27 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     }
 
     private int pregnancyDuration() {
+        int syncedDuration = entityData.get(PREGNANCY_DURATION);
+        if (level().isClientSide && syncedDuration > 0) return syncedDuration;
+        if (pregnancyDurationTicks > 0) return pregnancyDurationTicks;
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(getType());
-        return AnimaniaApi.species(id).map(SpeciesDefinition::gestationTicks).orElse(AnimaniaConfig.GESTATION_TICKS.get());
+        int configured = Math.max(200, config(AnimaniaConfig.GESTATION_TICKS, 20000));
+        if (id != null && (id.getNamespace().equals("animania") || id.getNamespace().startsWith("animania_"))) {
+            return configured;
+        }
+        return AnimaniaApi.species(id).map(SpeciesDefinition::gestationTicks).orElse(configured);
+    }
+
+    private int newPregnancyDuration() {
+        return pregnancyDuration() + random.nextInt(isHorseAnimal() ? 400 : 200);
     }
 
     private void giveBirth() {
         if (getGender() != AnimalGender.FEMALE) {
             setPregnant(false);
-            pregnancyTicks = 0;
             return;
         }
         setPregnant(false);
-        pregnancyTicks = 0;
         // A hungry/thirsty female can lose a pregnancy when the legacy rule is
         // enabled.  The decision is made only on the authoritative level.
         if ((getHunger() <= 0 || getThirst() <= 0)
@@ -783,8 +1042,13 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             child.moveTo(getX() + (index * 0.25D), getY(), getZ() + (index * 0.25D), getYRot(), 0.0f);
             ((ServerLevel) level()).addFreshEntity(child);
         }
-        if (isMilkSpecies()) setMilkReady(true);
-        setAge(6000);
+        if (isMilkSpecies()) {
+            setMilkReady(true);
+            lactationTicks = childGrowthDuration();
+        }
+        setFertile(false);
+        fertilityCooldownTicks = Math.max(1, config(AnimaniaConfig.GESTATION_TICKS, 20000) / 9
+                + random.nextInt(50));
     }
 
     /**
@@ -809,8 +1073,10 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         if (!(rawType instanceof EntityType<?>)) return;
         @SuppressWarnings("unchecked") EntityType<? extends AnimaniaAnimalEntity> adultType =
                 (EntityType<? extends AnimaniaAnimalEntity>) rawType;
-        AnimaniaAnimalEntity adult = new AnimaniaAnimalEntity(adultType, server);
+        Entity created = adultType.create(server);
+        if (!(created instanceof AnimaniaAnimalEntity adult)) return;
         adult.moveTo(getX(), getY(), getZ(), getYRot(), getXRot());
+        adult.setDeltaMovement(getDeltaMovement());
         adult.setAge(0);
         adult.setGender(adultGender);
         adult.setVariantName(getVariantName());
@@ -820,17 +1086,25 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         adult.setTamed(isTamed());
         adult.setOwnerUUID(getOwnerUUID());
         adult.setSitting(isSitting());
+        adult.setSaddled(isSaddled());
+        adult.interacted = interacted;
+        adult.setCustomName(getCustomName());
+        adult.setCustomNameVisible(isCustomNameVisible());
+        adult.setSilent(isSilent());
+        adult.setNoGravity(isNoGravity());
+        adult.setInvulnerable(isInvulnerable());
+        adult.setHealth(Math.min(getHealth(), adult.getMaxHealth()));
         adult.setPersistenceRequired();
-        if (isPassenger()) {
-            stopRiding();
-        }
+        if (!server.addFreshEntity(adult)) return;
+        if (isPassenger()) stopRiding();
         discard();
-        server.addFreshEntity(adult);
     }
 
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        InteractionResult poisonArrow = interactDartFrogArrow(player, hand, stack);
+        if (poisonArrow != null) return poisonArrow;
         if (isHamster()) {
             InteractionResult ballResult = interactHamsterBall(player, hand, stack);
             if (ballResult != null) return ballResult;
@@ -843,8 +1117,25 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                 return InteractionResult.sidedSuccess(level().isClientSide);
             }
         }
-        if (isHorseAnimal() && !isBaby()) {
-            if (stack.is(Items.SADDLE) && !isSaddled()) {
+        if (isTameableExtraRodent()) {
+            InteractionResult carryResult = interactCarryableAnimal(player, hand, stack);
+            if (carryResult != null) return carryResult;
+            if (stack.isEmpty() && isTamed() && !player.isCrouching() && !isSleeping()) {
+                if (!level().isClientSide) {
+                    setSitting(!isSitting());
+                    getNavigation().stop();
+                }
+                return InteractionResult.sidedSuccess(level().isClientSide);
+            }
+        }
+        if (isRideableFarmAnimal() && !isBaby()) {
+            if (isHorseAnimal() && isSaddled() && player.isSecondaryUseActive()) {
+                if (!level().isClientSide && (!isVehicle() || getPassengers().contains(player))) {
+                    player.openMenu(this);
+                }
+                return InteractionResult.sidedSuccess(level().isClientSide);
+            }
+            if (stack.is(Items.SADDLE) && !isSaddled() && !isSleeping()) {
                 if (!level().isClientSide) {
                     setSaddled(true);
                     interacted = true;
@@ -853,8 +1144,13 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                 }
                 return InteractionResult.sidedSuccess(level().isClientSide);
             }
-            if (stack.isEmpty() && isSaddled() && !player.isPassenger()) {
-                if (!level().isClientSide) player.startRiding(this);
+            if (isHorseAnimal() && stack.isEmpty() && !player.isSecondaryUseActive()
+                    && canMountRider(player)) {
+                if (!level().isClientSide) player.startRiding(this, true);
+                return InteractionResult.sidedSuccess(level().isClientSide);
+            }
+            if (isFarmPig() && stack.is(Items.CARROT_ON_A_STICK) && canMountRider(player)) {
+                if (!level().isClientSide) player.startRiding(this, true);
                 return InteractionResult.sidedSuccess(level().isClientSide);
             }
         }
@@ -866,32 +1162,41 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                 }
                 return InteractionResult.sidedSuccess(level().isClientSide);
             }
-            if (!isTamed() && canTameWith(stack)) {
+            if (!isTamed() && isConfiguredCompanionFood(stack)) {
                 if (!level().isClientSide) {
                     setTamed(true);
                     setOwnerUUID(player.getUUID());
                     setSitting(false);
                     interacted = true;
-                    if (!player.getAbilities().instabuild) stack.shrink(1);
                     level().broadcastEntityEvent(this, (byte) 7);
+                }
+                // Configured food is consumed exactly once by the normal feed
+                // path below, preserving fed/hand-fed/love state from 1.12.
+            } else if (!isTamed() && isDogCompanion() && stack.is(Items.BONE)) {
+                if (!level().isClientSide) {
+                    if (!player.getAbilities().instabuild) stack.shrink(1);
+                    if (random.nextInt(3) == 0) {
+                        setTamed(true);
+                        setOwnerUUID(player.getUUID());
+                        setSitting(false);
+                        interacted = true;
+                        level().broadcastEntityEvent(this, (byte) 7);
+                    } else {
+                        level().broadcastEntityEvent(this, (byte) 6);
+                    }
                 }
                 return InteractionResult.sidedSuccess(level().isClientSide);
             }
         }
-        if (stack.is(AnimaniaTags.ANIMAL_DRINK) || stack.is(Items.WATER_BUCKET) || stack.is(Items.POTION)) {
-            if (!level().isClientSide) drink(stack);
+        if (isAnimaniaDrink(stack)) {
+            if (isSleeping()) return InteractionResult.PASS;
+            if (!level().isClientSide && !drink(stack)) return InteractionResult.PASS;
             if (!level().isClientSide && !player.getAbilities().instabuild
-                    && config(AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING, true)) {
-                if (stack.is(Items.WATER_BUCKET) || stack.is(com.animania.common.AnimaniaItems.WATER_BOTTLE.get())) {
-                    stack.shrink(1);
-                } else if (stack.getItem() instanceof PotionItem) {
-                    stack.shrink(1);
-                    player.addItem(new ItemStack(Items.GLASS_BOTTLE));
-                }
-            }
+                    && config(AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING, true)) consumeDrinkContainer(player, hand, stack);
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
         if (stack.is(AnimaniaTags.ANIMAL_FEED) || isAnimaniaFood(stack)) {
+            if (isSleeping()) return InteractionResult.PASS;
             if (!level().isClientSide) {
                 if (isHamster() && player.isShiftKeyDown()
                         && com.animania.common.AnimaniaSupporters.contains(player.getUUID())) {
@@ -907,8 +1212,14 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                     else heal(1.0F);
                     setHamsterStanding(true, 100);
                 }
+                if (isTameableExtraRodent() && !isTamed()) {
+                    setTamed(true);
+                    setOwnerUUID(player.getUUID());
+                    setSitting(false);
+                    level().broadcastEntityEvent(this, (byte) 7);
+                }
                 ItemStack fedItem = stack.copyWithCount(1);
-                feed(stack);
+                if (!feed(stack)) return InteractionResult.PASS;
                 if (player instanceof ServerPlayer serverPlayer) {
                     ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(getType());
                     if (entityId != null) FeedAnimalTrigger.INSTANCE.trigger(serverPlayer, fedItem, entityId);
@@ -925,8 +1236,20 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                     interacted = true;
                     if (!player.getAbilities().instabuild) stack.shrink(1);
                     if (!player.addItem(new ItemStack(result))) player.drop(new ItemStack(result), false);
+                    consumeWateredAfterProduction();
                     level().playSound(null, blockPosition(), SoundEvents.COW_MILK, getSoundSource(), 1.0F, 1.0F);
                 }
+            }
+            return InteractionResult.sidedSuccess(level().isClientSide);
+        }
+        if (stack.is(Items.BOWL) && isMilkableMooshroom()) {
+            if (!level().isClientSide) {
+                interacted = true;
+                if (!player.getAbilities().instabuild) stack.shrink(1);
+                if (!player.addItem(new ItemStack(Items.MUSHROOM_STEW))) {
+                    player.drop(new ItemStack(Items.MUSHROOM_STEW), false);
+                }
+                consumeWateredAfterProduction();
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
@@ -939,11 +1262,17 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
+        if (stack.is(Items.SHEARS) && !isBaby() && isFarmMooshroom()) {
+            if (!level().isClientSide && convertMooshroomAfterShearing(player, hand, stack)) {
+                return InteractionResult.CONSUME;
+            }
+            return InteractionResult.sidedSuccess(level().isClientSide);
+        }
         if (stack.is(Items.SHEARS) && !isBaby() && isShearable() && !isSheared()) {
             if (!level().isClientSide) {
                 interacted = true;
                 setSheared(true);
-                woolRegrowthTicks = Math.max(20, AnimaniaConfig.WOOL_REGROWTH_TIMER.get());
+                woolRegrowthTicks = nextWoolRegrowthTicks();
                 spawnAtLocation(new ItemStack(woolDropItem(), 1 + random.nextInt(3)));
                 stack.hurtAndBreak(1, player, broken -> player.broadcastBreakEvent(hand));
                 level().playSound(null, blockPosition(), SoundEvents.SHEEP_SHEAR, getSoundSource(), 1.0f, 1.0f);
@@ -957,6 +1286,28 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     public boolean isHamster() {
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(getType());
         return id != null && "animania_extra".equals(id.getNamespace()) && "hamster".equals(id.getPath());
+    }
+
+    public boolean isAmphibian() {
+        return registryNamespace().equals("animania_extra")
+                && (registryPath().equals("frog") || registryPath().equals("dartfrog") || registryPath().equals("toad"));
+    }
+
+    public boolean isPeafowl() {
+        return registryNamespace().equals("animania_extra")
+                && (registryPath().startsWith("peacock_") || registryPath().startsWith("peahen_")
+                || registryPath().startsWith("peachick_"));
+    }
+
+    private boolean isTameableExtraRodent() {
+        return registryNamespace().equals("animania_extra")
+                && (registryPath().equals("hamster") || registryPath().startsWith("ferret_")
+                || registryPath().startsWith("hedgehog"));
+    }
+
+    private boolean isExtraPredator() {
+        return registryNamespace().equals("animania_extra")
+                && (registryPath().startsWith("ferret_") || registryPath().startsWith("hedgehog") || isPeafowl());
     }
 
     public int getHamsterFoodStack() {
@@ -1049,6 +1400,11 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
+        return null;
+    }
+
+    @Nullable
+    private InteractionResult interactCarryableAnimal(Player player, InteractionHand hand, ItemStack stack) {
         if (stack.isEmpty() && player.isCrouching() && isTamed()
                 && !isSleeping() && !isInBall() && !hasCarriedAnimal(player)) {
             if (!level().isClientSide) {
@@ -1070,6 +1426,22 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
         return null;
+    }
+
+    @Nullable
+    private InteractionResult interactDartFrogArrow(Player player, InteractionHand hand, ItemStack stack) {
+        if (!registryNamespace().equals("animania_extra") || !registryPath().equals("dartfrog")
+                || !stack.is(Items.ARROW) || dartFrogPoisonTimer > 1) return null;
+        if (!level().isClientSide) {
+            dartFrogPoisonTimer = 800;
+            ItemStack poisoned = PotionUtils.setPotion(new ItemStack(Items.TIPPED_ARROW), Potions.POISON);
+            if (!player.getAbilities().instabuild) stack.shrink(1);
+            if (stack.isEmpty()) player.setItemInHand(hand, poisoned);
+            else if (!player.addItem(poisoned)) player.drop(poisoned, false);
+            level().playSound(null, blockPosition(), SoundEvents.MAGMA_CUBE_SQUISH_SMALL,
+                    getSoundSource(), 0.2F, 1.8F);
+        }
+        return InteractionResult.sidedSuccess(level().isClientSide);
     }
 
     private static int ballColorFromStack(ItemStack stack) {
@@ -1101,33 +1473,167 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     @Override
     protected boolean canAddPassenger(Entity passenger) {
-        if (isHorseAnimal()) return passenger instanceof Player && isSaddled() && getPassengers().isEmpty();
+        if (isRideableFarmAnimal()) {
+            return passenger instanceof Player player && canMountRider(player) && getPassengers().isEmpty();
+        }
         return super.canAddPassenger(passenger);
+    }
+
+    private boolean canMountRider(Player player) {
+        if (!isRideableFarmAnimal() || !isAdult() || !isSaddled() || isSleeping()
+                || !getPassengers().isEmpty() || player.isPassenger()) return false;
+        // Legacy processInteract only mounted a cared-for animal. Keep the
+        // gate for horses as well as saddle pigs; once mounted, normal riding
+        // input remains available until the care timers expire.
+        if (getHunger() <= 0 || getThirst() <= 0) return false;
+        return !isFarmPig() || player.getMainHandItem().is(Items.CARROT_ON_A_STICK)
+                || player.getOffhandItem().is(Items.CARROT_ON_A_STICK);
+    }
+
+    private boolean canSteerRider(Player player) {
+        if (!isRideableFarmAnimal() || !isAdult() || !isSaddled() || isSleeping()) return false;
+        return !isFarmPig() || player.getMainHandItem().is(Items.CARROT_ON_A_STICK)
+                || player.getOffhandItem().is(Items.CARROT_ON_A_STICK);
+    }
+
+    /**
+     * Mob#getControllingPassenger only recognizes Mob passengers.  Farm
+     * horses (and legacy saddle pigs) are controlled by a Player, just like
+     * vanilla AbstractHorse, so expose the saddled player as the controller.
+     */
+    @Override
+    public net.minecraft.world.entity.LivingEntity getControllingPassenger() {
+        net.minecraft.world.entity.LivingEntity controlling = super.getControllingPassenger();
+        if (controlling != null) return controlling;
+        if (isRideableFarmAnimal() && isSaddled() && getFirstPassenger() instanceof Player player) {
+            return player;
+        }
+        return null;
+    }
+
+    /** Preserve the lower legacy saddle positions used by adult draft horses. */
+    @Override
+    public double getPassengersRidingOffset() {
+        if (isHorseAnimal()) {
+            String path = registryPath();
+            if (path.startsWith("mare_")) return getBbHeight() * 0.60D;
+            if (path.startsWith("stallion_")) return getBbHeight() * 0.72D;
+        }
+        return super.getPassengersRidingOffset();
+    }
+
+    /** Use the same modern riding hooks as AbstractHorse. */
+    @Override
+    protected void tickRidden(Player player, Vec3 input) {
+        super.tickRidden(player, input);
+        Vec2 rotation = getRiddenRotation(player);
+        setRot(rotation.y, rotation.x);
+        yHeadRot = yBodyRot = yRotO = getYRot();
+        // The client normally owns the movement of a ridden entity, but the
+        // server still receives the START_RIDING_JUMP packet. Processing the
+        // pending scale on both sides keeps mock/server riders authoritative
+        // and avoids a jump being discarded before the next travel tick.
+        if (!onGround()) return;
+
+        boolean wasJumping = riderJumping;
+        riderJumping = false;
+        setJumping(false);
+        if (playerJumpPendingScale > 0.0F && !wasJumping && canJump()) {
+            executeRiderJump(playerJumpPendingScale, input);
+        }
+        playerJumpPendingScale = 0.0F;
+    }
+
+    protected Vec2 getRiddenRotation(net.minecraft.world.entity.LivingEntity rider) {
+        return new Vec2(rider.getXRot() * 0.5F, rider.getYRot());
+    }
+
+    @Override
+    protected Vec3 getRiddenInput(Player player, Vec3 input) {
+        if (!canSteerRider(player)) return Vec3.ZERO;
+        float strafe = player.xxa * 0.5F;
+        float forward = player.zza;
+        if (forward < 0.0F) forward *= 0.25F;
+        return new Vec3(strafe, 0.0D, forward);
+    }
+
+    @Override
+    protected float getRiddenSpeed(Player player) {
+        float speed = (float) getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
+        // 1.12 applied Speed III during the crop window. Its vanilla
+        // movement-speed modifier is +80% (not a full 2x multiplier).
+        return speed * (isRidingBoostActive() ? 1.8F : 1.0F);
+    }
+
+    @Override
+    public void onPlayerJump(int jumpPower) {
+        if (!canJump()) return;
+        int clamped = Math.max(0, jumpPower);
+        playerJumpPendingScale = clamped >= 90
+                ? 1.0F
+                : 0.4F + 0.4F * clamped / 90.0F;
+    }
+
+    @Override
+    public boolean canJump() {
+        return isHorseAnimal() && isAdult() && isSaddled();
+    }
+
+    @Override
+    public void handleStartJump(int jumpPower) {
+        // Unlike AbstractHorse, this entity is not backed by the horse's
+        // client-authoritative movement state. Keep the packet charge on the
+        // server too, otherwise it immediately corrects the local jump.
+        if (!canJump()) return;
+        int clamped = Math.max(0, jumpPower);
+        playerJumpPendingScale = clamped >= 90
+                ? 1.0F
+                : 0.4F + 0.4F * clamped / 90.0F;
+    }
+
+    @Override
+    public void handleStopJump() {
+        // No continuous server-side state is needed; the pending scale is
+        // consumed by the next controlled travel tick.
+    }
+
+    private void executeRiderJump(float scale, Vec3 input) {
+        double jump = getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH)
+                * scale * getBlockJumpFactor() + getJumpBoostPower();
+        Vec3 movement = getDeltaMovement();
+        setDeltaMovement(movement.x, jump, movement.z);
+        riderJumping = true;
+        setJumping(true);
+        hasImpulse = true;
+        net.minecraftforge.common.ForgeHooks.onLivingJump(this);
+        if (input.z > 0.0D) {
+            float yaw = getYRot() * net.minecraft.util.Mth.DEG_TO_RAD;
+            setDeltaMovement(getDeltaMovement().add(
+                    -0.4D * net.minecraft.util.Mth.sin(yaw) * scale,
+                    0.0D,
+                    0.4D * net.minecraft.util.Mth.cos(yaw) * scale));
+        }
+        playSound(SoundEvents.HORSE_JUMP, 0.4F, 1.0F);
     }
 
     @Override
     public void travel(Vec3 input) {
-        if (isHorseAnimal() && isSaddled() && getControllingPassenger() instanceof Player rider) {
-            setYRot(rider.getYRot());
-            yRotO = getYRot();
-            float strafe = rider.xxa * 0.5F;
-            float forward = rider.zza;
-            if (forward < 0.0F) forward *= 0.25F;
-            float speed = (float) getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)
-                    * (boostTicks > 0 ? 2.0F : 1.0F);
-            moveRelative(speed, new Vec3(strafe, input.y, forward));
-            move(MoverType.SELF, getDeltaMovement());
-            setDeltaMovement(getDeltaMovement().multiply(0.91D, 0.98D, 0.91D));
-            return;
-        }
+        // LivingEntity.travelRidden() has already converted the rider input
+        // and set the riding speed. Keep the normal implementation so gravity,
+        // friction, collision resolution and automatic maxUpStep all run.
         super.travel(input);
     }
 
-    /** Start a short horse boost used by the riding crop. */
+    /** Start the legacy horse/pig riding boost. */
     public boolean boost() {
-        if (!isHorseAnimal() || boostTicks > 0) return false;
-        boostTicks = 40 + random.nextInt(80);
+        if (!isRideableFarmAnimal() || boostTicks > 0) return false;
+        boostTicks = 20 + random.nextInt(100);
+        entityData.set(RIDING_BOOST_TICKS, boostTicks);
         return true;
+    }
+
+    private boolean isRidingBoostActive() {
+        return boostTicks > 0 || entityData.get(RIDING_BOOST_TICKS) > 0;
     }
 
     protected boolean isAnimaniaFood(ItemStack stack) {
@@ -1150,8 +1656,25 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     }
 
     private static boolean isAnimaniaDrink(ItemStack stack) {
+        // Item tags cannot distinguish potion NBT; test PotionItem first so a
+        // tag containing minecraft:potion never turns every potion into water.
+        if (stack.getItem() instanceof PotionItem) return PotionUtils.getPotion(stack) == Potions.WATER;
         return stack.is(AnimaniaTags.ANIMAL_DRINK) || stack.is(Items.WATER_BUCKET)
-                || stack.is(Items.POTION) || stack.is(com.animania.common.AnimaniaItems.WATER_BOTTLE.get());
+                || stack.is(com.animania.common.AnimaniaItems.WATER_BOTTLE.get());
+    }
+
+    private static void consumeDrinkContainer(Player player, InteractionHand hand, ItemStack stack) {
+        if (!stack.is(Items.WATER_BUCKET)
+                && !stack.is(com.animania.common.AnimaniaItems.WATER_BOTTLE.get())
+                && !(stack.getItem() instanceof PotionItem)) return;
+        Item empty = stack.is(Items.WATER_BUCKET) ? Items.BUCKET : Items.GLASS_BOTTLE;
+        if (stack.getCount() == 1) {
+            player.setItemInHand(hand, new ItemStack(empty));
+            return;
+        }
+        stack.shrink(1);
+        ItemStack remainder = new ItemStack(empty);
+        if (!player.addItem(remainder)) player.drop(remainder, false);
     }
 
     @Override
@@ -1187,7 +1710,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         setMateUuid(mate.getUUID());
         mate.setMateUuid(getUUID());
         female.setPregnant(true);
-        female.pregnancyTicks = 0;
+        female.setPregnancyTicks(0);
         if (getGender() == AnimalGender.MALE && !config(AnimaniaConfig.MALES_MATE_MULTIPLE_FEMALES, false)) setAge(6000);
         if (mate.getGender() == AnimalGender.MALE && !config(AnimaniaConfig.MALES_MATE_MULTIPLE_FEMALES, false)) mate.setAge(6000);
         resetLove();
@@ -1264,7 +1787,17 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     }
 
     public void setSleeping(boolean sleeping) {
+        if (sleeping && !isSleeping()) setSleepTimer(0.0F);
+        if (!sleeping) setSleepTimer(0.0F);
         entityData.set(SLEEPING, sleeping);
+    }
+
+    public float getSleepTimer() {
+        return entityData.get(SLEEP_TIMER);
+    }
+
+    public void setSleepTimer(float value) {
+        entityData.set(SLEEP_TIMER, Math.max(-0.55F, Math.min(0.0F, value)));
     }
 
     @Override
@@ -1369,7 +1902,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     @Override
     public int pregnancyTicks() {
-        return pregnancyTicks;
+        return level().isClientSide ? entityData.get(PREGNANCY_TICKS) : pregnancyTicks;
     }
 
     @Override
@@ -1378,7 +1911,47 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     }
 
     public void setPregnant(boolean pregnant) {
-        entityData.set(PREGNANT, pregnant && getGender() == AnimalGender.FEMALE && !isSterilized());
+        boolean active = pregnant && getGender() == AnimalGender.FEMALE && !isSterilized();
+        entityData.set(PREGNANT, active);
+        if (!active) {
+            setPregnancyTicks(0);
+            setPregnancyDuration(0);
+        } else if (pregnancyDurationTicks <= 0) {
+            pregnancyDurationTicks = newPregnancyDuration();
+        }
+        syncPregnancyCounters();
+    }
+
+    /** Keep the server fields and client-visible entity data in lockstep. */
+    private void syncPregnancyCounters() {
+        entityData.set(PREGNANCY_TICKS, Math.max(0, pregnancyTicks));
+        entityData.set(PREGNANCY_DURATION, Math.max(0, pregnancyDurationTicks));
+    }
+
+    private void setPregnancyTicks(int ticks) {
+        pregnancyTicks = Math.max(0, ticks);
+        entityData.set(PREGNANCY_TICKS, pregnancyTicks);
+    }
+
+    private void setPregnancyDuration(int ticks) {
+        pregnancyDurationTicks = Math.max(0, ticks);
+        entityData.set(PREGNANCY_DURATION, pregnancyDurationTicks);
+    }
+
+    @Override
+    public boolean isFertile() {
+        return entityData.get(FERTILE);
+    }
+
+    @Override
+    public int fertilityCooldownTicks() {
+        return Math.max(0, fertilityCooldownTicks);
+    }
+
+    @Override
+    public void setFertile(boolean fertile) {
+        entityData.set(FERTILE, fertile && !isSterilized());
+        if (fertile) fertilityCooldownTicks = 0;
     }
 
     @Override
@@ -1388,7 +1961,10 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     public void setSterilized(boolean sterilized) {
         entityData.set(STERILIZED, sterilized);
-        if (sterilized) setPregnant(false);
+        if (sterilized) {
+            setPregnant(false);
+            setFertile(false);
+        }
     }
 
     /** Stable taming facade used by the Cats&Dogs addon and probe providers. */
@@ -1445,7 +2021,87 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     }
 
     public void setSaddled(boolean saddled) {
-        entityData.set(SADDLED, saddled && isHorseAnimal());
+        boolean active = saddled && isRideableFarmAnimal();
+        entityData.set(SADDLED, active);
+        if (isHorseAnimal()) horseItems.set(0, active ? new ItemStack(Items.SADDLE) : ItemStack.EMPTY);
+    }
+
+    // A small native container restores the legacy saddle slot and makes
+    // shift-right-clicking a saddled draft horse useful without introducing a
+    // second custom menu type for the four addon modules.
+    @Override
+    public int getContainerSize() {
+        return horseItems.size();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return horseItems.stream().allMatch(ItemStack::isEmpty);
+    }
+
+    @Override
+    public ItemStack getItem(int slot) {
+        return slot >= 0 && slot < horseItems.size() ? horseItems.get(slot) : ItemStack.EMPTY;
+    }
+
+    @Override
+    public ItemStack removeItem(int slot, int amount) {
+        if (slot < 0 || slot >= horseItems.size()) return ItemStack.EMPTY;
+        ItemStack result = net.minecraft.world.ContainerHelper.removeItem(horseItems, slot, amount);
+        syncSaddleFromContainer();
+        return result;
+    }
+
+    @Override
+    public ItemStack removeItemNoUpdate(int slot) {
+        if (slot < 0 || slot >= horseItems.size()) return ItemStack.EMPTY;
+        ItemStack result = net.minecraft.world.ContainerHelper.takeItem(horseItems, slot);
+        syncSaddleFromContainer();
+        return result;
+    }
+
+    @Override
+    public void setItem(int slot, ItemStack stack) {
+        if (slot < 0 || slot >= horseItems.size() || !canPlaceItem(slot, stack)) return;
+        horseItems.set(slot, stack.copy());
+        syncSaddleFromContainer();
+        setChanged();
+    }
+
+    @Override
+    public boolean canPlaceItem(int slot, ItemStack stack) {
+        return !isHorseAnimal() || (slot == 0 && stack.is(Items.SADDLE));
+    }
+
+    private void syncSaddleFromContainer() {
+        if (!isHorseAnimal()) return;
+        boolean active = !horseItems.get(0).isEmpty() && horseItems.get(0).is(Items.SADDLE);
+        entityData.set(SADDLED, active);
+    }
+
+    @Override
+    public void setChanged() {
+    }
+
+    @Override
+    public boolean stillValid(Player player) {
+        return !isRemoved() && isHorseAnimal() && player.distanceToSqr(this) <= 64.0D;
+    }
+
+    @Override
+    public void clearContent() {
+        horseItems.clear();
+        syncSaddleFromContainer();
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable(getType().getDescriptionId());
+    }
+
+    @Override
+    public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
+        return new ChestMenu(MenuType.GENERIC_9x1, id, inventory, this, 1);
     }
 
     /** Whether a female milk-producing animal has entered its lactation window. */
@@ -1455,6 +2111,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     public void setMilkReady(boolean ready) {
         entityData.set(MILK_READY, ready && getGender() == AnimalGender.FEMALE && isAdult() && isMilkSpecies());
+        if (!ready) lactationTicks = 0;
+        else if (lactationTicks <= 0) lactationTicks = childGrowthDuration();
     }
 
     public void setSitting(boolean sitting) {
@@ -1471,10 +2129,49 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         return id != null && id.getNamespace().equals("animania_catsdogs");
     }
 
+    private float legacyStepHeight() {
+        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(getType());
+        if (id != null && id.getNamespace().equals("animania_farm")) {
+            if (id.getPath().startsWith("mare_") || id.getPath().startsWith("stallion_")) return 1.2F;
+            if (id.getPath().startsWith("foal_")) return 1.1F;
+        }
+        return 1.0F;
+    }
+
     private boolean isHorseAnimal() {
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(getType());
         return id != null && id.getNamespace().equals("animania_farm")
                 && (id.getPath().startsWith("mare_") || id.getPath().startsWith("stallion_") || id.getPath().startsWith("foal_"));
+    }
+
+    private boolean isFoalEntity() {
+        return isHorseAnimal() && registryPath().startsWith("foal_");
+    }
+
+    public boolean isFarmPig() {
+        return registryNamespace().equals("animania_farm")
+                && (registryPath().startsWith("sow_") || registryPath().startsWith("hog_")
+                || registryPath().startsWith("piglet_"));
+    }
+
+    private boolean isRideableFarmAnimal() {
+        return isHorseAnimal() || (isFarmPig() && isAdult());
+    }
+
+    private boolean isFarmAnimal() {
+        return registryNamespace().equals("animania_farm");
+    }
+
+    private boolean isFarmChicken() {
+        return isFarmAnimal() && (registryPath().startsWith("hen_") || registryPath().startsWith("rooster_")
+                || registryPath().startsWith("chick_"));
+    }
+
+    public boolean isLegacySterilizableFarmMale() {
+        if (!isFarmAnimal() || !isAdult()) return false;
+        String path = registryPath();
+        return path.startsWith("bull_") || path.startsWith("buck_") || path.startsWith("stallion_")
+                || path.startsWith("hog_") || path.startsWith("ram_");
     }
 
     /**
@@ -1515,11 +2212,10 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                 && (id.getPath().startsWith("female_") || id.getPath().startsWith("male_") || id.getPath().startsWith("puppy_"));
     }
 
-    private boolean canTameWith(ItemStack stack) {
-        if (stack.isEmpty()) return false;
+    private boolean isConfiguredCompanionFood(ItemStack stack) {
+        if (stack.isEmpty() || !isCompanionAnimal()) return false;
         ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(getType());
-        if (isCatCompanion() && entityId != null && AnimaniaApi.matchesRegisteredFood(entityId, stack)) return true;
-        return isCatCompanion() ? isCatFood(stack) : stack.is(Items.BONE);
+        return entityId != null && AnimaniaApi.matchesRegisteredFood(entityId, stack);
     }
 
     private boolean isCompanionFood(ItemStack stack) {
@@ -1589,6 +2285,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                 && isAdult() && mate.isAdult()
                 && getGender() != mate.getGender()
                 && !isSterilized() && !mate.isSterilized()
+                && (getGender() != AnimalGender.FEMALE || isFertile())
+                && (mate.getGender() != AnimalGender.FEMALE || mate.isFertile())
                 && !isPregnant() && !mate.isPregnant()
                 && (!tamedRequirement || (isTamed() && mate.isTamed()));
     }
@@ -1616,6 +2314,11 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(getType());
         if (id == null) return AnimalGender.MALE;
         String path = id.getPath();
+        if (id.getNamespace().equals("animania_extra")
+                && (path.equals("frog") || path.equals("dartfrog") || path.equals("toad")
+                || path.equals("hamster") || path.startsWith("ferret_") || path.startsWith("hedgehog"))) {
+            return AnimalGender.NONE;
+        }
         if (path.startsWith("hen_") || path.startsWith("cow_") || path.startsWith("doe_") || path.startsWith("ewe_")
                 || path.startsWith("sow_") || path.startsWith("mare_") || path.startsWith("queen_") || path.startsWith("female_")) return AnimalGender.FEMALE;
         if (path.startsWith("chick_") || path.startsWith("calf_") || path.startsWith("kid_") || path.startsWith("lamb_")
@@ -1734,7 +2437,25 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     }
 
     private int careTimer(net.minecraftforge.common.ForgeConfigSpec.IntValue value, int fallback) {
-        return Math.max(1, config(value, fallback)) + random.nextInt(100);
+        int base = Math.max(1, config(value, fallback));
+        ResourceLocation type = ForgeRegistries.ENTITY_TYPES.getKey(getType());
+        if (type == null) return base + random.nextInt(100);
+        String path = type.getPath();
+        boolean water = value == AnimaniaConfig.WATER_TIMER;
+        int multiplier = 1;
+        int randomRange = 100;
+        if ("animania_extra".equals(type.getNamespace())) {
+            if (path.equals("hamster") && water) {
+                multiplier = 4;
+                randomRange = 200;
+            } else if ((path.startsWith("ferret_") || path.startsWith("hedgehog")) && water) {
+                multiplier = 2;
+                randomRange = 200;
+            } else if (path.startsWith("peacock_") || path.startsWith("peahen_") || path.startsWith("peachick_")) {
+                multiplier = 2;
+            }
+        }
+        return Math.multiplyExact(base, multiplier) + random.nextInt(randomRange);
     }
 
     private static double config(net.minecraftforge.common.ForgeConfigSpec.DoubleValue value, double fallback) {
@@ -1762,6 +2483,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         tag.putInt("AnimaniaHunger", getHunger());
         tag.putInt("AnimaniaThirst", getThirst());
         tag.putBoolean("AnimaniaSleeping", isSleeping());
+        tag.putFloat("AnimaniaSleepTimer", getSleepTimer());
         tag.putBoolean("AnimaniaPlaying", isPlaying());
         tag.putInt("AnimaniaPlayingTicks", playingTicks);
         tag.putBoolean("AnimaniaMuddy", isMuddy());
@@ -1773,14 +2495,22 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         tag.putBoolean("AnimaniaSaddled", isSaddled());
         if (getOwnerUUID() != null) tag.putUUID("AnimaniaOwner", getOwnerUUID());
         tag.putInt("AnimaniaPregnancyTicks", pregnancyTicks);
+        tag.putInt("AnimaniaPregnancyDuration", pregnancyDurationTicks);
+        tag.putBoolean("Fertile", isFertile());
+        tag.putInt("AnimaniaFertilityCooldown", fertilityCooldownTicks);
+        tag.putInt("AnimaniaLactationTicks", lactationTicks);
         tag.putInt("AnimaniaWoolRegrowthTicks", woolRegrowthTicks);
         tag.putInt("AnimaniaBoostTicks", boostTicks);
         tag.putInt("AnimaniaStarvationTicks", starvationTicks);
         tag.putInt("AnimaniaEggLayTicks", eggLayTicks);
+        tag.putInt("AnimaniaFeatherDropTicks", featherDropTicks);
         tag.putInt("AnimaniaFedTimer", fedTimer);
         tag.putInt("AnimaniaWateredTimer", wateredTimer);
+        tag.putInt("AnimaniaDartFrogPoisonTimer", dartFrogPoisonTimer);
         tag.putInt("AnimaniaChildGrowthTimer", childGrowthTimer);
         tag.putInt("CrowTime", crowCooldown);
+        tag.putInt("CrowDuration", getCrowDuration());
+        tag.putBoolean("AnimaniaEggLayInitialized", eggLayInitialized);
         tag.putBoolean("AnimaniaMilkReady", isMilkReady());
         tag.putBoolean("AnimaniaInteracted", interacted);
         tag.putBoolean("AnimaniaInBall", isInBall());
@@ -1815,6 +2545,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         setHunger(tag.contains("AnimaniaHunger") ? tag.getInt("AnimaniaHunger") : 100);
         setThirst(tag.contains("AnimaniaThirst") ? tag.getInt("AnimaniaThirst") : 100);
         setSleeping(tag.getBoolean("AnimaniaSleeping"));
+        if (isSleeping() && tag.contains("AnimaniaSleepTimer")) setSleepTimer(tag.getFloat("AnimaniaSleepTimer"));
         setPlaying(tag.getBoolean("AnimaniaPlaying"));
         playingTicks = Math.max(0, tag.getInt("AnimaniaPlayingTicks"));
         if (isPlaying() && playingTicks == 0 && AnimaniaFindMudGoal.supports(this)) {
@@ -1830,18 +2561,32 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         if (tag.hasUUID("AnimaniaOwner")) setOwnerUUID(tag.getUUID("AnimaniaOwner"));
         setSitting(tag.getBoolean("AnimaniaSitting"));
         setSaddled(tag.getBoolean("AnimaniaSaddled"));
-        pregnancyTicks = tag.getInt("AnimaniaPregnancyTicks");
+        setPregnancyTicks(tag.getInt("AnimaniaPregnancyTicks"));
+        setPregnancyDuration(tag.contains("AnimaniaPregnancyDuration")
+                ? tag.getInt("AnimaniaPregnancyDuration")
+                : isPregnant() ? newPregnancyDuration() : 0);
+        fertilityCooldownTicks = Math.max(0, tag.getInt("AnimaniaFertilityCooldown"));
+        setFertile(!tag.contains("Fertile") || tag.getBoolean("Fertile"));
+        if (tag.contains("AnimaniaLactationTicks")) {
+            lactationTicks = Math.max(0, tag.getInt("AnimaniaLactationTicks"));
+        }
         woolRegrowthTicks = Math.max(0, tag.getInt("AnimaniaWoolRegrowthTicks"));
         boostTicks = Math.max(0, tag.getInt("AnimaniaBoostTicks"));
+        entityData.set(RIDING_BOOST_TICKS, boostTicks);
         starvationTicks = Math.max(0, tag.getInt("AnimaniaStarvationTicks"));
         eggLayTicks = Math.max(0, tag.getInt("AnimaniaEggLayTicks"));
+        featherDropTicks = Math.max(0, tag.getInt("AnimaniaFeatherDropTicks"));
         fedTimer = tag.contains("AnimaniaFedTimer") ? Math.max(0, tag.getInt("AnimaniaFedTimer"))
                 : careTimer(AnimaniaConfig.FEED_TIMER, 12000);
         wateredTimer = tag.contains("AnimaniaWateredTimer") ? Math.max(0, tag.getInt("AnimaniaWateredTimer"))
                 : careTimer(AnimaniaConfig.WATER_TIMER, 12000);
+        dartFrogPoisonTimer = tag.contains("AnimaniaDartFrogPoisonTimer")
+                ? Math.max(0, tag.getInt("AnimaniaDartFrogPoisonTimer")) : 2;
         childGrowthTimer = tag.contains("AnimaniaChildGrowthTimer")
                 ? Math.max(0, tag.getInt("AnimaniaChildGrowthTimer")) : 0;
         crowCooldown = Math.max(0, tag.getInt("CrowTime"));
+        entityData.set(CROW_DURATION, Math.max(0, tag.getInt("CrowDuration")));
+        eggLayInitialized = tag.getBoolean("AnimaniaEggLayInitialized") || eggLayTicks > 0;
         setMilkReady(tag.getBoolean("AnimaniaMilkReady"));
         interacted = tag.getBoolean("AnimaniaInteracted");
         setInBall(tag.getBoolean("AnimaniaInBall") || tag.getBoolean("InBall"));
@@ -1869,23 +2614,45 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     }
 
     @Override
-    public boolean causeFallDamage(float fallDistance, float multiplier, net.minecraft.world.damagesource.DamageSource source) {
+    protected int calculateFallDamage(float fallDistance, float multiplier) {
+        if (isPeafowl()) return 0;
+        int damage = super.calculateFallDamage(fallDistance, multiplier);
         double reduction = Math.max(0.0D, Math.min(1.0D, config(AnimaniaConfig.FALL_DAMAGE_REDUCE_MULTIPLIER, 0.45D)));
-        return super.causeFallDamage((float) (fallDistance * reduction), multiplier, source);
+        return legacyFallDamage(damage, isLeashed(), reduction);
+    }
+
+    public static int legacyFallDamage(int damage, boolean leashed, double reduction) {
+        if (!leashed) return Math.max(0, damage);
+        double clamped = Math.max(0.0D, Math.min(1.0D, reduction));
+        return net.minecraft.util.Mth.floor(Math.max(0, damage) * clamped);
     }
 
     private boolean isMilkable() {
-        if (getGender() != AnimalGender.FEMALE || !isAdult() || !isMilkReady()) return false;
+        if (getGender() != AnimalGender.FEMALE || !isAdult() || !isMilkReady()
+                || getHunger() <= 0 || getThirst() <= 0) return false;
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(getType());
         if (id == null) return false;
         String path = id.getPath();
-        return path.startsWith("cow_") || path.startsWith("doe_") || path.startsWith("ewe_") || path.startsWith("mare_");
+        return (path.startsWith("cow_") && !path.equals("cow_mooshroom"))
+                || path.startsWith("doe_") || path.startsWith("ewe_");
+    }
+
+    private boolean isMilkableMooshroom() {
+        return registryNamespace().equals("animania_farm") && registryPath().equals("cow_mooshroom")
+                && getGender() == AnimalGender.FEMALE && isAdult() && isMilkReady()
+                && getHunger() > 0 && getThirst() > 0;
+    }
+
+    private void consumeWateredAfterProduction() {
+        setThirst(0);
+        wateredTimer = 0;
     }
 
     @Nullable
     private Item milkBucket() {
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(getType());
         if (id == null) return null;
+        if (isPurpCow()) return Items.LAVA_BUCKET;
         String path = id.getPath();
         String bucketId = null;
         if (path.startsWith("doe_")) bucketId = "milk_goat_bucket";
@@ -1903,6 +2670,68 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         return Items.MILK_BUCKET;
     }
 
+    private boolean isPurpCow() {
+        if (!registryNamespace().equals("animania_farm") || !hasCustomName()
+                || !"purp".equals(getCustomName().getString().trim().toLowerCase(Locale.ROOT))) return false;
+        String path = registryPath();
+        return path.endsWith("_friesian") || path.endsWith("_holstein");
+    }
+
+    private void tickFarmNameEffects() {
+        if (!isPurpCow()) return;
+        addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 4, 2, false, false));
+        if (!isInWaterRainOrBubble()) setSecondsOnFire(1);
+    }
+
+    private boolean isFarmMooshroom() {
+        return registryNamespace().equals("animania_farm")
+                && (registryPath().equals("cow_mooshroom") || registryPath().equals("bull_mooshroom"));
+    }
+
+    private boolean convertMooshroomAfterShearing(Player player, InteractionHand hand, ItemStack shears) {
+        if (!(level() instanceof ServerLevel server)) return false;
+        String targetPath = registryPath().startsWith("cow_") ? "cow_friesian" : "bull_friesian";
+        EntityType<?> raw = ForgeRegistries.ENTITY_TYPES.getValue(
+                new ResourceLocation("animania_farm", targetPath));
+        if (raw == null || !(raw.create(server) instanceof AnimaniaAnimalEntity replacement)) return false;
+        replacement.moveTo(getX(), getY(), getZ(), getYRot(), getXRot());
+        replacement.setHealth(Math.min(getHealth(), replacement.getMaxHealth()));
+        replacement.setCustomName(getCustomName());
+        replacement.setCustomNameVisible(isCustomNameVisible());
+        replacement.setNoAi(isNoAi());
+        replacement.setHunger(getHunger());
+        replacement.setThirst(getThirst());
+        replacement.interacted = interacted;
+        replacement.setPersistenceRequired();
+        if (!server.addFreshEntity(replacement)) return false;
+        for (int i = 0; i < 5; i++) spawnAtLocation(Items.RED_MUSHROOM);
+        if (!player.getAbilities().instabuild) {
+            shears.hurtAndBreak(1, player, broken -> player.broadcastBreakEvent(hand));
+        }
+        server.sendParticles(ParticleTypes.EXPLOSION, getX(), getY() + getBbHeight() * 0.5D, getZ(),
+                1, 0.0D, 0.0D, 0.0D, 0.0D);
+        level().playSound(null, blockPosition(), SoundEvents.MOOSHROOM_SHEAR, getSoundSource(), 1.0F, 1.0F);
+        discard();
+        return true;
+    }
+
+    @Override
+    public void thunderHit(ServerLevel level, net.minecraft.world.entity.LightningBolt lightning) {
+        if (!isFarmPig()) {
+            super.thunderHit(level, lightning);
+            return;
+        }
+        net.minecraft.world.entity.monster.ZombifiedPiglin replacement =
+                EntityType.ZOMBIFIED_PIGLIN.create(level);
+        if (replacement == null) return;
+        replacement.moveTo(getX(), getY(), getZ(), getYRot(), getXRot());
+        replacement.setBaby(isBaby());
+        replacement.setNoAi(isNoAi());
+        replacement.setCustomName(getCustomName());
+        replacement.setCustomNameVisible(isCustomNameVisible());
+        if (level.addFreshEntity(replacement)) discard();
+    }
+
     private boolean isShearable() {
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(getType());
         if (id == null || !"animania_farm".equals(id.getNamespace())) return false;
@@ -1916,7 +2745,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     private Item woolDropItem() {
         DyeColor color = DyeColor.byId(getWoolColor());
-        Item colored = ForgeRegistries.ITEMS.getValue(ResourceLocation.fromNamespaceAndPath("minecraft", color.getName() + "_wool"));
+        Item colored = ForgeRegistries.ITEMS.getValue(new ResourceLocation("minecraft", color.getName() + "_wool"));
         return colored == null || colored == Items.AIR ? Items.WHITE_WOOL : colored;
     }
 
@@ -1927,11 +2756,26 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         Item item = null;
         if (path.startsWith("hen_") || path.startsWith("rooster_")) {
             item = Items.FEATHER;
-        } else if (path.startsWith("peacock_") || path.startsWith("peahen_")) {
+        } else if (path.startsWith("peacock_")) {
             String color = speciesKey(path);
             item = ForgeRegistries.ITEMS.getValue(new ResourceLocation("animania_extra", color + "_peacock_feather"));
         }
         if (item != null) spawnAtLocation(new ItemStack(item));
+    }
+
+    private boolean canDropFeather() {
+        String path = registryPath();
+        return path.startsWith("hen_") || path.startsWith("rooster_") || path.startsWith("peacock_");
+    }
+
+    private int nextFeatherDropTicks() {
+        int base = Math.max(20, config(AnimaniaConfig.FEATHER_TIMER, 12000));
+        String path = registryPath();
+        return path.startsWith("hen_") || path.startsWith("rooster_") ? base + random.nextInt(1000) : base;
+    }
+
+    private int nextWoolRegrowthTicks() {
+        return Math.max(20, config(AnimaniaConfig.WOOL_REGROWTH_TIMER, 8000)) + random.nextInt(500);
     }
 
     /**
@@ -1942,7 +2786,11 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         if (level().isClientSide || !isAdult() || getGender() != AnimalGender.FEMALE) return false;
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(getType());
         if (id == null || !"animania_farm".equals(id.getNamespace()) || !id.getPath().startsWith("hen_")) return false;
-        if (eggLayTicks <= 0) eggLayTicks = Math.max(20, config(AnimaniaConfig.LAID_TIMER, 2000)) + random.nextInt(100);
+        if (!eggLayInitialized) {
+            eggLayTicks = Math.max(20, config(AnimaniaConfig.LAID_TIMER, 2000) / 2) + random.nextInt(100);
+            eggLayInitialized = true;
+        }
+        if (!isLegacyDaytime() || isSleeping() || getHunger() <= 0 || getThirst() <= 0) return false;
         if (--eggLayTicks > 0) return false;
         eggLayTicks = Math.max(20, config(AnimaniaConfig.LAID_TIMER, 2000)) + random.nextInt(100);
         String variant = speciesKey(id.getPath());

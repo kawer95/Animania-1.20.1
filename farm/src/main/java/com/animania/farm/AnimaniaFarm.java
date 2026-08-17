@@ -56,6 +56,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Mod(AnimaniaFarm.MOD_ID)
 public final class AnimaniaFarm {
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     public static final String MOD_ID = "animania_farm";
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MOD_ID);
     public static final Map<String, RegistryObject<EntityType<?>>> ENTITIES = new LinkedHashMap<>();
@@ -68,17 +69,18 @@ public final class AnimaniaFarm {
     }
 
     private static void register(String id) {
+        FarmAnimalProfile profile = FarmAnimalProfile.forId(id);
         RegistryObject<EntityType<?>> registered = FarmLegacyIds.VEHICLE_IDS.contains(id)
                 ? ENTITY_TYPES.register(id, () -> EntityType.Builder.of(AnimaniaVehicleEntity::new, MobCategory.MISC)
-                .sized(sizeFor(id, true), sizeFor(id, false)).clientTrackingRange(8).updateInterval(3)
+                .sized(profile.width(), profile.height()).clientTrackingRange(8).updateInterval(3)
                 .build(MOD_ID + ":" + id))
                 : ENTITY_TYPES.register(id, () -> EntityType.Builder.of(AnimaniaAnimalEntity::new, MobCategory.CREATURE)
-                .sized(sizeFor(id, true), sizeFor(id, false)).clientTrackingRange(8).updateInterval(3)
+                .sized(profile.width(), profile.height()).clientTrackingRange(8).updateInterval(3)
                 .build(MOD_ID + ":" + id));
         ENTITIES.put(id, registered);
         if (!FarmLegacyIds.VEHICLE_IDS.contains(id)) {
             AnimaniaApi.registerSpecies(new SpeciesDefinition(new ResourceLocation(MOD_ID, id), family(id), gender(id),
-                    sizeFor(id, true), sizeFor(id, false), 20000));
+                    profile.width(), profile.height(), 20000));
         }
     }
 
@@ -109,11 +111,13 @@ public final class AnimaniaFarm {
         // Keep that behavior server-side while preserving the vanilla UUID and
         // age/name state on the modern registry entity.
         MinecraftForge.EVENT_BUS.addListener(AnimaniaFarm::replaceVanillaFarmAnimal);
+        MinecraftForge.EVENT_BUS.addListener(AnimaniaFarm::markNaturalVanillaFarmAnimal);
         MinecraftForge.EVENT_BUS.addListener(AnimaniaFarm::farmAnimalTick);
         MinecraftForge.EVENT_BUS.addListener(AnimaniaFarm::limitNaturalFarmSpawns);
         MinecraftForge.EVENT_BUS.addListener(AnimaniaFarm::decorateHiveOnChunkLoad);
         MinecraftForge.EVENT_BUS.addListener(AnimaniaFarm::processHiveQueue);
         MinecraftForge.EVENT_BUS.addListener(FarmEggThrowHandler::onRightClickItem);
+        MinecraftForge.EVENT_BUS.addListener(AnimaniaFarm::boostRiddenPig);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> bus.addListener(AnimaniaFarmClient::onClientSetup));
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> bus.addListener(AnimaniaFarmClient::registerLayers));
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> bus.addListener(AnimaniaFarmClient::registerRenderers));
@@ -135,7 +139,13 @@ public final class AnimaniaFarm {
     private void attributes(EntityAttributeCreationEvent event) {
         ENTITIES.forEach((id, type) -> {
             if (!FarmLegacyIds.VEHICLE_IDS.contains(id)) {
-                event.put((EntityType<? extends LivingEntity>) type.get(), AnimaniaAnimalEntity.createAttributes().build());
+                var attributes = FarmAnimalProfile.forId(id).attributes();
+                if (id.startsWith("mare_") || id.startsWith("stallion_")) {
+                    // EntityHorse supplied this attribute in 1.12; the ported
+                    // entity is an Animal, so register the same jump strength.
+                    attributes.add(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH, 0.7D);
+                }
+                event.put((EntityType<? extends LivingEntity>) type.get(), attributes.build());
             }
         });
     }
@@ -188,6 +198,7 @@ public final class AnimaniaFarm {
     private static void replaceVanillaFarmAnimal(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide()) return;
         Entity vanilla = event.getEntity();
+        if (!vanilla.getPersistentData().getBoolean("AnimaniaNaturalFarmSpawn") || vanilla.hasCustomName()) return;
         String family;
         boolean enabled;
         if (vanilla instanceof Cow || vanilla instanceof MushroomCow) {
@@ -234,15 +245,26 @@ public final class AnimaniaFarm {
             case "horse" -> "stallion_";
             default -> "";
         };
-        java.util.List<String> candidates = FarmLegacyIds.ALL.stream()
-                .filter(id -> baby ? id.startsWith(childPrefix) : (id.startsWith(femalePrefix) || id.startsWith(malePrefix)))
+        net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biome =
+                event.getLevel().getBiome(vanilla.blockPosition());
+        java.util.List<String> adultCandidates = FarmLegacyIds.ALL.stream()
+                .filter(id -> id.startsWith(femalePrefix))
+                .filter(id -> FarmSpawnBiomeModifier.matchesConfiguredBiome(id, biome))
                 .toList();
-        if (candidates.isEmpty()) return;
-        String selected = candidates.get(event.getLevel().getRandom().nextInt(candidates.size()));
+        if (vanilla instanceof MushroomCow) {
+            adultCandidates = adultCandidates.stream().filter(id -> id.endsWith("_mooshroom")).toList();
+        }
+        if (adultCandidates.isEmpty()) return;
+        String female = adultCandidates.get(event.getLevel().getRandom().nextInt(adultCandidates.size()));
+        String breed = female.substring(femalePrefix.length());
+        String selected = baby ? childPrefix + breed
+                : event.getLevel().getRandom().nextBoolean() ? femalePrefix + breed : malePrefix + breed;
         EntityType<?> type = ENTITIES.get(selected).get();
         if (!(type.create(event.getLevel()) instanceof AnimaniaAnimalEntity replacement)) return;
         replacement.moveTo(vanilla.getX(), vanilla.getY(), vanilla.getZ(), vanilla.getYRot(), vanilla.getXRot());
-        replacement.setUUID(vanilla.getUUID());
+        // EntityJoinLevelEvent fires after the source UUID has entered the
+        // section manager. Reusing it makes addFreshEntity reject the
+        // replacement as a duplicate and defeats the transactional hand-off.
         replacement.setCustomName(vanilla.getCustomName());
         replacement.setCustomNameVisible(vanilla.isCustomNameVisible());
         replacement.setPersistenceRequired();
@@ -250,8 +272,20 @@ public final class AnimaniaFarm {
         else replacement.setAge(0);
         if (!baby && family.equals("cow") && replacement.getGender() == AnimalGender.FEMALE
                 && configured(FarmConfig.COWS_MILKABLE_AT_SPAWN)) replacement.setMilkReady(true);
-        event.getLevel().addFreshEntity(replacement);
-        event.setCanceled(true);
+        replacement.getPersistentData().putBoolean("AnimaniaReplacedVanilla", true);
+        boolean added = event.getLevel().addFreshEntity(replacement);
+        LOGGER.debug("Farm natural replacement {} ({}) -> {} ({}) added={}",
+                vanilla.getUUID(), vanilla.getType(), replacement.getUUID(), replacement.getType(), added);
+        if (added) event.setCanceled(true);
+    }
+
+    private static void markNaturalVanillaFarmAnimal(MobSpawnEvent.FinalizeSpawn event) {
+        if (event.getSpawnType() != MobSpawnType.NATURAL && event.getSpawnType() != MobSpawnType.CHUNK_GENERATION) return;
+        Entity entity = event.getEntity();
+        if (entity instanceof Cow || entity instanceof Pig || entity instanceof Chicken
+                || entity instanceof Sheep || entity instanceof Horse) {
+            entity.getPersistentData().putBoolean("AnimaniaNaturalFarmSpawn", true);
+        }
     }
 
     /** Apply addon-only legacy toggles without coupling Base to Farm config classes. */
@@ -262,8 +296,17 @@ public final class AnimaniaFarm {
         String path = id.getPath();
         if (path.startsWith("hen_")) animal.tryLayFarmEgg(configured(FarmConfig.CHICKENS_DROP_EGGS));
         if (path.startsWith("rooster_")) animal.configureRoosterCombat(configured(FarmConfig.ROOSTERS_FIGHT));
-        if (path.startsWith("cow_") && animal.getGender() == AnimalGender.FEMALE && animal.isAdult()
-                && configured(FarmConfig.COWS_MILKABLE_AT_SPAWN)) animal.setMilkReady(true);
+    }
+
+    private static void boostRiddenPig(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickItem event) {
+        if (!event.getItemStack().is(net.minecraft.world.item.Items.CARROT_ON_A_STICK)
+                || !(event.getEntity().getVehicle() instanceof AnimaniaAnimalEntity animal)
+                || !animal.isFarmPig() || !animal.boost()) return;
+        if (!event.getEntity().level().isClientSide && !event.getEntity().getAbilities().instabuild) {
+            event.getItemStack().hurtAndBreak(1, event.getEntity(), player -> player.broadcastBreakEvent(event.getHand()));
+        }
+        event.setCancellationResult(net.minecraft.world.InteractionResult.sidedSuccess(event.getEntity().level().isClientSide));
+        event.setCanceled(true);
     }
 
     /**
@@ -311,6 +354,7 @@ public final class AnimaniaFarm {
         for (int offset = 0; offset <= 6; offset++) {
             BlockPos candidate = new BlockPos(x, top + offset, z);
             if (!level.isEmptyBlock(candidate) || !level.getBlockState(candidate.below()).isFaceSturdy(level, candidate.below(), net.minecraft.core.Direction.UP)) continue;
+            if (!FarmSpawnBiomeModifier.matchesConfiguredBiome("hive", level.getBiome(candidate))) continue;
             level.setBlock(candidate, FarmContent.WILD_HIVE.get().defaultBlockState(), 3);
             break;
         }
@@ -385,9 +429,4 @@ public final class AnimaniaFarm {
         try { return value.get(); } catch (IllegalStateException ignored) { return value.getDefault(); }
     }
 
-    private static float sizeFor(String id, boolean width) {
-        if (id.startsWith("chick_") || id.startsWith("calf_") || id.startsWith("kid_") || id.startsWith("lamb_") || id.startsWith("piglet_") || id.startsWith("foal_")) return width ? 0.45f : 0.55f;
-        if (id.equals("wagon") || id.equals("cart") || id.equals("tiller")) return width ? 1.2f : 1.0f;
-        return width ? 0.8f : 1.0f;
-    }
 }

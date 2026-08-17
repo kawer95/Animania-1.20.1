@@ -4,6 +4,8 @@ import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AnimaniaBlinkingLayerTest {
     @Test
@@ -31,6 +33,15 @@ class AnimaniaBlinkingLayerTest {
                 ResourceLocation.fromNamespaceAndPath("animania_farm", "sow_yorkshire"))[0]);
         assertEquals(0x421006, AnimaniaBlinkingLayer.colorsFor(
                 ResourceLocation.fromNamespaceAndPath("animania_farm", "hog_duroc"))[0]);
+    }
+
+    @Test
+    void sleepingAnimalsUseTheLegacyClosedEyeWindow() {
+        assertTrue(AnimaniaBlinkingLayer.shouldRenderSleepingEyes(true, 0.0F, 13000L));
+        assertFalse(AnimaniaBlinkingLayer.shouldRenderSleepingEyes(true, -0.25F, 13000L));
+        assertTrue(AnimaniaBlinkingLayer.shouldRenderSleepingEyes(true, -0.55F, 13000L));
+        assertFalse(AnimaniaBlinkingLayer.shouldRenderSleepingEyes(false, 0.0F, 13000L));
+        assertFalse(AnimaniaBlinkingLayer.shouldRenderSleepingEyes(true, -0.55F, 23250L));
     }
 
     @Test

@@ -37,10 +37,12 @@ public final class AnimaniaLegacyGoalProfiles {
             return Optional.empty();
         }
         if ("animania_extra".equals(namespace)) {
+            if (path.equals("frog") || path.equals("dartfrog") || path.equals("toad"))
+                return profile(2.2D, 0.6D, true, false);
             if (path.startsWith("hamster")) return profile(1.4D, 1.1D, true, false);
             if (path.startsWith("hedgehog")) return profile(1.5D, 1.0D, true, true);
             if (path.startsWith("ferret_")) return profile(1.5D, 1.2D, true, true);
-            if (starts(path, "peacock_", "peahen_", "peachick_")) return profile(1.4D, 1.0D, false, true);
+            if (starts(path, "peacock_", "peahen_", "peachick_")) return profile(1.4D, 1.0D, true, true);
             if (starts(path, "doe_", "buck_", "kit_")) return profile(2.5D, 1.8D, true, true);
         }
         return Optional.empty();
