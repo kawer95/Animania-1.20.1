@@ -8,11 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Pins all four Java-rendered Base models and the dynamic facility subparts. */
+/** Pins all Java-rendered Base models and the dynamic facility subparts. */
 final class BaseLegacyModelConversionTest {
     @Test
     void everyBaseJavaModelBakesItsLegacyGeometry() {
-        assertEquals(4, BaseLegacyModelLayers.LAYERS.size());
+        assertEquals(5, BaseLegacyModelLayers.LAYERS.size());
         BaseLegacyModelLayers.LAYERS.keySet().forEach(id -> {
             ModelPart root = BaseLegacyModelLayers.create(id).bakeRoot();
             assertTrue(root.getAllParts().anyMatch(part -> !part.isEmpty()), id + " baked with no cubes");
@@ -30,6 +30,11 @@ final class BaseLegacyModelConversionTest {
         for (String part : new String[]{"feed", "feed_a", "slop1", "water1", "water3"}) {
             assertTrue(trough.hasChild(part), "trough lost " + part);
             assertFalse(trough.getChild(part).isEmpty(), "trough part has no geometry: " + part);
+        }
+        ModelPart food = BaseLegacyModelLayers.create("trough_food").bakeRoot();
+        for (String part : new String[]{"feed_a", "feed_h", "feed_a1", "feed_h1"}) {
+            assertTrue(food.hasChild(part), "trough food layer lost " + part);
+            assertFalse(food.getChild(part).isEmpty(), "trough food part has no geometry: " + part);
         }
     }
 

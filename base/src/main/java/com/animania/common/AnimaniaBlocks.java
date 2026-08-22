@@ -113,8 +113,17 @@ public final class AnimaniaBlocks {
     }
 
     public static final class TroughEntity extends AnimaniaStorageBlockEntity {
+        /** Mirrors the 1.12 TileEntityTrough.TroughContent state machine. */
+        public enum TroughContent { EMPTY, LIQUID, FOOD }
+
         public TroughEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
             super(TROUGH_BE.get(), pos, state, 1, 1000);
+        }
+
+        /** Food wins over a transient fluid packet, exactly as the legacy tick did. */
+        public TroughContent content() {
+            if (!getItem(0).isEmpty()) return TroughContent.FOOD;
+            return fluidSnapshot().isEmpty() ? TroughContent.EMPTY : TroughContent.LIQUID;
         }
 
         @Override public int getMaxStackSize() { return 3; }

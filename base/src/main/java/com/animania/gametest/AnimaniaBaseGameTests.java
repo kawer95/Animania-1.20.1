@@ -209,11 +209,57 @@ public final class AnimaniaBaseGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void troughClientUpdateClearsConsumedFoodAndTracksPortions(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania:troughClientUpdateClearsConsumedFoodAndTracksPortions");
+        BlockPos pos = helper.absolutePos(new BlockPos(0, 1, 0));
+        BlockState state = AnimaniaBlocks.TROUGH.get().defaultBlockState();
+        AnimaniaBlocks.TroughEntity server = new AnimaniaBlocks.TroughEntity(pos, state);
+        AnimaniaBlocks.TroughEntity client = new AnimaniaBlocks.TroughEntity(pos, state);
+        server.setItem(0, new ItemStack(Items.CARROT, 3));
+        client.load(server.getUpdateTag());
+        helper.assertTrue(client.getItem(0).getCount() == 3,
+                "client did not receive the full three-portion trough state");
+        server.removeItem(0, 2);
+        client.load(server.getUpdateTag());
+        helper.assertTrue(client.getItem(0).getCount() == 1,
+                "client did not receive the reduced one-portion trough state");
+        server.removeItem(0, 1);
+        client.load(server.getUpdateTag());
+        helper.assertTrue(client.getItem(0).isEmpty()
+                        && client.content() == AnimaniaBlocks.TroughEntity.TroughContent.EMPTY,
+                "empty update left the final consumed food portion visible on the client");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void troughFoodConfigUsesModernRegistryMatching(GameTestHelper helper) {
         helper.assertTrue(AnimaniaConfig.matchesTroughFood(new ItemStack(Items.WHEAT)),
                 "default troughFood did not accept minecraft:wheat");
         helper.assertFalse(AnimaniaConfig.matchesTroughFood(new ItemStack(Items.DIRT)),
                 "troughFood accepted an unconfigured item");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void troughContentStateMatchesLegacyPriority(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania:troughContentStateMatchesLegacyPriority");
+        BlockPos pos = helper.absolutePos(new BlockPos(0, 1, 0));
+        helper.getLevel().setBlock(pos, AnimaniaBlocks.TROUGH.get().defaultBlockState(), 3);
+        if (!(helper.getLevel().getBlockEntity(pos) instanceof AnimaniaBlocks.TroughEntity trough)) {
+            helper.fail("trough content test did not create its block entity");
+            return;
+        }
+        helper.assertTrue(trough.content() == AnimaniaBlocks.TroughEntity.TroughContent.EMPTY,
+                "new trough was not EMPTY");
+        trough.fillFluid(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1000),
+                net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        helper.assertTrue(trough.content() == AnimaniaBlocks.TroughEntity.TroughContent.LIQUID,
+                "water-filled trough was not LIQUID");
+        trough.getCapability(ForgeCapabilities.FLUID_HANDLER).resolve().orElseThrow().drain(1000,
+                net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        trough.setItem(0, new ItemStack(Items.WHEAT));
+        helper.assertTrue(trough.content() == AnimaniaBlocks.TroughEntity.TroughContent.FOOD,
+                "food-filled trough was not FOOD");
         helper.succeed();
     }
 
@@ -281,6 +327,11 @@ public final class AnimaniaBaseGameTests {
                 "trough did not create its persisted companion block");
         helper.assertTrue(helper.getLevel().getBlockState(companion).getValue(AnimaniaInvisibleBlock.CONTROLLER) == Direction.WEST,
                 "companion block did not point back to the trough controller");
+        helper.assertFalse(state.canBeReplaced(net.minecraft.world.level.material.Fluids.FLOWING_WATER),
+                "flowing water could replace and break the trough controller");
+        helper.assertFalse(helper.getLevel().getBlockState(companion)
+                        .canBeReplaced(net.minecraft.world.level.material.Fluids.FLOWING_WATER),
+                "flowing water could replace the trough companion half");
         var companionCollision = helper.getLevel().getBlockState(companion)
                 .getCollisionShape(helper.getLevel(), companion);
         helper.assertTrue(!companionCollision.isEmpty(),

@@ -250,6 +250,11 @@ public abstract class AnimaniaStorageBlockEntity extends BlockEntity implements 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        // ContainerHelper only overwrites slots present in the incoming list.
+        // An empty update therefore used to leave the previous client-side
+        // stack in place, making a consumed trough keep rendering its final
+        // food layer. Clear every slot before applying the authoritative tag.
+        for (int slot = 0; slot < items.size(); slot++) items.set(slot, ItemStack.EMPTY);
         net.minecraft.world.ContainerHelper.loadAllItems(tag, items);
         if (tag.contains("AnimaniaFluid")) fluidCapability.readFromNBT(tag.getCompound("AnimaniaFluid"));
         for (int slot = 0; slot < items.size(); slot++) setCapabilityStack(slot, items.get(slot));

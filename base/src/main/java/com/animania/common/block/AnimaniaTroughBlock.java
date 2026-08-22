@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.LiquidBlockContainer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -27,6 +28,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -35,7 +38,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 
 /** Native two-block trough retaining the legacy controller/companion layout. */
-public final class AnimaniaTroughBlock extends BaseEntityBlock {
+public final class AnimaniaTroughBlock extends BaseEntityBlock implements LiquidBlockContainer {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     private static final VoxelShape NORTH_SOUTH = Block.box(1.6, 0, 0, 14.4, 4.8, 16);
     private static final VoxelShape EAST_WEST = Block.box(0, 0, 1.6, 16, 4.8, 14.4);
@@ -56,6 +59,17 @@ public final class AnimaniaTroughBlock extends BaseEntityBlock {
     @Override public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return getShape(state, level, pos, context);
     }
+
+    /** Treat the wooden trough as an ordinary solid block when fluid spreads. */
+    @Override public boolean canBeReplaced(BlockState state, Fluid fluid) { return false; }
+
+    /**
+     * FlowingFluid ignores canBeReplaced for non-solid partial blocks in
+     * 1.20.1.  Implementing LiquidBlockContainer makes it consult this method
+     * before replacing the trough with the incoming fluid.
+     */
+    @Override public boolean canPlaceLiquid(BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) { return false; }
+    @Override public boolean placeLiquid(LevelAccessor level, BlockPos pos, BlockState state, FluidState fluid) { return false; }
 
     @Override public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
         Direction facing = context.getHorizontalDirection();

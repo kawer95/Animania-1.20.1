@@ -5,6 +5,8 @@ import com.animania.farm.client.model.FarmLegacyModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -111,6 +113,43 @@ class FarmRegistryTest {
                             id + " nose is not attached to the animated head");
                     assertFalse(root.hasChild("nose"), id + " retained a root-level floating nose");
                 });
+    }
+
+    @Test
+    void chickenLookAnimationRotatesTheWholeNeckAssembly() {
+        FarmLegacyIds.ALL.stream()
+                .filter(id -> id.startsWith("chick_") || id.startsWith("hen_") || id.startsWith("rooster_"))
+                .forEach(id -> {
+                    assertArrayEquals(new String[]{"neck"}, FarmLegacyModelLayers.profile(id).heads(), id);
+                    ModelPart neck = FarmLegacyModelLayers.create(id).bakeRoot().getChild("neck");
+                    assertTrue(neck.hasChild("head"), id + " head is not attached to its animated neck");
+                    assertTrue(neck.hasChild("beak_top"), id + " upper beak is not attached to its animated neck");
+                    if (!id.startsWith("chick_")) {
+                        assertTrue(neck.hasChild("beak_bottom"), id + " lower beak is not attached to its animated neck");
+                        assertTrue(neck.hasChild("crest"), id + " comb is not attached to its animated neck");
+                        assertTrue(neck.hasChild("crest_bottom"), id + " wattle is not attached to its animated neck");
+                    }
+                });
+        assertArrayEquals(new String[]{"wing1", "wing2", "wing3", "wing4"},
+                FarmLegacyModelLayers.profile("chick_leghorn").wings(),
+                "all four legacy chick wing layers must flap");
+    }
+
+    @Test
+    void bothPigletModelsUseTheirOriginal32PixelTextureWidth() throws Exception {
+        String source = Files.readString(Path.of(
+                "src/main/java/com/animania/farm/client/model/FarmLegacyModelLayers.java"));
+        int commonStart = source.indexOf("private static LayerDefinition model_piglet()");
+        int hampshireStart = source.indexOf("private static LayerDefinition model_piglet_hampshire()");
+        int nextModel = source.indexOf("private static LayerDefinition model_rooster()", hampshireStart);
+        assertTrue(commonStart >= 0 && hampshireStart > commonStart && nextModel > hampshireStart);
+
+        String common = source.substring(commonStart, hampshireStart);
+        String hampshire = source.substring(hampshireStart, nextModel);
+        assertTrue(common.contains("LayerDefinition.create(mesh, 32, 32)"));
+        assertTrue(hampshire.contains("LayerDefinition.create(mesh, 32, 32)"));
+        assertFalse(common.contains("LayerDefinition.create(mesh, 64, 32)"));
+        assertFalse(hampshire.contains("LayerDefinition.create(mesh, 64, 32)"));
     }
 
     @Test

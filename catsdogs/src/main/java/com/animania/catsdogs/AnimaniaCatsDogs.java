@@ -66,6 +66,13 @@ public final class AnimaniaCatsDogs {
         CatsDogsPetSeller.PROFESSIONS.register(bus);
         CatsDogsTab.TABS.register(bus);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CatsDogsConfig.SPEC);
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
+                ModLoadingContext.get().registerExtensionPoint(
+                        net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class,
+                        () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory((minecraft, parent) ->
+                                new com.animania.client.config.AnimaniaConfigScreen(parent,
+                                        net.minecraft.network.chat.Component.translatable("screen.animania_catsdogs.config.title"),
+                                        MOD_ID, CatsDogsConfig.SPEC))));
         AnimaniaSleepProfiles.register(MOD_ID, AnimaniaCatsDogs::sleepProfile);
         AnimaniaApi.registerFoodMatcher(MOD_ID, (id, stack) -> {
             String path = id.getPath();

@@ -18,6 +18,10 @@ public final class BaseLegacyModelLayers {
         LAYERS.put("salt_lick", new ModelLayerLocation(new ResourceLocation("animania", "legacy/salt_lick"), "main"));
         LAYERS.put("nest", new ModelLayerLocation(new ResourceLocation("animania", "legacy/nest"), "main"));
         LAYERS.put("trough", new ModelLayerLocation(new ResourceLocation("animania", "legacy/trough"), "main"));
+        // The 1.12 ModelTrough used a separate 16x16 texture size for the
+        // food planes. Keep that coordinate space separate from the 128x64
+        // wooden trough shell instead of relying on atlas UV rescaling.
+        LAYERS.put("trough_food", new ModelLayerLocation(new ResourceLocation("animania", "legacy/trough_food"), "main"));
         LAYERS.put("water_bottle", new ModelLayerLocation(new ResourceLocation("animania", "legacy/water_bottle"), "main"));
     }
     private BaseLegacyModelLayers() {}
@@ -26,6 +30,7 @@ public final class BaseLegacyModelLayers {
             case "salt_lick" -> salt_lick();
             case "nest" -> nest();
             case "trough" -> trough();
+            case "trough_food" -> trough_food();
             case "water_bottle" -> water_bottle();
             default -> throw new IllegalArgumentException("Unknown Base legacy model " + id);
         };
@@ -143,6 +148,35 @@ public final class BaseLegacyModelLayers {
         PartDefinition water1 = root.addOrReplaceChild("water1", CubeListBuilder.create().texOffs(0, 0).addBox(-14.0F, -0.5F, -4.0F, 28.0F, 1.0F, 8.0F), PartPose.offsetAndRotation(8.0F, 16.0F, 0.0F, 0.0F, 0.0F, 0.0F));
         return LayerDefinition.create(mesh, 128, 64);
     }
+
+    /**
+     * Food planes from ModelTrough. In the 1.12 model these parts called
+     * {@code setTextureSize(16, 16)} even though the shell used 128x64. A
+     * separate baked layer preserves the full item sprite instead of sampling
+     * only the upper-left fraction of an atlas entry.
+     */
+    private static LayerDefinition trough_food() {
+        MeshDefinition mesh = new MeshDefinition();
+        PartDefinition root = mesh.getRoot();
+        root.addOrReplaceChild("feed_a", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(-1.0F, 15.0F, 2.5F, 0.556656F, 0.693478F, 0.418777F));
+        root.addOrReplaceChild("feed_b", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(8.0F, 15.0F, 1.000001F, 0.332123F, 1.126472F, 0.456871F));
+        root.addOrReplaceChild("feed_c", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(17.0F, 15.0F, 2.500001F, 0.556138F, 0.694848F, 0.419501F));
+        root.addOrReplaceChild("feed_d", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(14.0F, 15.0F, -1.999999F, 0.329293F, -2.02634F, 0.499879F));
+        root.addOrReplaceChild("feed_e", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(2.0F, 15.0F, -0.999999F, 0.329293F, -2.02634F, 0.341495F));
+        root.addOrReplaceChild("feed_f", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(9.000001F, 14.0F, -1.999999F, 0.223693F, -1.865655F, 0.009323F));
+        root.addOrReplaceChild("feed_g", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(0.0F, 14.0F, -0.999999F, 0.202956F, -1.465355F, 0.095173F));
+        root.addOrReplaceChild("feed_h", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(17.0F, 14.0F, -0.999999F, 0.286131F, 2.831252F, 0.411317F));
+        root.addOrReplaceChild("feed_a1", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(-1.0F, 17.0F, 2.5F, 0.556656F, 0.693478F, 0.418777F));
+        root.addOrReplaceChild("feed_b1", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(8.0F, 17.0F, 1.000001F, 0.332123F, 1.126472F, 0.456871F));
+        root.addOrReplaceChild("feed_c1", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(17.0F, 17.0F, 2.500001F, 0.556138F, 0.694848F, 0.419501F));
+        root.addOrReplaceChild("feed_d1", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(14.0F, 17.0F, -1.999999F, 0.329293F, -2.02634F, 0.499879F));
+        root.addOrReplaceChild("feed_e1", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(2.0F, 17.0F, -0.999999F, 0.329293F, -2.02634F, 0.341495F));
+        root.addOrReplaceChild("feed_f1", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(9.000001F, 16.0F, -1.999999F, 0.223693F, -1.865655F, 0.009323F));
+        root.addOrReplaceChild("feed_g1", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(0.0F, 16.0F, -0.999999F, 0.202956F, -1.465355F, 0.095173F));
+        root.addOrReplaceChild("feed_h1", CubeListBuilder.create().texOffs(0, 0).addBox(-4.5F, 0.0F, -5.0F, 16.0F, 0.0F, 16.0F), PartPose.offsetAndRotation(17.0F, 16.0F, -0.999999F, 0.286131F, 2.831252F, 0.411317F));
+        return LayerDefinition.create(mesh, 16, 16);
+    }
+
     private static LayerDefinition water_bottle() {
         MeshDefinition mesh = new MeshDefinition();
         PartDefinition root = mesh.getRoot();

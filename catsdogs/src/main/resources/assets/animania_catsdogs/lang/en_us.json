@@ -1,5 +1,6 @@
 {
   "itemGroup.animania_catsdogs": "Animania Cats & Dogs",
+  "screen.animania_catsdogs.config.title": "Animania Cats & Dogs Configuration",
   "item.animania_catsdogs.cat_random": "Random Cat",
   "item.animania_catsdogs.dog_random": "Random Dog",
   "block.animania_catsdogs.pet_bowl": "Pet Bowl",
