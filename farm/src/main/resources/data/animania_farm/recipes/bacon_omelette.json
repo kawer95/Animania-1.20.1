@@ -7,7 +7,7 @@
       "item": "animania_farm:plain_omelette"
     },
     {
-      "tag": "minecraft:cooked_porkchop"
+      "item": "minecraft:cooked_porkchop"
     }
   ],
   "type": "minecraft:crafting_shapeless"

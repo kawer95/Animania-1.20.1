@@ -10,7 +10,7 @@
   "type": "minecraft:crafting_shaped",
   "key": {
     "d": {
-      "tag": "minecraft:brown_dye"
+      "tag": "forge:dyes/brown"
     },
     "x": {
       "item": "minecraft:glass_pane"

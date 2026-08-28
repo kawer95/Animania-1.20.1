@@ -14,6 +14,8 @@ import com.animania.common.entity.AnimaniaAnimalEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterColorHandlersEvent;
+import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
@@ -21,6 +23,15 @@ import net.minecraft.resources.ResourceLocation;
 
 final class AnimaniaFarmClient {
     private AnimaniaFarmClient() {
+    }
+
+    static void registerConfigScreen() {
+        net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(
+                net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class,
+                () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory((minecraft, parent) ->
+                        new com.animania.client.config.AnimaniaConfigScreen(parent,
+                                net.minecraft.network.chat.Component.translatable("screen.animania_farm.config.title"),
+                                AnimaniaFarm.MOD_ID, FarmConfig.SPEC)));
     }
 
     static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
@@ -59,5 +70,12 @@ final class AnimaniaFarmClient {
     static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(FarmContent.HIVE_BE.get(), FarmHiveRenderer::new);
         event.registerBlockEntityRenderer(FarmContent.WILD_HIVE_BE.get(), FarmHiveRenderer::new);
+    }
+
+    static void registerBlockColors(RegisterColorHandlersEvent.Block event) {
+        event.register((state, level, pos, tintIndex) -> {
+            if (tintIndex != 0) return 0xFFFFFFFF;
+            return level == null || pos == null ? 0x3F76E4 : BiomeColors.getAverageWaterColor(level, pos);
+        }, FarmContent.CHEESE_MOLD.get());
     }
 }

@@ -5,13 +5,13 @@
   },
   "ingredients": [
     {
-      "tag": "minecraft:seeds"
+      "tag": "forge:seeds"
     },
     {
-      "tag": "minecraft:seeds"
+      "tag": "forge:seeds"
     },
     {
-      "tag": "minecraft:seeds"
+      "tag": "forge:seeds"
     }
   ],
   "type": "minecraft:crafting_shapeless"

@@ -4,16 +4,16 @@
   },
   "ingredients": [
     {
-      "tag": "minecraft:leather"
+      "tag": "forge:leather"
     },
     {
-      "tag": "minecraft:leather"
+      "tag": "forge:leather"
     },
     {
-      "tag": "minecraft:string"
+      "tag": "forge:string"
     },
     {
-      "tag": "minecraft:string"
+      "tag": "forge:string"
     }
   ],
   "type": "minecraft:crafting_shapeless"

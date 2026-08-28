@@ -13,7 +13,7 @@
       "tag": "minecraft:sand"
     },
     "i": {
-      "tag": "minecraft:iron_ingots"
+      "tag": "forge:ingots/iron"
     }
   }
 }

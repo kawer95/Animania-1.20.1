@@ -16,6 +16,14 @@ import com.animania.extra.client.screen.ExtraHamsterWheelScreen;
 
 final class AnimaniaExtraClient {
     private AnimaniaExtraClient() { }
+    static void registerConfigScreen() {
+        net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(
+                net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class,
+                () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory((minecraft, parent) ->
+                        new com.animania.client.config.AnimaniaConfigScreen(parent,
+                                net.minecraft.network.chat.Component.translatable("screen.animania_extra.config.title"),
+                                AnimaniaExtra.MOD_ID, ExtraConfig.SPEC)));
+    }
     static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         ExtraLegacyModelLayers.LAYERS.forEach((id, layer) -> event.registerLayerDefinition(layer, () -> ExtraLegacyModelLayers.create(id)));
         ExtraNativeModelLayers.LAYERS.forEach((id, layer) -> event.registerLayerDefinition(layer, () -> ExtraNativeModelLayers.create(id)));

@@ -113,11 +113,128 @@ public final class AnimaniaBlocks {
     }
 
     public static final class TroughEntity extends AnimaniaStorageBlockEntity {
+        /** Mirrors the 1.12 TileEntityTrough.TroughContent state machine. */
+        public enum TroughContent { EMPTY, LIQUID, FOOD }
+        private static final String SYNCED_SOLID_CAPACITY = "TroughSolidCapacity";
+        private static final String SYNCED_FLUID_CAPACITY = "TroughFluidCapacity";
+        private int syncedSolidCapacity = AnimaniaConfig.troughSolidCapacity();
+        private int syncedFluidCapacity = AnimaniaConfig.troughFluidCapacity();
+
         public TroughEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-            super(TROUGH_BE.get(), pos, state, 1, 1000);
+            super(TROUGH_BE.get(), pos, state, 1, AnimaniaConfig.troughFluidCapacity());
         }
 
-        @Override public int getMaxStackSize() { return 3; }
+        /** Food wins over a transient fluid packet, exactly as the legacy tick did. */
+        public TroughContent content() {
+            if (!getItem(0).isEmpty()) return TroughContent.FOOD;
+            return fluidSnapshot().isEmpty() ? TroughContent.EMPTY : TroughContent.LIQUID;
+        }
+
+        @Override public int getMaxStackSize() { return solidCapacity(); }
+
+        public int solidCapacity() {
+            return level != null && level.isClientSide ? syncedSolidCapacity : AnimaniaConfig.troughSolidCapacity();
+        }
+        public int fluidCapacity() {
+            return level != null && level.isClientSide ? syncedFluidCapacity : AnimaniaConfig.troughFluidCapacity();
+        }
+
+        /** Convert a non-empty amount into the three legacy-style display levels. */
+        public static int displayLevel(int amount, int capacity) {
+            if (amount <= 0 || capacity <= 0) return 0;
+            long percentage = (long) amount * 100L;
+            if (percentage <= (long) capacity * 30L) return 1;
+            if (percentage <= (long) capacity * 60L) return 2;
+            return 3;
+        }
+
+        public int foodDisplayLevel() { return displayLevel(getItem(0).getCount(), solidCapacity()); }
+        public int fluidDisplayLevel() { return displayLevel(fluidCapability.getFluidAmount(), fluidCapacity()); }
+
+        /** Apply live config changes to existing and capability-cached troughs. */
+        private void syncConfiguredLimits() {
+            boolean changed = false;
+            if (level == null || !level.isClientSide) {
+                int configuredSolidCapacity = AnimaniaConfig.troughSolidCapacity();
+                int configuredFluidCapacity = AnimaniaConfig.troughFluidCapacity();
+                if (syncedSolidCapacity != configuredSolidCapacity) {
+                    syncedSolidCapacity = configuredSolidCapacity;
+                    changed = true;
+                }
+                if (syncedFluidCapacity != configuredFluidCapacity) {
+                    syncedFluidCapacity = configuredFluidCapacity;
+                    changed = true;
+                }
+            }
+
+            int solidCapacity = solidCapacity();
+            ItemStack storedFood = getItem(0);
+            if (!storedFood.isEmpty() && storedFood.getCount() > solidCapacity) {
+                ItemStack trimmed = storedFood.copy();
+                trimmed.setCount(solidCapacity);
+                setItem(0, trimmed);
+            }
+
+            int fluidCapacity = fluidCapacity();
+            if (fluidCapability.getCapacity() != fluidCapacity) {
+                fluidCapability.setCapacity(fluidCapacity);
+                changed = true;
+            }
+            net.minecraftforge.fluids.FluidStack storedFluid = fluidCapability.getFluid();
+            if (!storedFluid.isEmpty() && storedFluid.getAmount() > fluidCapacity) {
+                net.minecraftforge.fluids.FluidStack trimmed = storedFluid.copy();
+                trimmed.setAmount(fluidCapacity);
+                fluidCapability.setFluid(trimmed);
+                setChanged();
+            }
+            if (changed) setChanged();
+        }
+
+        @Override public void serverTick() { syncConfiguredLimits(); }
+        @Override public net.minecraftforge.fluids.FluidStack fluidSnapshot() {
+            syncConfiguredLimits();
+            return super.fluidSnapshot();
+        }
+        @Override public int fillFluid(net.minecraftforge.fluids.FluidStack stack,
+                                       net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) {
+            syncConfiguredLimits();
+            return super.fillFluid(stack, action);
+        }
+        @Override public int drainFluid(int amount,
+                                        java.util.function.Predicate<net.minecraftforge.fluids.FluidStack> filter,
+                                        net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) {
+            syncConfiguredLimits();
+            return super.drainFluid(amount, filter, action);
+        }
+        @Override public int fluidAmount(java.util.function.Predicate<net.minecraftforge.fluids.FluidStack> filter) {
+            syncConfiguredLimits();
+            return super.fluidAmount(filter);
+        }
+        @Override public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+                net.minecraftforge.common.capabilities.Capability<T> capability,
+                net.minecraft.core.Direction side) {
+            if (capability == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
+                syncConfiguredLimits();
+            }
+            return super.getCapability(capability, side);
+        }
+        @Override public net.minecraft.nbt.CompoundTag getUpdateTag() {
+            net.minecraft.nbt.CompoundTag tag = super.getUpdateTag();
+            tag.putInt(SYNCED_SOLID_CAPACITY, syncedSolidCapacity);
+            tag.putInt(SYNCED_FLUID_CAPACITY, syncedFluidCapacity);
+            return tag;
+        }
+        @Override public void load(net.minecraft.nbt.CompoundTag tag) {
+            if (tag.contains(SYNCED_SOLID_CAPACITY)) {
+                syncedSolidCapacity = net.minecraft.util.Mth.clamp(tag.getInt(SYNCED_SOLID_CAPACITY), 3, 64);
+            }
+            if (tag.contains(SYNCED_FLUID_CAPACITY)) {
+                syncedFluidCapacity = net.minecraft.util.Mth.clamp(tag.getInt(SYNCED_FLUID_CAPACITY), 1000, 3000);
+                fluidCapability.setCapacity(syncedFluidCapacity);
+            }
+            super.load(tag);
+            syncConfiguredLimits();
+        }
         @Override protected boolean allowsAutomation() {
             try { return AnimaniaConfig.ALLOW_TROUGH_AUTOMATION.get(); }
             catch (IllegalStateException ignored) { return true; }

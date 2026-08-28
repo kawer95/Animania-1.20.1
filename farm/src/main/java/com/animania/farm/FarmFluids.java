@@ -47,7 +47,11 @@ public final class FarmFluids {
     private static FluidRegistration register(String id, int density, int viscosity) {
         FluidRegistration registration = new FluidRegistration(id);
         registration.type = FLUID_TYPES.register(id,
-                () -> new FluidType(FluidType.Properties.create().density(density).viscosity(viscosity).canSwim(false)) {
+                () -> new FluidType(FluidType.Properties.create()
+                        .descriptionId("fluid." + AnimaniaFarm.MOD_ID + "." + id)
+                        .density(density)
+                        .viscosity(viscosity)
+                        .canSwim(false)) {
                     @Override
                     public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                         consumer.accept(new IClientFluidTypeExtensions() {

@@ -13,10 +13,10 @@
       "tag": "minecraft:planks"
     },
     "s": {
-      "tag": "minecraft:string"
+      "tag": "forge:string"
     },
     "r": {
-      "tag": "minecraft:red_wool"
+      "item": "minecraft:red_wool"
     }
   }
 }

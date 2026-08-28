@@ -68,7 +68,8 @@ public final class FarmContent {
             () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(FarmHiveBlockEntity::createWildHive, WILD_HIVE.get()).build(null));
 
     public static final RegistryObject<Block> CHEESE_MOLD = BLOCKS.register("cheese_mold", () ->
-            new FarmCheeseMoldBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW).strength(1.2f).sound(SoundType.WOOD)));
+            new FarmCheeseMoldBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW)
+                    .strength(1.2f).sound(SoundType.WOOD).noOcclusion()));
     public static final RegistryObject<net.minecraft.world.level.block.entity.BlockEntityType<FarmCheeseMoldBlockEntity>> CHEESE_MOLD_BE =
             BLOCK_ENTITIES.register("cheese_mold", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder
                     .of(FarmCheeseMoldBlockEntity::new, CHEESE_MOLD.get()).build(null));
@@ -110,8 +111,11 @@ public final class FarmContent {
         });
         BLOCK_ENTRIES.put("hive", HIVE);
         BLOCK_ENTRIES.put("wild_hive", WILD_HIVE);
-        ITEM_ENTRIES.put("hive", ITEMS.register("hive", () -> new FarmHiveItem(HIVE.get(), false, new Item.Properties())));
-        ITEM_ENTRIES.put("wild_hive", ITEMS.register("wild_hive", () -> new FarmHiveItem(WILD_HIVE.get(), true, new Item.Properties())));
+        // The 1.12 items used ordinary generated sprites. Keeping them as plain
+        // BlockItems also lets JEI, inventory screens and shader renderers use
+        // Minecraft's stable baked-item path instead of a custom BEWLR.
+        ITEM_ENTRIES.put("hive", ITEMS.register("hive", () -> new BlockItem(HIVE.get(), new Item.Properties())));
+        ITEM_ENTRIES.put("wild_hive", ITEMS.register("wild_hive", () -> new BlockItem(WILD_HIVE.get(), new Item.Properties())));
         BLOCK_ENTRIES.put("cheese_mold", CHEESE_MOLD);
         ITEM_ENTRIES.put("cheese_mold", ITEMS.register("cheese_mold", () -> new BlockItem(CHEESE_MOLD.get(), new Item.Properties())));
     }

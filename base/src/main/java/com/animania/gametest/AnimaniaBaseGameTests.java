@@ -192,12 +192,15 @@ public final class AnimaniaBaseGameTests {
             helper.fail("trough did not create its storage block entity");
             return;
         }
+        var trough = (AnimaniaBlocks.TroughEntity) storage;
         var items = storage.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve().orElseThrow();
-        ItemStack remainder = items.insertItem(0, new ItemStack(Items.WHEAT, 4), false);
-        helper.assertTrue(storage.getItem(0).getCount() == 3 && remainder.getCount() == 1,
-                "item capability did not sync the legacy three-portion limit to the container");
+        int solidCapacity = trough.solidCapacity();
+        ItemStack remainder = items.insertItem(0, new ItemStack(Items.WHEAT, solidCapacity + 2), false);
+        helper.assertTrue(storage.getItem(0).getCount() == solidCapacity && remainder.getCount() == 2,
+                "item capability did not enforce the configured trough food capacity");
         items.extractItem(0, 2, false);
-        helper.assertTrue(storage.getItem(0).getCount() == 1, "capability extraction did not sync to container");
+        helper.assertTrue(storage.getItem(0).getCount() == solidCapacity - 2,
+                "capability extraction did not sync to container");
         storage.clearContent();
         var fluids = storage.getCapability(ForgeCapabilities.FLUID_HANDLER).resolve().orElseThrow();
         int filled = fluids.fill(new FluidStack(AnimaniaFluids.SOURCE_SLOP.get(), 1000), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
@@ -209,11 +212,57 @@ public final class AnimaniaBaseGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void troughClientUpdateClearsConsumedFoodAndTracksPortions(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania:troughClientUpdateClearsConsumedFoodAndTracksPortions");
+        BlockPos pos = helper.absolutePos(new BlockPos(0, 1, 0));
+        BlockState state = AnimaniaBlocks.TROUGH.get().defaultBlockState();
+        AnimaniaBlocks.TroughEntity server = new AnimaniaBlocks.TroughEntity(pos, state);
+        AnimaniaBlocks.TroughEntity client = new AnimaniaBlocks.TroughEntity(pos, state);
+        server.setItem(0, new ItemStack(Items.CARROT, 3));
+        client.load(server.getUpdateTag());
+        helper.assertTrue(client.getItem(0).getCount() == 3,
+                "client did not receive the full three-portion trough state");
+        server.removeItem(0, 2);
+        client.load(server.getUpdateTag());
+        helper.assertTrue(client.getItem(0).getCount() == 1,
+                "client did not receive the reduced one-portion trough state");
+        server.removeItem(0, 1);
+        client.load(server.getUpdateTag());
+        helper.assertTrue(client.getItem(0).isEmpty()
+                        && client.content() == AnimaniaBlocks.TroughEntity.TroughContent.EMPTY,
+                "empty update left the final consumed food portion visible on the client");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void troughFoodConfigUsesModernRegistryMatching(GameTestHelper helper) {
         helper.assertTrue(AnimaniaConfig.matchesTroughFood(new ItemStack(Items.WHEAT)),
                 "default troughFood did not accept minecraft:wheat");
         helper.assertFalse(AnimaniaConfig.matchesTroughFood(new ItemStack(Items.DIRT)),
                 "troughFood accepted an unconfigured item");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void troughContentStateMatchesLegacyPriority(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania:troughContentStateMatchesLegacyPriority");
+        BlockPos pos = helper.absolutePos(new BlockPos(0, 1, 0));
+        helper.getLevel().setBlock(pos, AnimaniaBlocks.TROUGH.get().defaultBlockState(), 3);
+        if (!(helper.getLevel().getBlockEntity(pos) instanceof AnimaniaBlocks.TroughEntity trough)) {
+            helper.fail("trough content test did not create its block entity");
+            return;
+        }
+        helper.assertTrue(trough.content() == AnimaniaBlocks.TroughEntity.TroughContent.EMPTY,
+                "new trough was not EMPTY");
+        trough.fillFluid(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1000),
+                net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        helper.assertTrue(trough.content() == AnimaniaBlocks.TroughEntity.TroughContent.LIQUID,
+                "water-filled trough was not LIQUID");
+        trough.getCapability(ForgeCapabilities.FLUID_HANDLER).resolve().orElseThrow().drain(1000,
+                net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        trough.setItem(0, new ItemStack(Items.WHEAT));
+        helper.assertTrue(trough.content() == AnimaniaBlocks.TroughEntity.TroughContent.FOOD,
+                "food-filled trough was not FOOD");
         helper.succeed();
     }
 
@@ -281,6 +330,11 @@ public final class AnimaniaBaseGameTests {
                 "trough did not create its persisted companion block");
         helper.assertTrue(helper.getLevel().getBlockState(companion).getValue(AnimaniaInvisibleBlock.CONTROLLER) == Direction.WEST,
                 "companion block did not point back to the trough controller");
+        helper.assertFalse(state.canBeReplaced(net.minecraft.world.level.material.Fluids.FLOWING_WATER),
+                "flowing water could replace and break the trough controller");
+        helper.assertFalse(helper.getLevel().getBlockState(companion)
+                        .canBeReplaced(net.minecraft.world.level.material.Fluids.FLOWING_WATER),
+                "flowing water could replace the trough companion half");
         var companionCollision = helper.getLevel().getBlockState(companion)
                 .getCollisionShape(helper.getLevel(), companion);
         helper.assertTrue(!companionCollision.isEmpty(),
@@ -321,16 +375,19 @@ public final class AnimaniaBaseGameTests {
         AnimaniaBlocks.TroughEntity trough = (AnimaniaBlocks.TroughEntity) helper.getLevel().getBlockEntity(pos);
         var items = trough.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve().orElseThrow();
         helper.assertTrue(items.insertItem(0, new ItemStack(Items.DIRT), false).getCount() == 1, "trough automation accepted invalid food");
-        ItemStack remainder = items.insertItem(0, new ItemStack(Items.WHEAT, 5), false);
-        helper.assertTrue(trough.getItem(0).getCount() == 3 && remainder.getCount() == 2, "trough did not retain its three-food limit");
+        int solidCapacity = trough.solidCapacity();
+        ItemStack remainder = items.insertItem(0, new ItemStack(Items.WHEAT, solidCapacity + 2), false);
+        helper.assertTrue(trough.getItem(0).getCount() == solidCapacity && remainder.getCount() == 2,
+                "trough did not enforce its configured solid-food capacity");
         var fluids = trough.getCapability(ForgeCapabilities.FLUID_HANDLER).resolve().orElseThrow();
         helper.assertTrue(fluids.fill(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1000), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE) == 0,
                 "trough mixed fluid with stored food");
         helper.assertTrue(((AnimaniaTroughBlock) AnimaniaBlocks.TROUGH.get()).getAnalogOutputSignal(helper.getLevel().getBlockState(pos), helper.getLevel(), pos) == 15,
-                "three food portions did not produce full comparator output");
+                "a full food trough did not produce full comparator output");
         trough.clearContent();
-        helper.assertTrue(fluids.fill(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 2000), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE) == 1000,
-                "trough did not enforce its 1000 mB legacy tank capacity");
+        int fluidCapacity = trough.fluidCapacity();
+        helper.assertTrue(fluids.fill(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, fluidCapacity + 1000), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE) == fluidCapacity,
+                "trough did not enforce its configured liquid capacity");
         helper.assertTrue(items.insertItem(0, new ItemStack(Items.WHEAT), false).getCount() == 1, "trough mixed food with stored fluid");
         boolean oldAutomation = AnimaniaConfig.ALLOW_TROUGH_AUTOMATION.get();
         AnimaniaConfig.ALLOW_TROUGH_AUTOMATION.set(false);

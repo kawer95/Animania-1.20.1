@@ -30,16 +30,22 @@ import org.joml.Vector4f;
 public final class BaseTroughRenderer implements BlockEntityRenderer<AnimaniaBlocks.TroughEntity> {
     private static final ResourceLocation TROUGH_TEXTURE = new ResourceLocation(
             "animania", "textures/entity/tileentities/block_trough.png");
+    private static final ResourceLocation WHEAT_TEXTURE = new ResourceLocation(
+            "animania", "textures/entity/tileentities/wheat.png");
     private static final String[] SHELL = {"block1", "block2", "block3", "block4", "block5", "base1", "base2"};
-    private static final String[] FOOD_PLANES = {
-            "feed_a", "feed_b", "feed_c", "feed_d", "feed_e", "feed_f", "feed_g", "feed_h",
+    private static final String[] FOOD_PLANES_FIRST = {
+            "feed_a", "feed_b", "feed_c", "feed_d", "feed_e", "feed_f", "feed_g", "feed_h"
+    };
+    private static final String[] FOOD_PLANES_SECOND = {
             "feed_a1", "feed_b1", "feed_c1", "feed_d1", "feed_e1", "feed_f1", "feed_g1", "feed_h1"
     };
 
     private final net.minecraft.client.model.geom.ModelPart model;
+    private final net.minecraft.client.model.geom.ModelPart foodModel;
 
     public BaseTroughRenderer(BlockEntityRendererProvider.Context context) {
         model = context.bakeLayer(BaseLegacyModelLayers.LAYERS.get("trough"));
+        foodModel = context.bakeLayer(BaseLegacyModelLayers.LAYERS.get("trough_food"));
     }
 
     @Override
@@ -56,14 +62,18 @@ public final class BaseTroughRenderer implements BlockEntityRenderer<AnimaniaBlo
         BaseLegacyFacilityRenderSupport.render(model, pose, buffers, TROUGH_TEXTURE,
                 packedLight, 1, 1, 1, 1);
 
-        FluidStack fluid = entity.fluidSnapshot();
-        if (!fluid.isEmpty()) renderFluidSurface(pose, buffers, fluid, packedLight);
-
         ItemStack food = entity.getItem(0);
-        if (!food.isEmpty()) {
-            renderFoodContents(entity, pose, buffers, packedLight, food);
+        FluidStack fluid = entity.fluidSnapshot();
+        // TileEntityTrough.update() exposed one mutually-exclusive content
+        // state in 1.12.  Keep the same priority here so a transient/stale
+        // client packet cannot draw a food tint over a liquid surface.
+        switch (entity.content()) {
+            case FOOD -> renderFoodContents(entity, pose, buffers, packedLight, food);
+            case LIQUID -> renderFluidSurface(entity, pose, buffers, fluid, packedLight);
+            case EMPTY -> { }
         }
         BaseLegacyFacilityRenderSupport.hideAll(model);
+        BaseLegacyFacilityRenderSupport.hideAll(foodModel);
         pose.popPose();
     }
 
@@ -90,9 +100,10 @@ public final class BaseTroughRenderer implements BlockEntityRenderer<AnimaniaBlo
     /**
      * The 1.12 renderer used a fluid atlas sprite rather than the trough atlas.
      * Emit the same horizontal surface directly so water and slop use their
-     * registered still textures and the height follows the stored amount.
+     * registered still textures and the height follows the configured
+     * 1-30%, 30-60%, and 60-100% display bands.
      */
-    private static void renderFluidSurface(PoseStack pose, MultiBufferSource buffers,
+    private static void renderFluidSurface(AnimaniaBlocks.TroughEntity entity, PoseStack pose, MultiBufferSource buffers,
                                            FluidStack fluid, int packedLight) {
         IClientFluidTypeExtensions properties = IClientFluidTypeExtensions.of(fluid.getFluid());
         ResourceLocation stillTexture = properties.getStillTexture(fluid);
@@ -104,8 +115,8 @@ public final class BaseTroughRenderer implements BlockEntityRenderer<AnimaniaBlo
         float green = ((tint >> 8) & 0xFF) / 255.0F;
         float blue = (tint & 0xFF) / 255.0F;
         float alpha = ((tint >>> 24) & 0xFF) / 255.0F;
-        float amount = Math.max(0.0F, Math.min(1000.0F, fluid.getAmount()));
-        float y = 1.0F + 0.3122F * (1.0F - amount / 1000.0F);
+        int displayLevel = entity.fluidDisplayLevel();
+        float y = 1.0F + 0.3122F * (1.0F - displayLevel / 3.0F);
         VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucent(InventoryMenu.BLOCK_ATLAS));
         PoseStack.Pose last = pose.last();
         // The converted trough spans x=-6..22 model pixels. The previous
@@ -138,13 +149,13 @@ public final class BaseTroughRenderer implements BlockEntityRenderer<AnimaniaBlo
      */
     private void renderFoodContents(AnimaniaBlocks.TroughEntity entity, PoseStack pose,
                                     MultiBufferSource buffers, int packedLight, ItemStack stack) {
-        int count = Math.min(3, Math.max(1, stack.getCount()));
+        int displayLevel = entity.foodDisplayLevel();
         float[] tint = foodTint(stack, entity.getLevel());
 
         BaseLegacyFacilityRenderSupport.hideAll(model);
         BaseLegacyFacilityRenderSupport.show(model, "feed");
         pose.pushPose();
-        pose.translate(0.0D, 0.17D * (3 - count), 0.0D);
+        pose.translate(0.0D, 0.17D * (3 - displayLevel), 0.0D);
         BaseLegacyFacilityRenderSupport.render(model, pose, buffers, TROUGH_TEXTURE,
                 packedLight, tint[0], tint[1], tint[2], 1.0F);
         pose.popPose();
@@ -152,21 +163,32 @@ public final class BaseTroughRenderer implements BlockEntityRenderer<AnimaniaBlo
         BakedModel itemModel = Minecraft.getInstance().getItemRenderer()
                 .getModel(stack, entity.getLevel(), null, 0);
         TextureAtlasSprite sprite = itemModel.getParticleIcon();
-        if (sprite == null) return;
+        if (sprite == null && !stack.is(Items.WHEAT)) return;
 
-        BaseLegacyFacilityRenderSupport.hideAll(model);
-        BaseLegacyFacilityRenderSupport.show(model, FOOD_PLANES);
-        VertexConsumer consumer = sprite.wrap(
-                buffers.getBuffer(RenderType.entityCutoutNoCull(InventoryMenu.BLOCK_ATLAS)));
+        BaseLegacyFacilityRenderSupport.hideAll(foodModel);
+        BaseLegacyFacilityRenderSupport.show(foodModel, FOOD_PLANES_FIRST);
+        // The legacy renderer bound the item's standalone PNG. Its model UVs
+        // intentionally exceed 0..1 and repeat that one texture. Expanding
+        // those UVs inside the shared 1.20 atlas samples neighbouring item
+        // sprites instead (the straw/grey fragments seen in game).
+        ResourceLocation foodTexture = stack.is(Items.WHEAT)
+                ? WHEAT_TEXTURE
+                : sprite.contents().name().withPrefix("textures/").withSuffix(".png");
+        // Legacy explicitly enabled face culling for these zero-thickness food
+        // planes. Rendering both sides puts two faces at the same depth and
+        // causes camera-dependent dark speckles (z-fighting).
+        VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutout(foodTexture));
         pose.pushPose();
-        pose.translate(0.0D, 0.2D * (3 - count), 0.0D);
+        pose.translate(0.0D, 0.2D * (3 - displayLevel), 0.0D);
         pose.mulPose(Axis.YP.rotationDegrees(-10.0F));
         pose.scale(0.8F, 0.8F, 0.8F);
         pose.translate(0.0D, 0.25D, -0.1D);
-        model.render(pose, consumer, packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+        foodModel.render(pose, consumer, packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
         pose.mulPose(Axis.YP.rotationDegrees(180.0F));
         pose.translate(-1.4D, -0.1D, 0.0D);
-        model.render(pose, consumer, packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+        BaseLegacyFacilityRenderSupport.hideAll(foodModel);
+        BaseLegacyFacilityRenderSupport.show(foodModel, FOOD_PLANES_SECOND);
+        foodModel.render(pose, consumer, packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
         pose.popPose();
     }
 
@@ -187,7 +209,6 @@ public final class BaseTroughRenderer implements BlockEntityRenderer<AnimaniaBlo
         double red = 0.0D;
         double green = 0.0D;
         double blue = 0.0D;
-        double alphaTotal = 0.0D;
         for (int x = 0; x < image.getWidth(); x++) {
             for (int y = 0; y < image.getHeight(); y++) {
                 int pixel = image.getPixelRGBA(x, y);
@@ -195,18 +216,25 @@ public final class BaseTroughRenderer implements BlockEntityRenderer<AnimaniaBlo
                 red += FastColor.ABGR32.red(pixel) * alpha;
                 green += FastColor.ABGR32.green(pixel) * alpha;
                 blue += FastColor.ABGR32.blue(pixel) * alpha;
-                alphaTotal += alpha;
             }
         }
-        if (alphaTotal <= 0.0D) return new float[]{0.63F, 0.49F, 0.35F};
+        int pixels = image.getWidth() * image.getHeight();
+        if (pixels <= 0) return new float[]{0.63F, 0.49F, 0.35F};
+        // The old renderer divided by the complete image area (not by the
+        // sum of alpha). That deliberately softens sparse seed sprites and
+        // prevents transparent pixels from turning the feed into neon liquid.
         return new float[]{
-                brighten((float) (red / alphaTotal / 255.0D)),
-                brighten((float) (green / alphaTotal / 255.0D)),
-                brighten((float) (blue / alphaTotal / 255.0D))
+                legacyBrighten(red, pixels),
+                legacyBrighten(green, pixels),
+                legacyBrighten(blue, pixels)
         };
     }
 
-    private static float brighten(float value) {
-        return Math.min(1.0F, value / 0.7F / 0.7F / 0.7F);
+    private static float legacyBrighten(double sum, int pixels) {
+        int value = (int) sum / pixels;
+        for (int i = 0; i < 3; i++) {
+            value = value <= 3 ? 3 : Math.min(255, (int) (value / 0.7D));
+        }
+        return value / 255.0F;
     }
 }

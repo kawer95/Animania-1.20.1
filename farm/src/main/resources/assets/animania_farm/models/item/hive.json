@@ -1,4 +1,6 @@
 {
-  "parent": "minecraft:builtin/entity",
-  "gui_light": "side"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "animania_farm:item/bee_hive"
+  }
 }

@@ -43,6 +43,8 @@ public final class AnimaniaConfig {
     public static final ForgeConfigSpec.BooleanValue ANIMALS_STARVE;
     public static final ForgeConfigSpec.BooleanValue ALLOW_MOB_RIDING;
     public static final ForgeConfigSpec.BooleanValue ALLOW_TROUGH_AUTOMATION;
+    public static final ForgeConfigSpec.IntValue TROUGH_SOLID_CAPACITY;
+    public static final ForgeConfigSpec.IntValue TROUGH_FLUID_CAPACITY;
     public static final ForgeConfigSpec.DoubleValue FALL_DAMAGE_REDUCE_MULTIPLIER;
     public static final ForgeConfigSpec.BooleanValue WATER_REMOVED_AFTER_DRINKING;
     public static final ForgeConfigSpec.BooleanValue PLANTS_REMOVED_AFTER_EATING;
@@ -100,6 +102,10 @@ public final class AnimaniaConfig {
         ANIMALS_STARVE = builder.define("animalsStarve", false);
         ALLOW_MOB_RIDING = builder.define("allowMobRiding", true);
         ALLOW_TROUGH_AUTOMATION = builder.define("allowTroughAutomation", true);
+        TROUGH_SOLID_CAPACITY = builder.comment("Maximum solid food portions held by one trough")
+                .defineInRange("troughSolidCapacity", 64, 3, 64);
+        TROUGH_FLUID_CAPACITY = builder.comment("Maximum liquid held by one trough, in millibuckets")
+                .defineInRange("troughFluidCapacity", 3000, 1000, 3000);
         FALL_DAMAGE_REDUCE_MULTIPLIER = builder.defineInRange("fallDamageReduceMultiplier", 0.45D, 0.0D, 1.0D);
         WATER_REMOVED_AFTER_DRINKING = builder.define("waterRemovedAfterDrinking", true);
         PLANTS_REMOVED_AFTER_EATING = builder.define("plantsRemovedAfterEating", true);
@@ -218,5 +224,15 @@ public final class AnimaniaConfig {
     public static boolean eatFoodAnytime() {
         try { return EAT_FOOD_ANYTIME.get(); }
         catch (RuntimeException ignored) { return true; }
+    }
+
+    public static int troughSolidCapacity() {
+        try { return TROUGH_SOLID_CAPACITY.get(); }
+        catch (RuntimeException ignored) { return 64; }
+    }
+
+    public static int troughFluidCapacity() {
+        try { return TROUGH_FLUID_CAPACITY.get(); }
+        catch (RuntimeException ignored) { return 3000; }
     }
 }

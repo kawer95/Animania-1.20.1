@@ -16,41 +16,41 @@ from pathlib import Path
 from typing import Any
 
 
-ORE_TAGS = {
-    "stickWood": "minecraft:planks",
-    "plankWood": "minecraft:planks",
-    "blockWool": "minecraft:wool",
-    "wool": "minecraft:wool",
-    "woolRed": "minecraft:red_wool",
-    "leather": "minecraft:leather",
-    "string": "minecraft:string",
-    "ingotIron": "minecraft:iron_ingots",
-    "nuggetIron": "minecraft:iron_nuggets",
-    "nuggetGold": "minecraft:gold_nuggets",
-    "foodBaconCooked": "minecraft:cooked_porkchop",
-    "foodCheese": "animania_farm:friesian_cheese_wedge",
-    "listAllseed": "minecraft:seeds",
-    "listAllSeeds": "minecraft:seeds",
-    "listAllsugar": "minecraft:sugar",
-    "treeLeaves": "minecraft:leaves",
-    "dyeBlack": "minecraft:black_dye",
-    "dyeRed": "minecraft:red_dye",
-    "dyeGreen": "minecraft:green_dye",
-    "dyeBrown": "minecraft:brown_dye",
-    "dyeBlue": "minecraft:blue_dye",
-    "dyePurple": "minecraft:purple_dye",
-    "dyeCyan": "minecraft:cyan_dye",
-    "dyeLightGray": "minecraft:light_gray_dye",
-    "dyeGray": "minecraft:gray_dye",
-    "dyePink": "minecraft:pink_dye",
-    "dyeLime": "minecraft:lime_dye",
-    "dyeYellow": "minecraft:yellow_dye",
-    "dyeLightBlue": "minecraft:light_blue_dye",
-    "dyeMagenta": "minecraft:magenta_dye",
-    "dyeOrange": "minecraft:orange_dye",
-    "dyeWhite": "minecraft:white_dye",
-    "sand": "minecraft:sand",
-    "dustSalt": "animania:salt",
+ORE_INGREDIENTS = {
+    "stickWood": {"tag": "forge:rods/wooden"},
+    "plankWood": {"tag": "minecraft:planks"},
+    "blockWool": {"tag": "minecraft:wool"},
+    "wool": {"tag": "minecraft:wool"},
+    "woolRed": {"item": "minecraft:red_wool"},
+    "leather": {"tag": "forge:leather"},
+    "string": {"tag": "forge:string"},
+    "ingotIron": {"tag": "forge:ingots/iron"},
+    "nuggetIron": {"tag": "forge:nuggets/iron"},
+    "nuggetGold": {"tag": "forge:nuggets/gold"},
+    "foodBaconCooked": {"item": "minecraft:cooked_porkchop"},
+    "foodCheese": {"tag": "forge:foods/cheese"},
+    "listAllseed": {"tag": "forge:seeds"},
+    "listAllSeeds": {"tag": "forge:seeds"},
+    "listAllsugar": {"item": "minecraft:sugar"},
+    "treeLeaves": {"tag": "minecraft:leaves"},
+    "dyeBlack": {"tag": "forge:dyes/black"},
+    "dyeRed": {"tag": "forge:dyes/red"},
+    "dyeGreen": {"tag": "forge:dyes/green"},
+    "dyeBrown": {"tag": "forge:dyes/brown"},
+    "dyeBlue": {"tag": "forge:dyes/blue"},
+    "dyePurple": {"tag": "forge:dyes/purple"},
+    "dyeCyan": {"tag": "forge:dyes/cyan"},
+    "dyeLightGray": {"tag": "forge:dyes/light_gray"},
+    "dyeGray": {"tag": "forge:dyes/gray"},
+    "dyePink": {"tag": "forge:dyes/pink"},
+    "dyeLime": {"tag": "forge:dyes/lime"},
+    "dyeYellow": {"tag": "forge:dyes/yellow"},
+    "dyeLightBlue": {"tag": "forge:dyes/light_blue"},
+    "dyeMagenta": {"tag": "forge:dyes/magenta"},
+    "dyeOrange": {"tag": "forge:dyes/orange"},
+    "dyeWhite": {"tag": "forge:dyes/white"},
+    "sand": {"tag": "minecraft:sand"},
+    "dustSalt": {"tag": "forge:dusts/salt"},
 }
 
 GENERIC_ITEM_ALIASES = {
@@ -159,7 +159,7 @@ def normalize_value(value: Any, module: str) -> Any:
         out = {key: normalize_value(item, module) for key, item in value.items()}
         if out.get("type") == "forge:ore_dict":
             ore = str(out.get("ore", ""))
-            return {"tag": ORE_TAGS.get(ore, "minecraft:planks")}
+            return dict(ORE_INGREDIENTS.get(ore, {"tag": "minecraft:planks"}))
         if "item" in out and isinstance(out["item"], str):
             out["item"] = modern_id(out["item"], module)
         if "result" in out and isinstance(out["result"], dict):

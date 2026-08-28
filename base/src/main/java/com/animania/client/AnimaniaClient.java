@@ -21,6 +21,14 @@ public final class AnimaniaClient {
     private AnimaniaClient() {
     }
 
+    /** Register the Mod List screen without leaking Screen into common code. */
+    public static void registerConfigScreen() {
+        net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(
+                net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class,
+                () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory(
+                        com.animania.client.config.AnimaniaConfigScreen::new));
+    }
+
     public static void registerLayers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(ANIMAL_LAYER, AnimaniaAnimalModel::createBodyLayer);
         event.registerLayerDefinition(VEHICLE_LAYER, AnimaniaVehicleModel::createBodyLayer);
@@ -56,6 +64,10 @@ public final class AnimaniaClient {
 
     /** Restores the two tinted egg layers used by every non-random 1.12 animal egg. */
     public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
+        event.register((stack, tintIndex) -> tintIndex == 0
+                        ? net.minecraft.world.item.alchemy.PotionUtils.getColor(net.minecraft.world.item.alchemy.Potions.WATER)
+                        : 0xFFFFFFFF,
+                com.animania.common.AnimaniaItems.WATER_BOTTLE.get());
         ForgeRegistries.ITEMS.getValues().stream()
                 .filter(AnimaniaEntityEggItem.class::isInstance)
                 .map(AnimaniaEntityEggItem.class::cast)

@@ -15,6 +15,8 @@ import java.util.List;
 public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEntity> {
     /** ModelPeacock.render() in 1.12 rendered every fan root with scale / 3. */
     private static final float LEGACY_PEACOCK_FAN_RENDER_SCALE = 1.0F / 3.0F;
+    /** ModelPiglet.render() in 1.12 rendered Tail1 with scale * 0.8. */
+    private static final float LEGACY_PIGLET_TAIL_RENDER_SCALE = 0.8F;
     /**
      * ModelDraftHorseMare/Stallion.render() in 1.12 rendered this complete
      * saddle assembly only while isHorseSaddled() was true.  The converted
@@ -39,6 +41,7 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
     private final List<ModelPart> privateParts;
     private final List<ModelPart> coloredParts;
     private final List<ModelPart> fanNodes;
+    private final ModelPart pigletTail;
     private final List<ModelPart> saddleParts;
     private final List<ResolvedPose> sittingPose;
     private final List<ResolvedPose> sleepingPose;
@@ -47,6 +50,7 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
     private float woolRed = 1.0F;
     private float woolGreen = 1.0F;
     private float woolBlue = 1.0F;
+    private boolean renderPigletTailAtLegacyScale;
 
     public LegacyAnimalModel(ModelPart root, LegacyAnimationProfile profile) {
         this(root, profile, LegacyPoseDefinition.EMPTY, LegacyPetAnimationDefinition.EMPTY);
@@ -72,6 +76,8 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
         // scale without changing peahen/peachick geometry.
         this.fanNodes = resolve(root, new String[]{
                 "fan_node_a", "fan_node_b", "fan_node_c", "fan_node_d"});
+        List<ModelPart> resolvedPigletTail = resolve(root, new String[]{"tail1"});
+        this.pigletTail = resolvedPigletTail.isEmpty() ? null : resolvedPigletTail.get(0);
         this.saddleParts = resolve(root, LEGACY_HORSE_SADDLE_PARTS);
         this.sittingPose = resolvePose(root, sittingPose);
         this.sleepingPose = resolvePose(root, petAnimation.sleepingPose());
@@ -93,6 +99,7 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
     public void setupAnim(AnimaniaAnimalEntity entity, float limbSwing, float limbSwingAmount,
                           float ageInTicks, float netHeadYaw, float headPitch) {
         root.getAllParts().forEach(ModelPart::resetPose);
+        renderPigletTailAtLegacyScale = entity.registryPath().startsWith("piglet_");
         float[] wool = DyeColor.byId(entity.getWoolColor()).getTextureDiffuseColors();
         woolRed = wool[0];
         woolGreen = wool[1];
@@ -111,6 +118,7 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
         for (ModelPart part : saddleParts) part.visible = entity.isSaddled();
         hideGoatHornBudArtifacts(entity);
         if (entity.isPigAnimal()) applyPigRestPose(entity.registryPath(), showPrivateParts);
+        if (isChickenId(entity.registryPath())) applyChickenRestPose(entity.registryPath());
         if (isRabbitId(entity.registryPath())) {
             // The 1.12 rabbit models reset Neck1 in setRotationAngles after
             // their constructor pose is written.  The generated 1.20 layer
@@ -431,15 +439,16 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
     }
 
     /**
-     * Renders the model body normally and the 1.12 peacock fan roots at their
-     * original per-render scale.  ModelPart has no equivalent of the old
-     * ModelRenderer.render(scale / 3), so the fan roots must be isolated from
+     * Renders the model body normally and restores local render scales used
+     * by the 1.12 Java models. ModelPart has no equivalent of the old
+     * ModelRenderer.render(customScale), so those roots must be isolated from
      * the normal root pass and rendered under a temporary PoseStack scale.
      */
     private void renderRootWithLegacyFanScale(PoseStack pose, VertexConsumer consumer,
                                               int packedLight, int packedOverlay,
                                               float red, float green, float blue, float alpha) {
-        if (fanNodes.isEmpty()) {
+        boolean scaledPigletTail = renderPigletTailAtLegacyScale && pigletTail != null;
+        if (fanNodes.isEmpty() && !scaledPigletTail) {
             root.render(pose, consumer, packedLight, packedOverlay, red, green, blue, alpha);
             return;
         }
@@ -455,35 +464,108 @@ public final class LegacyAnimalModel extends HierarchicalModel<AnimaniaAnimalEnt
             // temporary visibility change.
             fan.visible = false;
         }
+        boolean pigletTailVisible = scaledPigletTail && pigletTail.visible;
+        boolean pigletTailSkipDraw = scaledPigletTail && pigletTail.skipDraw;
+        if (scaledPigletTail) pigletTail.visible = false;
         try {
             root.render(pose, consumer, packedLight, packedOverlay, red, green, blue, alpha);
-            pose.pushPose();
-            try {
-                pose.scale(LEGACY_PEACOCK_FAN_RENDER_SCALE,
-                        LEGACY_PEACOCK_FAN_RENDER_SCALE,
-                        LEGACY_PEACOCK_FAN_RENDER_SCALE);
-                for (int i = 0; i < fanNodes.size(); i++) {
-                    if (!visible[i]) continue;
-                    ModelPart fan = fanNodes.get(i);
-                    // ModelPart.render() checks both flags.  Restore them for
-                    // this explicit pass, otherwise the fan would disappear
-                    // after being hidden from the ordinary root pass (and
-                    // would remain skipped during a coloured second pass).
-                    fan.visible = true;
-                    fan.skipDraw = false;
-                    fan.render(pose, consumer, packedLight, packedOverlay,
-                            red, green, blue, alpha);
-                    fan.visible = false;
+            if (!fanNodes.isEmpty()) {
+                pose.pushPose();
+                try {
+                    pose.scale(LEGACY_PEACOCK_FAN_RENDER_SCALE,
+                            LEGACY_PEACOCK_FAN_RENDER_SCALE,
+                            LEGACY_PEACOCK_FAN_RENDER_SCALE);
+                    for (int i = 0; i < fanNodes.size(); i++) {
+                        if (!visible[i]) continue;
+                        ModelPart fan = fanNodes.get(i);
+                        // ModelPart.render() checks both flags. Restore them for
+                        // this explicit pass after hiding the ordinary pass.
+                        fan.visible = true;
+                        fan.skipDraw = false;
+                        fan.render(pose, consumer, packedLight, packedOverlay,
+                                red, green, blue, alpha);
+                        fan.visible = false;
+                    }
+                } finally {
+                    pose.popPose();
                 }
-            } finally {
-                pose.popPose();
+            }
+            if (pigletTailVisible && !pigletTailSkipDraw) {
+                pose.pushPose();
+                try {
+                    // Scaling before ModelPart.render reproduces the old
+                    // Tail1.render(scale * .8F): pivot, cubes and children all
+                    // shrink together around the model origin.
+                    pose.scale(LEGACY_PIGLET_TAIL_RENDER_SCALE,
+                            LEGACY_PIGLET_TAIL_RENDER_SCALE,
+                            LEGACY_PIGLET_TAIL_RENDER_SCALE);
+                    pigletTail.visible = true;
+                    pigletTail.skipDraw = false;
+                    pigletTail.render(pose, consumer, packedLight, packedOverlay,
+                            red, green, blue, alpha);
+                    pigletTail.visible = false;
+                } finally {
+                    pose.popPose();
+                }
             }
         } finally {
             for (int i = 0; i < fanNodes.size(); i++) {
                 fanNodes.get(i).visible = visible[i];
                 fanNodes.get(i).skipDraw = skipDraw[i];
             }
+            if (scaledPigletTail) {
+                pigletTail.visible = pigletTailVisible;
+                pigletTail.skipDraw = pigletTailSkipDraw;
+            }
         }
+    }
+
+    /**
+     * Restores the constant rotations assigned by the 1.12 chicken models in
+     * {@code setRotationAngles}.  The generated layers contain the constructor
+     * offsets but not these per-frame rotations, leaving tails, beaks, combs
+     * and lower legs in their editor pose after the port.
+     */
+    private void applyChickenRestPose(String id) {
+        boolean chick = id.startsWith("chick_");
+        setRotation(child(chick ? "body" : "body1"), Mth.HALF_PI, 0.0F, 0.0F);
+
+        if (chick) {
+            setRotation(child("tail1"), 0.3593722F, 0.0F, 0.0F);
+            setRotation(child("tail1/tail2"), 0.6340498F, 0.0F, 0.0F);
+            for (String wing : new String[]{"wing1", "wing2", "wing3", "wing4"})
+                setRotation(child(wing), 0.1139416F, 0.0F, 0.0F);
+            setRotation(child("neck/head"), -0.0213736F, 0.0F, 0.0F);
+            setRotation(child("neck/beak_top"), 0.7268012F, 0.0F, 0.0F);
+            for (String leg : new String[]{"leg1_top/leg1", "leg2_top/leg2"})
+                setRotation(child(leg), -0.2617994F, 0.0F, 0.0F);
+            for (String foot : new String[]{"leg1_top/foot1", "leg2_top/foot2"})
+                setRotation(child(foot), Mth.HALF_PI, 0.0F, 0.0F);
+            return;
+        }
+
+        setRotation(child("tail1"), 0.2144478F, 0.0F, 0.0F);
+        setRotation(child("tail1/tail2"), 0.5295422F, 0.0F, 0.0F);
+        for (String leg : new String[]{"leg1_pivot/leg1_top", "leg2_pivot/leg2_top"})
+            setRotation(child(leg), 0.2617994F, 0.0F, 0.0F);
+        for (String leg : new String[]{"leg1_pivot/leg1", "leg2_pivot/leg2"})
+            setRotation(child(leg), -0.2617995F, 0.0F, 0.0F);
+        setRotation(child("neck/neck2"), -0.7360098F, 0.0F, 0.0F);
+        setRotation(child("neck/head"), 0.05872217F, 0.0F, 0.0F);
+        setRotation(child("neck/crest"), 0.3490659F, 0.0F, 0.0F);
+        setRotation(child("neck/crest_bottom"), 0.0F, 0.0F, 0.0F);
+        setRotation(child("neck/beak_bottom"), 0.05872219F, 0.0F, 0.0F);
+        setRotation(child("neck/beak_top"), 0.3169494F, 0.0F, 0.0F);
+
+        if (id.startsWith("rooster_")) {
+            setRotation(child("feather1"), 0.5097123F, -0.3010362F, -0.1503443F);
+            setRotation(child("feather2"), 0.5097123F, 0.3010362F, 0.1503443F);
+            setRotation(child("feather3"), 0.5295422F, 0.0F, 0.0F);
+        }
+    }
+
+    private static boolean isChickenId(String id) {
+        return id.startsWith("chick_") || id.startsWith("hen_") || id.startsWith("rooster_");
     }
 
     @Override

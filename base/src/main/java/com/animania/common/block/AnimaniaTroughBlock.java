@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.LiquidBlockContainer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -27,6 +28,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -35,7 +38,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 
 /** Native two-block trough retaining the legacy controller/companion layout. */
-public final class AnimaniaTroughBlock extends BaseEntityBlock {
+public final class AnimaniaTroughBlock extends BaseEntityBlock implements LiquidBlockContainer {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     private static final VoxelShape NORTH_SOUTH = Block.box(1.6, 0, 0, 14.4, 4.8, 16);
     private static final VoxelShape EAST_WEST = Block.box(0, 0, 1.6, 16, 4.8, 14.4);
@@ -56,6 +59,17 @@ public final class AnimaniaTroughBlock extends BaseEntityBlock {
     @Override public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return getShape(state, level, pos, context);
     }
+
+    /** Treat the wooden trough as an ordinary solid block when fluid spreads. */
+    @Override public boolean canBeReplaced(BlockState state, Fluid fluid) { return false; }
+
+    /**
+     * FlowingFluid ignores canBeReplaced for non-solid partial blocks in
+     * 1.20.1.  Implementing LiquidBlockContainer makes it consult this method
+     * before replacing the trough with the incoming fluid.
+     */
+    @Override public boolean canPlaceLiquid(BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) { return false; }
+    @Override public boolean placeLiquid(LevelAccessor level, BlockPos pos, BlockState state, FluidState fluid) { return false; }
 
     @Override public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
         Direction facing = context.getHorizontalDirection();
@@ -109,8 +123,9 @@ public final class AnimaniaTroughBlock extends BaseEntityBlock {
         if (trough == null || !trough.getItem(0).isEmpty()) return 0;
         FluidStack stored = trough.fluidSnapshot();
         if (!stored.isEmpty() && stored.getFluid() != Fluids.WATER) return 0;
-        if (stored.getAmount() >= 1000) return 0;
-        return trough.fillFluid(new FluidStack(Fluids.WATER, Math.min(100, 1000 - stored.getAmount())),
+        int capacity = trough.fluidCapacity();
+        if (stored.getAmount() >= capacity) return 0;
+        return trough.fillFluid(new FluidStack(Fluids.WATER, Math.min(100, capacity - stored.getAmount())),
                 net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
     }
 
@@ -120,8 +135,9 @@ public final class AnimaniaTroughBlock extends BaseEntityBlock {
                 && trough.fluidSnapshot().isEmpty()) {
             ItemStack held = dropped.getItem();
             ItemStack existing = trough.getItem(0);
-            if ((existing.isEmpty() || ItemStack.isSameItemSameTags(existing, held)) && existing.getCount() < 3) {
-                int moved = Math.min(3 - existing.getCount(), held.getCount());
+            int capacity = trough.solidCapacity();
+            if ((existing.isEmpty() || ItemStack.isSameItemSameTags(existing, held)) && existing.getCount() < capacity) {
+                int moved = Math.min(capacity - existing.getCount(), held.getCount());
                 ItemStack inserted = held.copy(); inserted.setCount(existing.getCount() + moved); trough.setItem(0, inserted);
                 held.shrink(moved); if (held.isEmpty()) dropped.discard();
             }
@@ -138,7 +154,7 @@ public final class AnimaniaTroughBlock extends BaseEntityBlock {
             if (!level.isClientSide) {
                 ItemStack existing = trough.getItem(0);
                 if (existing.isEmpty() || ItemStack.isSameItemSameTags(existing, held)) {
-                    int moved = Math.min(3 - existing.getCount(), held.getCount());
+                    int moved = Math.min(trough.solidCapacity() - existing.getCount(), held.getCount());
                     if (moved > 0) { ItemStack inserted = held.copy(); inserted.setCount(existing.getCount() + moved); trough.setItem(0, inserted); if (!player.getAbilities().instabuild) held.shrink(moved); }
                 }
             }
@@ -154,7 +170,12 @@ public final class AnimaniaTroughBlock extends BaseEntityBlock {
     @Override public boolean hasAnalogOutputSignal(BlockState state) { return true; }
     @Override public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         if (!(level.getBlockEntity(pos) instanceof AnimaniaBlocks.TroughEntity trough)) return 0;
-        if (!trough.getItem(0).isEmpty()) return Math.min(15, trough.getItem(0).getCount() * 5);
-        return Math.min(15, trough.fluidSnapshot().getAmount() / 66);
+        if (!trough.getItem(0).isEmpty()) return analogSignal(trough.getItem(0).getCount(), trough.solidCapacity());
+        return analogSignal(trough.fluidSnapshot().getAmount(), trough.fluidCapacity());
+    }
+
+    private static int analogSignal(int amount, int capacity) {
+        if (amount <= 0 || capacity <= 0) return 0;
+        return Math.min(15, (int) Math.ceil((double) amount * 15.0D / capacity));
     }
 }

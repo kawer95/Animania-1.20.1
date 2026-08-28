@@ -13,7 +13,7 @@
       "item": "minecraft:stone_slab"
     },
     "I": {
-      "tag": "minecraft:iron_ingots"
+      "tag": "forge:ingots/iron"
     }
   }
 }

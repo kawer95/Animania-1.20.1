@@ -1,0 +1,52 @@
+{
+  "sources": [
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/milk_holstein_still"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/milk_holstein_flow"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/milk_friesian_still"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/milk_friesian_flow"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/milk_jersey_still"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/milk_jersey_flow"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/milk_goat_still"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/milk_goat_flow"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/milk_sheep_still"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/milk_sheep_flow"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/animania_honey_still"
+    },
+    {
+      "type": "single",
+      "resource": "animania_farm:fluids/animania_honey_flow"
+    }
+  ]
+}

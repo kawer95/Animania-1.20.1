@@ -15,6 +15,14 @@ import net.minecraft.world.entity.EntityType;
 
 final class AnimaniaCatsDogsClient {
     private AnimaniaCatsDogsClient() { }
+    static void registerConfigScreen() {
+        net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(
+                net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class,
+                () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory((minecraft, parent) ->
+                        new com.animania.client.config.AnimaniaConfigScreen(parent,
+                                net.minecraft.network.chat.Component.translatable("screen.animania_catsdogs.config.title"),
+                                AnimaniaCatsDogs.MOD_ID, CatsDogsConfig.SPEC)));
+    }
     static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         CatsDogsLegacyModelLayers.LAYERS.forEach((id, layer) -> event.registerLayerDefinition(layer, () -> CatsDogsLegacyModelLayers.create(id)));
         CatsDogsNativeModelLayers.LAYERS.forEach((id, layer) -> event.registerLayerDefinition(layer, () -> CatsDogsNativeModelLayers.create(id)));

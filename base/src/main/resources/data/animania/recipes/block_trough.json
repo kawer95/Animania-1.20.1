@@ -13,10 +13,10 @@
       "tag": "minecraft:planks"
     },
     "s": {
-      "tag": "minecraft:planks"
+      "tag": "forge:rods/wooden"
     },
     "i": {
-      "tag": "minecraft:iron_ingots"
+      "tag": "forge:ingots/iron"
     }
   }
 }

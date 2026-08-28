@@ -6,7 +6,7 @@
     "2": "animania_farm:block/cheese_mold_top",
     "3": "animania_farm:block/cheese_mold_bottom",
     "4": "animania_farm:block/cheese_mold_inner",
-    "5": "animania_farm:block/salt",
+    "5": "animania:block/salt",
     "particle": "animania_farm:block/cheese_mold_bottom"
   },
   "elements": [
@@ -359,7 +359,7 @@
       "name": "Milk",
       "from": [
         1.0,
-        5.0,
+        4.75,
         1.0
       ],
       "to": [

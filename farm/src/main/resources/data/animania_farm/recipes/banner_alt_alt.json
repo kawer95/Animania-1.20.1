@@ -10,7 +10,7 @@
   "type": "minecraft:crafting_shaped",
   "key": {
     "s": {
-      "tag": "minecraft:planks"
+      "tag": "forge:rods/wooden"
     },
     "w": {
       "item": "animania_farm:animania_wool"

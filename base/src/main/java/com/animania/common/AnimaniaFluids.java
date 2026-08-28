@@ -26,7 +26,9 @@ public final class AnimaniaFluids {
             DeferredRegister.create(ForgeRegistries.BLOCKS, Animania.MOD_ID);
 
     public static final RegistryObject<FluidType> SLOP_TYPE = FLUID_TYPES.register("slop",
-            () -> new FluidType(FluidType.Properties.create().density(1000).viscosity(1000).canSwim(false)) {
+            () -> new FluidType(FluidType.Properties.create()
+                    .descriptionId("fluid.animania.slop")
+                    .density(1000).viscosity(1000).canSwim(false)) {
                 @Override
                 public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                     consumer.accept(new IClientFluidTypeExtensions() {

@@ -13,7 +13,7 @@
       "tag": "minecraft:planks"
     },
     "i": {
-      "tag": "minecraft:iron_ingots"
+      "tag": "forge:ingots/iron"
     },
     "w": {
       "item": "animania_farm:wheel"

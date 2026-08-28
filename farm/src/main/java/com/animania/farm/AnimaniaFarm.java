@@ -102,6 +102,8 @@ public final class AnimaniaFarm {
         AnimaniaApi.registerFoodMatcher(MOD_ID, (id, stack) -> FarmConfig.matchesSpeciesFood(id, stack));
         AnimaniaSleepProfiles.register(MOD_ID, AnimaniaFarm::sleepProfile);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, FarmConfig.SPEC);
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                () -> AnimaniaFarmClient::registerConfigScreen);
         bus.addListener(this::attributes);
         bus.addListener(this::spawnPlacements);
         bus.addListener(this::registerGameTests);
@@ -121,6 +123,7 @@ public final class AnimaniaFarm {
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> bus.addListener(AnimaniaFarmClient::onClientSetup));
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> bus.addListener(AnimaniaFarmClient::registerLayers));
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> bus.addListener(AnimaniaFarmClient::registerRenderers));
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> bus.addListener(AnimaniaFarmClient::registerBlockColors));
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {

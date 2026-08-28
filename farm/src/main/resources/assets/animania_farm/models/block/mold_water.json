@@ -359,7 +359,7 @@
       "name": "Milk",
       "from": [
         1.0,
-        9.0,
+        8.75,
         1.0
       ],
       "to": [
@@ -370,6 +370,7 @@
       "faces": {
         "north": {
           "texture": "#5",
+          "tintindex": 0,
           "uv": [
             0.0,
             0.0,
@@ -379,6 +380,7 @@
         },
         "east": {
           "texture": "#5",
+          "tintindex": 0,
           "uv": [
             0.0,
             0.0,
@@ -388,6 +390,7 @@
         },
         "south": {
           "texture": "#5",
+          "tintindex": 0,
           "uv": [
             0.0,
             0.0,
@@ -397,6 +400,7 @@
         },
         "west": {
           "texture": "#5",
+          "tintindex": 0,
           "uv": [
             0.0,
             0.0,
@@ -406,6 +410,7 @@
         },
         "up": {
           "texture": "#5",
+          "tintindex": 0,
           "uv": [
             1.0,
             1.0,
@@ -415,6 +420,7 @@
         },
         "down": {
           "texture": "#5",
+          "tintindex": 0,
           "uv": [
             1.0,
             1.0,

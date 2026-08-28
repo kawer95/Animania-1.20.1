@@ -1,0 +1,23 @@
+{
+  "replace": false,
+  "values": [
+    "animania_farm:hog_duroc",
+    "animania_farm:hog_hampshire",
+    "animania_farm:hog_large_black",
+    "animania_farm:hog_large_white",
+    "animania_farm:hog_old_spot",
+    "animania_farm:hog_yorkshire",
+    "animania_farm:piglet_duroc",
+    "animania_farm:piglet_hampshire",
+    "animania_farm:piglet_large_black",
+    "animania_farm:piglet_large_white",
+    "animania_farm:piglet_old_spot",
+    "animania_farm:piglet_yorkshire",
+    "animania_farm:sow_duroc",
+    "animania_farm:sow_hampshire",
+    "animania_farm:sow_large_black",
+    "animania_farm:sow_large_white",
+    "animania_farm:sow_old_spot",
+    "animania_farm:sow_yorkshire"
+  ]
+}

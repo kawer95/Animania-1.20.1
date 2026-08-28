@@ -6,13 +6,144 @@
     "animation": 8
   },
   "verified": {
-    "java_model": 104,
-    "craftstudio_model": 18,
-    "animation": 8
+    "java_model": 0,
+    "craftstudio_model": 0,
+    "animation": 0
   },
   "total": 130,
-  "error_count": 0,
-  "errors": [],
+  "error_count": 130,
+  "errors": [
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/blocks/ModelPetBowl.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/blocks/ModelPetBowl.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatAmericanShorthair.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatAmericanShorthair.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatAsiatic.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatAsiatic.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatExotic.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatExotic.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatOcelot.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatOcelot.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatRagdoll.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatRagdoll.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatSiamese.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatSiamese.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatTabby.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatTabby.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelBloodHound.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelBloodHound.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelChihuahua.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelChihuahua.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelCollie.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelCollie.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelCorgi.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelCorgi.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelDachshund.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelDachshund.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelFox.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelFox.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelGermanShepherd.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelGermanShepherd.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelGreatDane.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelGreatDane.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelGreyhound.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelGreyhound.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelHusky.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelHusky.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelLabrador.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelLabrador.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelPomeranian.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelPomeranian.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelPoodle.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelPoodle.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelPug.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelPug.java",
+    "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelWolf.java: missing pinned source src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelWolf.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/amphibians/ModelFrog.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/amphibians/ModelFrog.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/amphibians/ModelToad.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/amphibians/ModelToad.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/peafowl/ModelPeachick.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/peafowl/ModelPeachick.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/peafowl/ModelPeacock.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/peafowl/ModelPeacock.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/peafowl/ModelPeafowl.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/peafowl/ModelPeafowl.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelChinchilla.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rabbits/ModelChinchilla.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelCottontail.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rabbits/ModelCottontail.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelDutch.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rabbits/ModelDutch.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelHavana.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rabbits/ModelHavana.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelJack.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rabbits/ModelJack.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelLop.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rabbits/ModelLop.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelNewZealand.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rabbits/ModelNewZealand.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelRex.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rabbits/ModelRex.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rodents/ModelBall.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rodents/ModelBall.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rodents/ModelFerret.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rodents/ModelFerret.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rodents/ModelHamster.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rodents/ModelHamster.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rodents/ModelHedgehog.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rodents/ModelHedgehog.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rodents/ModelRendererBall.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/rodents/ModelRendererBall.java",
+    "extra:java_model:src/main/java/com/animania/addons/extra/client/model/tileentity/ModelHamsterWheel.java: missing pinned source src/main/java/com/animania/addons/extra/client/model/tileentity/ModelHamsterWheel.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/chicken/ModelChick.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/chicken/ModelChick.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/chicken/ModelHen.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/chicken/ModelHen.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/chicken/ModelRooster.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/chicken/ModelRooster.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelBull.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelBull.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelBullAngus.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelBullAngus.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelBullHereford.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelBullHereford.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelBullLonghorn.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelBullLonghorn.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCalf.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelCalf.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCalfAngus.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelCalfAngus.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCalfLonghorn.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelCalfLonghorn.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCow.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelCow.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCowAngus.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelCowAngus.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCowHereford.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelCowHereford.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCowLonghorn.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/cow/ModelCowLonghorn.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckAlpine.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckAlpine.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckAngora.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckAngora.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckFainting.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckFainting.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckKiko.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckKiko.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckKinder.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckKinder.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckNigerianDwarf.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckNigerianDwarf.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckPygmy.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckPygmy.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeAlpine.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeAlpine.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeAngora.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeAngora.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeFainting.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeFainting.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeKiko.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeKiko.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeKinder.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeKinder.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeNigerianDwarf.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeNigerianDwarf.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoePygmy.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelDoePygmy.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidAlpine.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelKidAlpine.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidAngora.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelKidAngora.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidFainting.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelKidFainting.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidKiko.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelKidKiko.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidKinder.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelKidKinder.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidNigerianDwarf.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelKidNigerianDwarf.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidPygmy.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/goats/ModelKidPygmy.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/horse/ModelDraftHorseFoal.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/horse/ModelDraftHorseFoal.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/horse/ModelDraftHorseMare.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/horse/ModelDraftHorseMare.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/horse/ModelDraftHorseStallion.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/horse/ModelDraftHorseStallion.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelHog.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/pig/ModelHog.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelHogHampshire.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/pig/ModelHogHampshire.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelHogLargeBlack.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/pig/ModelHogLargeBlack.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelPiglet.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/pig/ModelPiglet.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelPigletHampshire.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/pig/ModelPigletHampshire.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelSow.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/pig/ModelSow.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelSowHampshire.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/pig/ModelSowHampshire.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelSowLargeBlack.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/pig/ModelSowLargeBlack.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelDorperSheep.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/sheep/ModelDorperSheep.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelDorsetEwe.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/sheep/ModelDorsetEwe.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelDorsetRam.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/sheep/ModelDorsetRam.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelFriesianSheep.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/sheep/ModelFriesianSheep.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelJacobSheep.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/sheep/ModelJacobSheep.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelMerinoEwe.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/sheep/ModelMerinoEwe.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelMerinoRam.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/sheep/ModelMerinoRam.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelSuffolkEwe.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/sheep/ModelSuffolkEwe.java",
+    "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelSuffolkRam.java: missing pinned source src/main/java/com/animania/addons/farm/client/model/sheep/ModelSuffolkRam.java",
+    "base:java_model:src/main/java/com/animania/api/rendering/ModelPose.java: missing pinned source src/main/java/com/animania/api/rendering/ModelPose.java",
+    "base:java_model:src/main/java/com/animania/client/models/blocks/ModelSaltLick.java: missing pinned source src/main/java/com/animania/client/models/blocks/ModelSaltLick.java",
+    "base:java_model:src/main/java/com/animania/client/models/ModelNest.java: missing pinned source src/main/java/com/animania/client/models/ModelNest.java",
+    "base:java_model:src/main/java/com/animania/client/models/ModelTrough.java: missing pinned source src/main/java/com/animania/client/models/ModelTrough.java",
+    "base:java_model:src/main/java/com/animania/client/models/ModelWaterBottle.java: missing pinned source src/main/java/com/animania/client/models/ModelWaterBottle.java",
+    "base:java_model:src/main/java/com/animania/client/models/render/ModelRendererAnimania.java: missing pinned source src/main/java/com/animania/client/models/render/ModelRendererAnimania.java",
+    "base:java_model:src/main/java/com/animania/client/models/render/ModelRendererColored.java: missing pinned source src/main/java/com/animania/client/models/render/ModelRendererColored.java",
+    "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_cat_bed_1.csjsmodel: missing pinned source src/main/resources/assets/catsdogs/animania/craftstudio/models/blocks/model_cat_bed_1.csjsmodel",
+    "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_cat_bed_2.csjsmodel: missing pinned source src/main/resources/assets/catsdogs/animania/craftstudio/models/blocks/model_cat_bed_2.csjsmodel",
+    "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_cat_tower.csjsmodel: missing pinned source src/main/resources/assets/catsdogs/animania/craftstudio/models/blocks/model_cat_tower.csjsmodel",
+    "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_dog_house.csjsmodel: missing pinned source src/main/resources/assets/catsdogs/animania/craftstudio/models/blocks/model_dog_house.csjsmodel",
+    "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_dog_pillow.csjsmodel: missing pinned source src/main/resources/assets/catsdogs/animania/craftstudio/models/blocks/model_dog_pillow.csjsmodel",
+    "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_litter_box.csjsmodel: missing pinned source src/main/resources/assets/catsdogs/animania/craftstudio/models/blocks/model_litter_box.csjsmodel",
+    "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_pet_bowl.csjsmodel: missing pinned source src/main/resources/assets/catsdogs/animania/craftstudio/models/blocks/model_pet_bowl.csjsmodel",
+    "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/entity/model_ragdoll.csjsmodel: missing pinned source src/main/resources/assets/catsdogs/animania/craftstudio/models/entity/model_ragdoll.csjsmodel",
+    "extra:animation:assets/extra/animania/craftstudio/animations/blocks/anim_hamster_wheel.csjsmodelanim: missing pinned source src/main/resources/assets/extra/animania/craftstudio/animations/blocks/anim_hamster_wheel.csjsmodelanim",
+    "extra:animation:assets/extra/animania/craftstudio/animations/entity/hamster_run.csjsmodelanim: missing pinned source src/main/resources/assets/extra/animania/craftstudio/animations/entity/hamster_run.csjsmodelanim",
+    "extra:craftstudio_model:assets/extra/animania/craftstudio/models/blocks/model_hamster_wheel.csjsmodel: missing pinned source src/main/resources/assets/extra/animania/craftstudio/models/blocks/model_hamster_wheel.csjsmodel",
+    "extra:craftstudio_model:assets/extra/animania/craftstudio/models/entity/hamster.csjsmodel: missing pinned source src/main/resources/assets/extra/animania/craftstudio/models/entity/hamster.csjsmodel",
+    "farm:animation:assets/farm/animania/craftstudio/animations/blocks/anim_bees.csjsmodelanim: missing pinned source src/main/resources/assets/farm/animania/craftstudio/animations/blocks/anim_bees.csjsmodelanim",
+    "farm:animation:assets/farm/animania/craftstudio/animations/blocks/anim_bees_wild.csjsmodelanim: missing pinned source src/main/resources/assets/farm/animania/craftstudio/animations/blocks/anim_bees_wild.csjsmodelanim",
+    "farm:animation:assets/farm/animania/craftstudio/animations/entity/anim_cart.csjsmodelanim: missing pinned source src/main/resources/assets/farm/animania/craftstudio/animations/entity/anim_cart.csjsmodelanim",
+    "farm:animation:assets/farm/animania/craftstudio/animations/entity/anim_cart_chest.csjsmodelanim: missing pinned source src/main/resources/assets/farm/animania/craftstudio/animations/entity/anim_cart_chest.csjsmodelanim",
+    "farm:animation:assets/farm/animania/craftstudio/animations/entity/anim_tiller.csjsmodelanim: missing pinned source src/main/resources/assets/farm/animania/craftstudio/animations/entity/anim_tiller.csjsmodelanim",
+    "farm:animation:assets/farm/animania/craftstudio/animations/entity/anim_wagon.csjsmodelanim: missing pinned source src/main/resources/assets/farm/animania/craftstudio/animations/entity/anim_wagon.csjsmodelanim",
+    "farm:craftstudio_model:assets/farm/animania/craftstudio/models/blocks/model_bee_hive.csjsmodel: missing pinned source src/main/resources/assets/farm/animania/craftstudio/models/blocks/model_bee_hive.csjsmodel",
+    "farm:craftstudio_model:assets/farm/animania/craftstudio/models/blocks/model_wild_hive.csjsmodel: missing pinned source src/main/resources/assets/farm/animania/craftstudio/models/blocks/model_wild_hive.csjsmodel",
+    "farm:craftstudio_model:assets/farm/animania/craftstudio/models/entity/model_cart.csjsmodel: missing pinned source src/main/resources/assets/farm/animania/craftstudio/models/entity/model_cart.csjsmodel",
+    "farm:craftstudio_model:assets/farm/animania/craftstudio/models/entity/model_cart_chest.csjsmodel: missing pinned source src/main/resources/assets/farm/animania/craftstudio/models/entity/model_cart_chest.csjsmodel",
+    "farm:craftstudio_model:assets/farm/animania/craftstudio/models/entity/model_tiller.csjsmodel: missing pinned source src/main/resources/assets/farm/animania/craftstudio/models/entity/model_tiller.csjsmodel",
+    "farm:craftstudio_model:assets/farm/animania/craftstudio/models/entity/model_wagon.csjsmodel: missing pinned source src/main/resources/assets/farm/animania/craftstudio/models/entity/model_wagon.csjsmodel",
+    "base:craftstudio_model:assets/player_anim/craftstudio/models/entity/player.csjsmodel: missing pinned source src/main/resources/assets/player_anim/craftstudio/models/entity/player.csjsmodel",
+    "base:craftstudio_model:assets/player_anim/craftstudio/models/entity/player_sit.csjsmodel: missing pinned source src/main/resources/assets/player_anim/craftstudio/models/entity/player_sit.csjsmodel"
+  ],
   "entries": [
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/blocks/ModelPetBowl.java",
@@ -25,7 +156,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatAmericanShorthair.java",
@@ -38,7 +169,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatAsiatic.java",
@@ -51,7 +182,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatExotic.java",
@@ -64,7 +195,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatOcelot.java",
@@ -77,7 +208,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatRagdoll.java",
@@ -90,7 +221,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatSiamese.java",
@@ -103,7 +234,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/cats/ModelCatTabby.java",
@@ -116,7 +247,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelBloodHound.java",
@@ -129,7 +260,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelChihuahua.java",
@@ -142,7 +273,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelCollie.java",
@@ -155,7 +286,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelCorgi.java",
@@ -168,7 +299,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelDachshund.java",
@@ -181,7 +312,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelFox.java",
@@ -194,7 +325,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelGermanShepherd.java",
@@ -207,7 +338,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelGreatDane.java",
@@ -220,7 +351,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelGreyhound.java",
@@ -233,7 +364,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelHusky.java",
@@ -246,7 +377,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelLabrador.java",
@@ -259,7 +390,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelPomeranian.java",
@@ -272,7 +403,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelPoodle.java",
@@ -285,7 +416,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelPug.java",
@@ -298,7 +429,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:java_model:src/main/java/com/animania/addons/catsdogs/client/models/dogs/ModelWolf.java",
@@ -311,7 +442,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/amphibians/ModelFrog.java",
@@ -324,7 +455,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/amphibians/ModelToad.java",
@@ -337,7 +468,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/peafowl/ModelPeachick.java",
@@ -350,7 +481,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/peafowl/ModelPeacock.java",
@@ -363,7 +494,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/peafowl/ModelPeafowl.java",
@@ -376,7 +507,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelChinchilla.java",
@@ -389,7 +520,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelCottontail.java",
@@ -402,7 +533,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelDutch.java",
@@ -415,7 +546,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelHavana.java",
@@ -428,7 +559,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelJack.java",
@@ -441,7 +572,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelLop.java",
@@ -454,7 +585,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelNewZealand.java",
@@ -467,7 +598,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rabbits/ModelRex.java",
@@ -480,7 +611,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rodents/ModelBall.java",
@@ -493,7 +624,7 @@
       "tests": [
         "base/src/test/java/com/animania/client/AnimaniaHamsterBallModelTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rodents/ModelFerret.java",
@@ -506,7 +637,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rodents/ModelHamster.java",
@@ -520,7 +651,7 @@
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java",
         "extra/src/test/java/com/animania/extra/ExtraModelLayerTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rodents/ModelHedgehog.java",
@@ -533,7 +664,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/rodents/ModelRendererBall.java",
@@ -546,7 +677,7 @@
       "tests": [
         "base/src/test/java/com/animania/client/AnimaniaHamsterBallModelTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:java_model:src/main/java/com/animania/addons/extra/client/model/tileentity/ModelHamsterWheel.java",
@@ -559,7 +690,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/chicken/ModelChick.java",
@@ -572,7 +703,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/chicken/ModelHen.java",
@@ -585,7 +716,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/chicken/ModelRooster.java",
@@ -598,7 +729,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelBull.java",
@@ -611,7 +742,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelBullAngus.java",
@@ -624,7 +755,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelBullHereford.java",
@@ -637,7 +768,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelBullLonghorn.java",
@@ -650,7 +781,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCalf.java",
@@ -663,7 +794,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCalfAngus.java",
@@ -676,7 +807,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCalfLonghorn.java",
@@ -689,7 +820,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCow.java",
@@ -702,7 +833,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCowAngus.java",
@@ -715,7 +846,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCowHereford.java",
@@ -728,7 +859,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/cow/ModelCowLonghorn.java",
@@ -741,7 +872,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckAlpine.java",
@@ -754,7 +885,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckAngora.java",
@@ -767,7 +898,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckFainting.java",
@@ -780,7 +911,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckKiko.java",
@@ -793,7 +924,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckKinder.java",
@@ -806,7 +937,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckNigerianDwarf.java",
@@ -819,7 +950,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelBuckPygmy.java",
@@ -832,7 +963,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeAlpine.java",
@@ -845,7 +976,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeAngora.java",
@@ -858,7 +989,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeFainting.java",
@@ -871,7 +1002,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeKiko.java",
@@ -884,7 +1015,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeKinder.java",
@@ -897,7 +1028,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoeNigerianDwarf.java",
@@ -910,7 +1041,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelDoePygmy.java",
@@ -923,7 +1054,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidAlpine.java",
@@ -936,7 +1067,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidAngora.java",
@@ -949,7 +1080,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidFainting.java",
@@ -962,7 +1093,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidKiko.java",
@@ -975,7 +1106,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidKinder.java",
@@ -988,7 +1119,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidNigerianDwarf.java",
@@ -1001,7 +1132,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/goats/ModelKidPygmy.java",
@@ -1014,7 +1145,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/horse/ModelDraftHorseFoal.java",
@@ -1027,7 +1158,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/horse/ModelDraftHorseMare.java",
@@ -1040,7 +1171,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/horse/ModelDraftHorseStallion.java",
@@ -1053,7 +1184,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelHog.java",
@@ -1066,7 +1197,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelHogHampshire.java",
@@ -1079,7 +1210,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelHogLargeBlack.java",
@@ -1092,7 +1223,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelPiglet.java",
@@ -1105,7 +1236,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelPigletHampshire.java",
@@ -1118,7 +1249,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelSow.java",
@@ -1131,7 +1262,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelSowHampshire.java",
@@ -1144,7 +1275,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/pig/ModelSowLargeBlack.java",
@@ -1157,7 +1288,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelDorperSheep.java",
@@ -1170,7 +1301,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelDorsetEwe.java",
@@ -1183,7 +1314,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelDorsetRam.java",
@@ -1196,7 +1327,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelFriesianSheep.java",
@@ -1209,7 +1340,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelJacobSheep.java",
@@ -1222,7 +1353,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelMerinoEwe.java",
@@ -1235,7 +1366,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelMerinoRam.java",
@@ -1248,7 +1379,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelSuffolkEwe.java",
@@ -1261,7 +1392,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:java_model:src/main/java/com/animania/addons/farm/client/model/sheep/ModelSuffolkRam.java",
@@ -1274,7 +1405,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "base:java_model:src/main/java/com/animania/api/rendering/ModelPose.java",
@@ -1289,7 +1420,7 @@
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java",
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "base:java_model:src/main/java/com/animania/client/models/blocks/ModelSaltLick.java",
@@ -1303,7 +1434,7 @@
       "tests": [
         "base/src/test/java/com/animania/client/BaseLegacyModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "base:java_model:src/main/java/com/animania/client/models/ModelNest.java",
@@ -1317,7 +1448,7 @@
       "tests": [
         "base/src/test/java/com/animania/client/BaseLegacyModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "base:java_model:src/main/java/com/animania/client/models/ModelTrough.java",
@@ -1331,7 +1462,7 @@
       "tests": [
         "base/src/test/java/com/animania/client/BaseLegacyModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "base:java_model:src/main/java/com/animania/client/models/ModelWaterBottle.java",
@@ -1344,7 +1475,7 @@
       "tests": [
         "base/src/test/java/com/animania/client/BaseLegacyModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "base:java_model:src/main/java/com/animania/client/models/render/ModelRendererAnimania.java",
@@ -1359,7 +1490,7 @@
         "extra/src/test/java/com/animania/extra/ExtraRegistryTest.java",
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "base:java_model:src/main/java/com/animania/client/models/render/ModelRendererColored.java",
@@ -1372,7 +1503,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmRegistryTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_cat_bed_1.csjsmodel",
@@ -1385,7 +1516,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_cat_bed_2.csjsmodel",
@@ -1398,7 +1529,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_cat_tower.csjsmodel",
@@ -1411,7 +1542,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_dog_house.csjsmodel",
@@ -1424,7 +1555,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_dog_pillow.csjsmodel",
@@ -1437,7 +1568,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_litter_box.csjsmodel",
@@ -1450,7 +1581,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/blocks/model_pet_bowl.csjsmodel",
@@ -1463,7 +1594,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "catsdogs:craftstudio_model:assets/catsdogs/animania/craftstudio/models/entity/model_ragdoll.csjsmodel",
@@ -1476,7 +1607,7 @@
       "tests": [
         "catsdogs/src/test/java/com/animania/catsdogs/CatsDogsNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:animation:assets/extra/animania/craftstudio/animations/blocks/anim_hamster_wheel.csjsmodelanim",
@@ -1489,7 +1620,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:animation:assets/extra/animania/craftstudio/animations/entity/hamster_run.csjsmodelanim",
@@ -1502,7 +1633,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:craftstudio_model:assets/extra/animania/craftstudio/models/blocks/model_hamster_wheel.csjsmodel",
@@ -1515,7 +1646,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "extra:craftstudio_model:assets/extra/animania/craftstudio/models/entity/hamster.csjsmodel",
@@ -1528,7 +1659,7 @@
       "tests": [
         "extra/src/test/java/com/animania/extra/ExtraNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:animation:assets/farm/animania/craftstudio/animations/blocks/anim_bees.csjsmodelanim",
@@ -1541,7 +1672,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:animation:assets/farm/animania/craftstudio/animations/blocks/anim_bees_wild.csjsmodelanim",
@@ -1554,7 +1685,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:animation:assets/farm/animania/craftstudio/animations/entity/anim_cart.csjsmodelanim",
@@ -1567,7 +1698,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:animation:assets/farm/animania/craftstudio/animations/entity/anim_cart_chest.csjsmodelanim",
@@ -1580,7 +1711,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:animation:assets/farm/animania/craftstudio/animations/entity/anim_tiller.csjsmodelanim",
@@ -1593,7 +1724,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:animation:assets/farm/animania/craftstudio/animations/entity/anim_wagon.csjsmodelanim",
@@ -1606,7 +1737,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:craftstudio_model:assets/farm/animania/craftstudio/models/blocks/model_bee_hive.csjsmodel",
@@ -1619,7 +1750,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:craftstudio_model:assets/farm/animania/craftstudio/models/blocks/model_wild_hive.csjsmodel",
@@ -1632,7 +1763,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:craftstudio_model:assets/farm/animania/craftstudio/models/entity/model_cart.csjsmodel",
@@ -1645,7 +1776,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:craftstudio_model:assets/farm/animania/craftstudio/models/entity/model_cart_chest.csjsmodel",
@@ -1658,7 +1789,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:craftstudio_model:assets/farm/animania/craftstudio/models/entity/model_tiller.csjsmodel",
@@ -1671,7 +1802,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "farm:craftstudio_model:assets/farm/animania/craftstudio/models/entity/model_wagon.csjsmodel",
@@ -1684,7 +1815,7 @@
       "tests": [
         "farm/src/test/java/com/animania/farm/FarmNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "base:craftstudio_model:assets/player_anim/craftstudio/models/entity/player.csjsmodel",
@@ -1697,7 +1828,7 @@
       "tests": [
         "base/src/test/java/com/animania/client/BaseNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     },
     {
       "key": "base:craftstudio_model:assets/player_anim/craftstudio/models/entity/player_sit.csjsmodel",
@@ -1710,7 +1841,7 @@
       "tests": [
         "base/src/test/java/com/animania/client/BaseNativeModelConversionTest.java"
       ],
-      "verified": true
+      "verified": false
     }
   ]
 }

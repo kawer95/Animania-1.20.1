@@ -70,6 +70,8 @@ public final class AnimaniaExtra {
         AnimaniaApi.registerFoodMatcher(MOD_ID, (id, stack) -> ExtraConfig.matchesSpeciesFood(id, stack));
         AnimaniaSleepProfiles.register(MOD_ID, AnimaniaExtra::sleepProfile);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ExtraConfig.SPEC);
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                () -> AnimaniaExtraClient::registerConfigScreen);
         bus.addListener(this::attributes);
         bus.addListener(this::spawnPlacements);
         bus.addListener(this::registerGameTests);

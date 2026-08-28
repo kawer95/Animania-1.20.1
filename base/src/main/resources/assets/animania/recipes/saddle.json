@@ -10,13 +10,13 @@
   "type": "minecraft:crafting_shaped",
   "key": {
     "l": {
-      "tag": "minecraft:leather"
+      "tag": "forge:leather"
     },
     "w": {
       "tag": "minecraft:wool"
     },
     "i": {
-      "tag": "minecraft:iron_ingots"
+      "tag": "forge:ingots/iron"
     }
   }
 }
