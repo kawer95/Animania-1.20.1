@@ -44,6 +44,10 @@ public final class AnimaniaJeiPlugin implements IModPlugin {
     }
 
     private static String legacyDescription(ResourceLocation id) {
+        if ("animania".equals(id.getNamespace())
+                && ("slop_bucket".equals(id.getPath()) || "bucket_slop".equals(id.getPath()))) {
+            return "text.jei.slop";
+        }
         if (!"animania_farm".equals(id.getNamespace())) return null;
         return switch (id.getPath()) {
             case "truffle" -> "text.jei.truffle";

@@ -34,6 +34,16 @@ public interface IAnimaniaAnimal {
 
     int getThirst();
 
+    /** Current care-cycle state; independent from the gradual 0..100 hunger meter. */
+    default boolean isFed() {
+        return getHunger() > 0;
+    }
+
+    /** Current care-cycle state; independent from the gradual 0..100 thirst meter. */
+    default boolean isWatered() {
+        return getThirst() > 0;
+    }
+
     boolean isSleeping();
 
     default boolean isPlaying() {

@@ -10,6 +10,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.EnumSet;
+import java.util.List;
+import net.minecraft.world.phys.AABB;
 
 /** Server-authoritative port of the farm pig mud-seeking care goal. */
 public final class AnimaniaFindMudGoal extends Goal {
@@ -71,20 +73,17 @@ public final class AnimaniaFindMudGoal extends Goal {
 
     private BlockPos findNearestMud() {
         BlockPos origin = pig.blockPosition();
-        BlockPos best = null;
-        double bestDistance = Double.MAX_VALUE;
-        for (BlockPos candidate : BlockPos.betweenClosed(origin.offset(-10, -2, -10), origin.offset(9, 1, 9))) {
-            if (!isMud(pig.level().getBlockState(candidate).getBlock())) continue;
-            long nearbyPigs = pig.level().getEntitiesOfClass(AnimaniaAnimalEntity.class,
-                    new net.minecraft.world.phys.AABB(candidate).inflate(2.0D), AnimaniaFindMudGoal::supports).size();
-            if (nearbyPigs >= 2) continue;
-            double distance = candidate.distSqr(origin);
-            if (distance < bestDistance) {
-                best = candidate.immutable();
-                bestDistance = distance;
+        List<AnimaniaAnimalEntity> nearbyPigs = pig.level().getEntitiesOfClass(AnimaniaAnimalEntity.class,
+                pig.getBoundingBox().inflate(12.0D, 4.0D, 12.0D), AnimaniaFindMudGoal::supports);
+        return BlockPos.findClosestMatch(origin, 10, 2, candidate -> {
+            if (!isMud(pig.level().getBlockState(candidate).getBlock())) return false;
+            AABB crowdArea = new AABB(candidate).inflate(2.0D);
+            int occupants = 0;
+            for (AnimaniaAnimalEntity nearbyPig : nearbyPigs) {
+                if (nearbyPig.getBoundingBox().intersects(crowdArea) && ++occupants >= 2) return false;
             }
-        }
-        return best;
+            return true;
+        }).map(BlockPos::immutable).orElse(null);
     }
 
     private static boolean isMud(Block block) {

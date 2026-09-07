@@ -21,7 +21,9 @@ Additional release checks:
 * `ensure_texture_aliases.py` records deterministic aliases for unresolved
   legacy texture names in `build/texture-aliases.json`.
 * `ensure_locales.py` emits the 25-locale JSON surface for every module.
-* `audit_resources.py` is the strict resource/data gate used by Gradle.
+* `audit_resources.py` is the strict resource/data gate used by Gradle. It
+  accepts `--legacy-root` for an explicit read-only 1.12 checkout and otherwise
+  checks `upstream/Animania-1.12` followed by the sibling `_legacy_animania`.
 * `audit_texture_resolver.py` expands every registered entity variant and
   checks the native nested texture path plus the renderer's flat fallback.
   It is a client/resource prerequisite, not a visual-regression pass.

@@ -71,7 +71,7 @@ public final class AnimaniaExtra {
         AnimaniaSleepProfiles.register(MOD_ID, AnimaniaExtra::sleepProfile);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ExtraConfig.SPEC);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                () -> AnimaniaExtraClient::registerConfigScreen);
+                () -> () -> AnimaniaExtraClient.registerConfigScreen());
         bus.addListener(this::attributes);
         bus.addListener(this::spawnPlacements);
         bus.addListener(this::registerGameTests);
@@ -87,11 +87,14 @@ public final class AnimaniaExtra {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(() -> ExtraContent.ITEM_ENTRIES.values().forEach(entry -> {
-            if (entry.get() instanceof com.animania.common.item.AnimaniaEntityEggItem egg) {
-                com.animania.common.item.AnimaniaEntityEggItem.registerDispenserBehavior(egg);
-            }
-        }));
+        event.enqueueWork(() -> {
+            ExtraContent.ITEM_ENTRIES.values().forEach(entry -> {
+                if (entry.get() instanceof com.animania.common.item.AnimaniaEntityEggItem egg) {
+                    com.animania.common.item.AnimaniaEntityEggItem.registerDispenserBehavior(egg);
+                }
+            });
+            com.animania.common.NestHatchHooks.register(MOD_ID, ExtraNestHatching::tryHatch);
+        });
     }
 
     private void gatherData(GatherDataEvent event) {

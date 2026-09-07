@@ -46,7 +46,7 @@ public abstract class AnimaniaStorageBlockEntity extends BlockEntity implements 
         this.itemCapability = new ItemStackHandler(slots) {
             @Override
             public int getSlotLimit(int slot) {
-                return AnimaniaStorageBlockEntity.this.getMaxStackSize();
+                return AnimaniaStorageBlockEntity.this.automationSlotLimit(slot);
             }
 
             @Override
@@ -91,9 +91,27 @@ public abstract class AnimaniaStorageBlockEntity extends BlockEntity implements 
         return stack != null && !stack.isEmpty();
     }
 
+    /** Automation limits can be stricter than internally produced output stacks. */
+    protected int automationSlotLimit(int slot) {
+        return getMaxStackSize();
+    }
+
     /** Whether hoppers, pipes and other sided automation may see this store. */
     protected boolean allowsAutomation() {
         return true;
+    }
+
+    /**
+     * Whether husbandry AI may consume solid or slop contents from this
+     * storage. A capability alone does not make a block a food provider.
+     */
+    public boolean providesAnimalFood() {
+        return false;
+    }
+
+    /** Whether husbandry AI may consume water from this storage. */
+    public boolean providesAnimalWater() {
+        return false;
     }
 
     public int fluidAmount(Predicate<FluidStack> filter) {

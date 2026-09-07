@@ -238,8 +238,33 @@ public final class AnimaniaBaseGameTests {
     public static void troughFoodConfigUsesModernRegistryMatching(GameTestHelper helper) {
         helper.assertTrue(AnimaniaConfig.matchesTroughFood(new ItemStack(Items.WHEAT)),
                 "default troughFood did not accept minecraft:wheat");
+        helper.assertTrue(AnimaniaConfig.matchesTroughFood(new ItemStack(Items.BEEF)),
+                "listAllbeefraw did not accept raw beef");
+        helper.assertFalse(AnimaniaConfig.matchesTroughFood(new ItemStack(Items.COOKED_BEEF)),
+                "listAllbeefraw incorrectly accepted cooked beef");
+        helper.assertFalse(AnimaniaConfig.matchesTroughFood(new ItemStack(Items.FEATHER)),
+                "troughFood accepted a feather that is absent from the legacy whitelist");
         helper.assertFalse(AnimaniaConfig.matchesTroughFood(new ItemStack(Items.DIRT)),
                 "troughFood accepted an unconfigured item");
+
+        BlockPos pos = helper.absolutePos(new BlockPos(0, 1, 0));
+        helper.getLevel().setBlock(pos, AnimaniaBlocks.TROUGH.get().defaultBlockState(), 3);
+        if (!(helper.getLevel().getBlockEntity(pos) instanceof AnimaniaBlocks.TroughEntity trough)) {
+            helper.fail("trough whitelist test did not create its block entity");
+            return;
+        }
+        helper.assertFalse(trough.canPlaceItem(0, new ItemStack(Items.FEATHER)),
+                "vanilla Container insertion bypassed the trough whitelist");
+        trough.setItem(0, new ItemStack(Items.FEATHER));
+        helper.assertTrue(trough.getItem(0).isEmpty(),
+                "direct Container#setItem inserted a feather into the trough");
+        ItemStack remainder = trough.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve().orElseThrow()
+                .insertItem(0, new ItemStack(Items.FEATHER), false);
+        helper.assertTrue(remainder.is(Items.FEATHER) && trough.getItem(0).isEmpty(),
+                "Forge item capability inserted a feather into the trough");
+        trough.setItem(0, new ItemStack(Items.WHEAT));
+        helper.assertTrue(trough.getItem(0).is(Items.WHEAT),
+                "trough rejected a legacy-whitelisted food after hardening insertion");
         helper.succeed();
     }
 
@@ -268,6 +293,19 @@ public final class AnimaniaBaseGameTests {
 
     @GameTest(template = "empty")
     public static void slopRecipePreservesConfigAndBucketSemantics(GameTestHelper helper) {
+        var registered = helper.getLevel().getRecipeManager().byKey(
+                new net.minecraft.resources.ResourceLocation("animania", "slop")).orElse(null);
+        helper.assertTrue(registered instanceof SlopRecipe,
+                "animania:slop was not loaded by the server recipe manager");
+        if (!(registered instanceof SlopRecipe slop)) return;
+        helper.assertTrue(slop.getResultItem(helper.getLevel().registryAccess()).is(AnimaniaItems.SLOP_BUCKET.get()),
+                "registered slop recipe did not expose its output");
+        helper.assertTrue(slop.getIngredients().size() == 3
+                        && !slop.getIngredients().get(0).isEmpty()
+                        && !slop.getIngredients().get(2).isEmpty(),
+                "registered slop recipe did not expose two food inputs and one milk input");
+        helper.assertFalse(slop.isSpecial(),
+                "slop recipe remained hidden from recipe viewers");
         helper.assertTrue(SlopRecipe.matchesInputs(java.util.List.of(
                         new ItemStack(Items.CARROT), new ItemStack(Items.BREAD), new ItemStack(Items.MILK_BUCKET))),
                 "two configured pig foods plus one milk bucket did not make slop");

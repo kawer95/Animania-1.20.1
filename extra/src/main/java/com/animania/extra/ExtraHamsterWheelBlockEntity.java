@@ -127,7 +127,7 @@ public final class ExtraHamsterWheelBlockEntity extends AnimaniaStorageBlockEnti
         // The legacy wheel marks a runner unfed when its work cycle exhausts
         // the food supply (and when the wheel is broken). A manual removal did
         // not exist in 1.12, so it must not masquerade as food exhaustion.
-        if (markHungry) hamster.setHunger(0);
+        if (markHungry) hamster.setFed(false);
         for (net.minecraft.core.Direction direction : net.minecraft.core.Direction.values()) {
             if (direction == net.minecraft.core.Direction.DOWN) continue;
             BlockPos target = worldPosition.relative(direction);

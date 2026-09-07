@@ -9,6 +9,9 @@ import com.animania.common.entity.AnimaniaVehicleEntity;
 import com.animania.common.entity.AnimaniaSleepProfiles;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.LivingEntity;
@@ -30,10 +33,10 @@ import net.minecraftforge.eventbus.api.Event;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.RegisterGameTestsEvent;
-import net.minecraftforge.event.level.ChunkDataEvent;
+import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -61,6 +64,7 @@ public final class AnimaniaFarm {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MOD_ID);
     public static final Map<String, RegistryObject<EntityType<?>>> ENTITIES = new LinkedHashMap<>();
     private static final Queue<PendingHive> PENDING_HIVES = new ConcurrentLinkedQueue<>();
+    private static final Direction[] HIVE_SIDES = {Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST};
 
     private record PendingHive(net.minecraft.server.level.ServerLevel level, ChunkPos chunk) { }
 
@@ -103,7 +107,7 @@ public final class AnimaniaFarm {
         AnimaniaSleepProfiles.register(MOD_ID, AnimaniaFarm::sleepProfile);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, FarmConfig.SPEC);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                () -> AnimaniaFarmClient::registerConfigScreen);
+                () -> () -> AnimaniaFarmClient.registerConfigScreen());
         bus.addListener(this::attributes);
         bus.addListener(this::spawnPlacements);
         bus.addListener(this::registerGameTests);
@@ -127,11 +131,14 @@ public final class AnimaniaFarm {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(() -> FarmContent.ITEM_ENTRIES.values().forEach(entry -> {
-            if (entry.get() instanceof com.animania.common.item.AnimaniaEntityEggItem egg) {
-                com.animania.common.item.AnimaniaEntityEggItem.registerDispenserBehavior(egg);
-            }
-        }));
+        event.enqueueWork(() -> {
+            FarmContent.ITEM_ENTRIES.values().forEach(entry -> {
+                if (entry.get() instanceof com.animania.common.item.AnimaniaEntityEggItem egg) {
+                    com.animania.common.item.AnimaniaEntityEggItem.registerDispenserBehavior(egg);
+                }
+            });
+            com.animania.common.NestHatchHooks.register(MOD_ID, FarmNestHatching::tryHatch);
+        });
     }
 
     private void gatherData(GatherDataEvent event) {
@@ -312,21 +319,12 @@ public final class AnimaniaFarm {
         event.setCanceled(true);
     }
 
-    /**
-     * Forge 1.20.1 no longer exposes the 1.12 tree-decoration event.  A
-     * full-chunk data hook provides the same once-per-chunk semantics without
-     * touching vanilla worldgen registries: the marker is persisted in the
-     * chunk data, so unloading/reloading cannot duplicate wild hives.
-     */
-    private static void decorateHiveOnChunkLoad(ChunkDataEvent.Load event) {
+    /** Queue only newly generated chunks, matching the 1.12 tree-decoration pass. */
+    private static void decorateHiveOnChunkLoad(ChunkEvent.Load event) {
         if (!(event.getLevel() instanceof net.minecraft.server.level.ServerLevel level)
-                || event.getStatus() != ChunkStatus.ChunkType.LEVELCHUNK
-                || !configured(FarmConfig.HIVE_SPAWNING)
-                || event.getData().getBoolean("AnimaniaHiveDecorated")) return;
-        event.getData().putBoolean("AnimaniaHiveDecorated", true);
-        // ChunkDataEvent.Load may run while a generation worker owns the
-        // chunk lock.  Only enqueue immutable coordinates here; all level
-        // reads/writes happen during the server tick after publication.
+                || !event.isNewChunk() || !configured(FarmConfig.HIVE_SPAWNING)) return;
+        // ChunkEvent.Load can precede full chunk publication. Only enqueue
+        // immutable coordinates here; level access happens on the server tick.
         PENDING_HIVES.add(new PendingHive(level, event.getChunk().getPos()));
     }
 
@@ -341,26 +339,68 @@ public final class AnimaniaFarm {
 
     private static void placeWildHive(net.minecraft.server.level.ServerLevel level, ChunkPos chunk) {
         if (!configured(FarmConfig.HIVE_SPAWNING)) return;
+        if (!level.getChunkSource().hasChunk(chunk.x, chunk.z)) return;
+        LevelChunk loaded = level.getChunkSource().getChunkNow(chunk.x, chunk.z);
+        if (loaded == null) return;
+        int biomeY = loaded.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 8, 8);
+        BlockPos biomePos = new BlockPos(chunk.getMiddleBlockX(), biomeY, chunk.getMiddleBlockZ());
+        if (!FarmSpawnBiomeModifier.matchesConfiguredBiome("hive", level.getBiome(biomePos))) return;
         int frequency = Math.max(0, Math.min(10, configured(FarmConfig.HIVE_SPAWNING_FREQUENCY, 3)));
         if (frequency == 0 || level.random.nextInt(200) >= frequency) return;
-        if (!level.getChunkSource().hasChunk(chunk.x, chunk.z)) return;
-        net.minecraft.world.level.chunk.LevelChunk loaded = level.getChunkSource().getChunkNow(chunk.x, chunk.z);
-        if (loaded == null) return;
-        int x = chunk.getMinBlockX() + level.random.nextInt(16);
-        int z = chunk.getMinBlockZ() + level.random.nextInt(16);
-        // Read the heightmap owned by the event's already-loaded chunk.  A
-        // level.getHeight call here would synchronously request the same
-        // chunk while the server is preparing its spawn region.
-        int top = loaded.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x & 15, z & 15);
-        // Search a short vertical band for a safe air pocket on a tree or
-        // other sturdy surface, matching the old tree decorator's intent.
-        for (int offset = 0; offset <= 6; offset++) {
-            BlockPos candidate = new BlockPos(x, top + offset, z);
-            if (!level.isEmptyBlock(candidate) || !level.getBlockState(candidate.below()).isFaceSturdy(level, candidate.below(), net.minecraft.core.Direction.UP)) continue;
-            if (!FarmSpawnBiomeModifier.matchesConfiguredBiome("hive", level.getBiome(candidate))) continue;
-            level.setBlock(candidate, FarmContent.WILD_HIVE.get().defaultBlockState(), 3);
-            break;
+        placeWildHiveOnTree(level, loaded, level.random);
+    }
+
+    /**
+     * Locate a tagged tree trunk and hang one hive from an open horizontal
+     * side.  The log below the attachment point and air below the hive prevent
+     * fallen logs, wooden buildings and ordinary ground from becoming hosts.
+     */
+    public static boolean placeWildHiveOnTree(net.minecraft.server.level.ServerLevel level,
+                                               LevelChunk loaded, RandomSource random) {
+        ChunkPos chunk = loaded.getPos();
+        int startX = random.nextInt(16);
+        int startZ = random.nextInt(16);
+        for (int xOffset = 0; xOffset < 16; xOffset++) {
+            int localX = (startX + xOffset) & 15;
+            int x = chunk.getMinBlockX() + localX;
+            for (int zOffset = 0; zOffset < 16; zOffset++) {
+                int localZ = (startZ + zOffset) & 15;
+                int z = chunk.getMinBlockZ() + localZ;
+                // Read the published chunk directly instead of trusting a
+                // heightmap that another worldgen feature may not have updated.
+                for (int y = level.getMaxBuildHeight() - 1; y > level.getMinBuildHeight(); y--) {
+                    BlockPos trunk = new BlockPos(x, y, z);
+                    if (!loaded.getBlockState(trunk).is(BlockTags.LOGS)
+                            || !loaded.getBlockState(trunk.below()).is(BlockTags.LOGS)
+                            || !hasNearbyLeaves(loaded, trunk)) continue;
+                    int sideStart = random.nextInt(HIVE_SIDES.length);
+                    for (int sideOffset = 0; sideOffset < HIVE_SIDES.length; sideOffset++) {
+                        Direction side = HIVE_SIDES[(sideStart + sideOffset) % HIVE_SIDES.length];
+                        BlockPos candidate = trunk.relative(side);
+                        if (!new ChunkPos(candidate).equals(chunk)
+                                || !level.isEmptyBlock(candidate)
+                                || !level.isEmptyBlock(candidate.below())) continue;
+                        return level.setBlock(candidate, FarmContent.WILD_HIVE.get().defaultBlockState()
+                                .setValue(FarmHiveBlock.FACING, side), 3);
+                    }
+                }
+            }
         }
+        return false;
+    }
+
+    private static boolean hasNearbyLeaves(LevelChunk loaded, BlockPos center) {
+        ChunkPos chunk = loaded.getPos();
+        BlockPos.MutableBlockPos scan = new BlockPos.MutableBlockPos();
+        for (int x = center.getX() - 3; x <= center.getX() + 3; x++) {
+            for (int y = center.getY() - 2; y <= center.getY() + 4; y++) {
+                for (int z = center.getZ() - 3; z <= center.getZ() + 3; z++) {
+                    scan.set(x, y, z);
+                    if (new ChunkPos(scan).equals(chunk) && loaded.getBlockState(scan).is(BlockTags.LEAVES)) return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean configured(net.minecraftforge.common.ForgeConfigSpec.BooleanValue value) {

@@ -40,7 +40,7 @@ public final class AnimaniaPigSnuffleGoal extends Goal {
     public boolean canUse() {
         BlockPos ground = pig.blockPosition().below();
         return AnimaniaFindMudGoal.supports(pig) && !isMud(ground) && !pig.isSleeping()
-                && pig.getHunger() < 100 && pig.getRandom().nextInt(120) == 50;
+                && pig.shouldSeekFood() && pig.getRandom().nextInt(120) == 50;
     }
 
     @Override

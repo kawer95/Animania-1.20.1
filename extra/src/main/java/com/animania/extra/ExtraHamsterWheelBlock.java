@@ -83,7 +83,7 @@ public final class ExtraHamsterWheelBlock extends AnimaniaContainerBlock {
             AnimaniaAnimalEntity hamster = type == null ? null : (AnimaniaAnimalEntity) type.create(level);
             if (hamster != null) {
                 hamster.readAdditionalSaveData(AnimaniaAnimalEntity.carriedAnimalData(player));
-                if (!hamster.isInBall() && hamster.getHunger() > 0) {
+                if (!hamster.isInBall() && hamster.isFed()) {
                     CompoundTag stored = new CompoundTag();
                     hamster.addAdditionalSaveData(stored);
                     if (!wheel.insertHamster(stored)) return InteractionResult.PASS;

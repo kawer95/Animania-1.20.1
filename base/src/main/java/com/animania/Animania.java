@@ -50,11 +50,12 @@ public final class Animania {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> com.animania.compat.top.AnimaniaTopProbeCompat.bootstrap());
         }
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, AnimaniaConfig.COMMON_SPEC);
-        // Keep every Screen/ConfigScreenFactory reference out of the common
-        // entrypoint bytecode. Dedicated servers inspect this constructor
-        // before DistExecutor can discard a nested client-only lambda.
+        // Do not use a direct client method reference as DistExecutor's safe
+        // referent. Its invokedynamic bootstrap can resolve the client class
+        // while a dedicated server reflects this constructor. The extra
+        // lambda keeps that resolution inside the client-only runnable.
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                () -> com.animania.client.AnimaniaClient::registerConfigScreen);
+                () -> () -> com.animania.client.AnimaniaClient.registerConfigScreen());
         MinecraftForge.EVENT_BUS.register(new AnimaniaServerEvents());
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> modBus.addListener(com.animania.client.AnimaniaClient::registerLayers));
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> modBus.addListener(com.animania.client.AnimaniaClient::registerBlockEntityRenderers));

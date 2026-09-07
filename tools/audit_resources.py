@@ -50,6 +50,23 @@ VANILLA_ADVANCEMENT_TRIGGERS = {
     "minecraft:location", "minecraft:placed_block", "minecraft:enchanted_item",
 }
 SUPPORTED_ADVANCEMENT_TRIGGERS = VANILLA_ADVANCEMENT_TRIGGERS | {"animania:feed_animal"}
+EXTERNAL_MODEL_PARENTS = {"forge:item/bucket"}
+
+
+def _resolve_legacy_root(root: Path, requested: Path | None = None) -> Path | None:
+    """Locate the read-only 1.12 checkout used for byte-level comparisons."""
+    if requested is not None:
+        candidate = requested if requested.is_absolute() else root / requested
+        return candidate.resolve() if candidate.is_dir() else None
+    for candidate in (root / "upstream" / "Animania-1.12", root.parent / "_legacy_animania"):
+        if candidate.is_dir():
+            return candidate.resolve()
+    return None
+
+
+def _is_external_model_parent(parent: str) -> bool:
+    """Return whether a model parent is supplied by Minecraft or Forge itself."""
+    return parent.startswith("minecraft:") or parent in EXTERNAL_MODEL_PARENTS
 
 
 def _validate_ingredient(value: object, location: str, errors: list[str]) -> None:
@@ -284,9 +301,17 @@ def _validate_png(path: Path, location: str, errors: list[str]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--legacy-root", type=Path,
+                        help="read-only Animania 1.12 checkout; defaults to the pinned or sibling checkout")
     args = parser.parse_args()
     errors: list[str] = []
     report: dict[str, object] = {"modules": {}, "errors": errors}
+    legacy_root = _resolve_legacy_root(args.root, args.legacy_root)
+    if legacy_root is None:
+        errors.append(
+            "missing legacy source tree; pass --legacy-root or provide "
+            "upstream/Animania-1.12 or ../_legacy_animania"
+        )
     for module, namespace in MODULES.items():
         resource_root = args.root / module / "src" / "main" / "resources"
         module_report = {
@@ -421,24 +446,28 @@ def main() -> None:
             # from the preserved 1.12 texture tree. Verify every source PNG
             # byte-for-byte so a same-named generic alias cannot hide a lost
             # horse, hamster, sheep, frog, rabbit, cat or dog variant.
-            pinned_entity_dir = (args.root / "upstream" / "Animania-1.12" / "src" / "main" /
-                                 "resources" / "assets" / module / "animania" / "textures" / "entity")
+            pinned_entity_dir = ((legacy_root / "src" / "main" / "resources" / "assets" / module /
+                                  "animania" / "textures" / "entity") if legacy_root is not None else None)
             preserved_entity_dir = (resource_root / "assets" / module / "animania" /
                                     "textures" / "entity")
             pinned_pngs = {item.relative_to(pinned_entity_dir).as_posix(): item
-                           for item in pinned_entity_dir.rglob("*.png")} if pinned_entity_dir.exists() else {}
+                           for item in pinned_entity_dir.rglob("*.png")} if pinned_entity_dir is not None and pinned_entity_dir.exists() else {}
             preserved_pngs = {item.relative_to(preserved_entity_dir).as_posix(): item
                               for item in preserved_entity_dir.rglob("*.png")} if preserved_entity_dir.exists() else {}
             module_report["legacy_entity_textures"] = len(preserved_pngs)
-            for relative, source in sorted(pinned_pngs.items()):
-                target = preserved_pngs.get(relative)
-                if target is None:
-                    errors.append(f"{module}: missing preserved legacy entity texture {relative}")
-                elif source.read_bytes() != target.read_bytes():
-                    errors.append(f"{module}: modified preserved legacy entity texture {relative}")
-            unexpected_preserved = sorted(set(preserved_pngs) - set(pinned_pngs))
-            if unexpected_preserved:
-                errors.append(f"{module}: unexpected files in preserved legacy entity texture tree: {', '.join(unexpected_preserved)}")
+            if pinned_entity_dir is not None:
+                if not pinned_entity_dir.exists():
+                    errors.append(f"{module}: missing legacy entity texture source tree {pinned_entity_dir}")
+                else:
+                    for relative, source in sorted(pinned_pngs.items()):
+                        target = preserved_pngs.get(relative)
+                        if target is None:
+                            errors.append(f"{module}: missing preserved legacy entity texture {relative}")
+                        elif source.read_bytes() != target.read_bytes():
+                            errors.append(f"{module}: modified preserved legacy entity texture {relative}")
+                    unexpected_preserved = sorted(set(preserved_pngs) - set(pinned_pngs))
+                    if unexpected_preserved:
+                        errors.append(f"{module}: unexpected files in preserved legacy entity texture tree: {', '.join(unexpected_preserved)}")
 
             content_items = _java_list(args.root, CONTENT_SOURCES[module], "ITEM_IDS")
             content_blocks = _java_list(args.root, CONTENT_SOURCES[module], "BLOCK_IDS")
@@ -599,8 +628,8 @@ def main() -> None:
                 continue
             parent = data.get("parent")
             if not isinstance(parent, str) or ":" not in parent: continue
+            if _is_external_model_parent(parent): continue
             parent_namespace, parent_path = parent.split(":", 1)
-            if parent_namespace == "minecraft": continue
             parent_root = asset_roots.get(parent_namespace)
             parent_model = parent_root / "models" / f"{parent_path}.json" if parent_root else None
             if parent_model is None or not parent_model.exists():

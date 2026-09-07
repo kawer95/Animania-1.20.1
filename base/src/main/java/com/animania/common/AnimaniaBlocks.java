@@ -83,7 +83,8 @@ public final class AnimaniaBlocks {
 
     private static RegistryObject<Block> nest() {
         RegistryObject<Block> block = BLOCKS.register("nest", () -> new AnimaniaNestBlock(
-                BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_BROWN).strength(1.2f).sound(SoundType.WOOD),
+                BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_BROWN).strength(1.2f)
+                        .sound(SoundType.WOOD).randomTicks(),
                 (pos, state) -> new NestEntity(pos, state)));
         ITEMS.register("nest", () -> new BlockItem(block.get(), new Item.Properties()));
         return block;
@@ -239,6 +240,18 @@ public final class AnimaniaBlocks {
             try { return AnimaniaConfig.ALLOW_TROUGH_AUTOMATION.get(); }
             catch (IllegalStateException ignored) { return true; }
         }
+        @Override public boolean providesAnimalFood() { return true; }
+        @Override public boolean providesAnimalWater() { return true; }
+        @Override public boolean canPlaceItem(int slot, ItemStack stack) {
+            return isItemValid(slot, stack);
+        }
+        @Override public void setItem(int slot, ItemStack stack) {
+            // Container#setItem is public and bypasses ItemStackHandler's validator.
+            // Keep menus, hoppers and direct integrations on the same whitelist.
+            if (!stack.isEmpty() && (slot != 0 || !super.fluidSnapshot().isEmpty()
+                    || !AnimaniaConfig.matchesTroughFood(stack))) return;
+            super.setItem(slot, stack);
+        }
         @Override protected boolean isItemValid(int slot, ItemStack stack) {
             return slot == 0 && fluidSnapshot().isEmpty() && AnimaniaConfig.matchesTroughFood(stack);
         }
@@ -279,6 +292,16 @@ public final class AnimaniaBlocks {
         }
 
         public String birdVariant() { return birdVariant; }
+
+        /** Consume one incubated egg and clear stale parent data on the last egg. */
+        public ItemStack removeEgg() {
+            ItemStack removed = removeItem(0, 1);
+            if (getItem(0).isEmpty() && !birdVariant.isEmpty()) {
+                birdVariant = "";
+                setChanged();
+            }
+            return removed;
+        }
 
         @Override protected void saveAdditional(net.minecraft.nbt.CompoundTag tag) {
             super.saveAdditional(tag);

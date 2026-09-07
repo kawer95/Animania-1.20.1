@@ -11,6 +11,11 @@ import com.animania.common.AnimaniaSeedPlacement;
 import com.animania.common.config.AnimaniaConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.eventbus.api.Event;
@@ -94,16 +99,25 @@ public final class AnimaniaServerEvents {
     }
 
     @SubscribeEvent
-    public void onSeedRightClick(PlayerInteractEvent.RightClickBlock event) {
+    public void onSeedRightClick(PlayerInteractEvent.RightClickItem event) {
         if (AnimaniaSeedPlacement.variant(event.getItemStack().getItem()) == null) return;
         boolean shiftRequired;
         try { shiftRequired = AnimaniaConfig.SHIFT_SEED_PLACEMENT.get(); }
         catch (IllegalStateException ignored) { shiftRequired = false; }
         if (shiftRequired && !event.getEntity().isShiftKeyDown()) return;
-        BlockPos target = event.getPos();
+
+        // Legacy listened to RightClickItem, not RightClickBlock. That lets a
+        // chest, door, button, or other usable block consume right-click first.
+        // Only the otherwise-unused item action is converted into a seed pile.
+        Vec3 eye = event.getEntity().getEyePosition();
+        Vec3 look = event.getEntity().getViewVector(1.0F);
+        double reach = event.getEntity().getAttributeValue(ForgeMod.BLOCK_REACH.get());
+        BlockHitResult hit = event.getLevel().clip(new ClipContext(eye, eye.add(look.scale(reach)),
+                ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, event.getEntity()));
+        if (hit.getType() != HitResult.Type.BLOCK) return;
+        BlockPos target = hit.getBlockPos();
         if (!event.getLevel().getBlockState(target).canBeReplaced()) {
-            if (event.getFace() == null) return;
-            target = target.relative(event.getFace());
+            target = target.relative(hit.getDirection());
         }
         if (!AnimaniaSeedPlacement.place(event.getLevel(), target, event.getItemStack())) return;
         if (!event.getLevel().isClientSide) {

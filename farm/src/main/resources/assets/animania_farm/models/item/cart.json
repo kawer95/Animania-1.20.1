@@ -1,6 +1,3 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "animania_farm:item/cart"
-  }
+  "parent": "animania_farm:item/item_cart"
 }

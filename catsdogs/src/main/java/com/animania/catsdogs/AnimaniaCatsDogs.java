@@ -23,7 +23,6 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -67,7 +66,7 @@ public final class AnimaniaCatsDogs {
         CatsDogsTab.TABS.register(bus);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CatsDogsConfig.SPEC);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                () -> AnimaniaCatsDogsClient::registerConfigScreen);
+                () -> () -> AnimaniaCatsDogsClient.registerConfigScreen());
         AnimaniaSleepProfiles.register(MOD_ID, AnimaniaCatsDogs::sleepProfile);
         AnimaniaApi.registerFoodMatcher(MOD_ID, (id, stack) -> {
             String path = id.getPath();
@@ -79,7 +78,6 @@ public final class AnimaniaCatsDogs {
         bus.addListener(this::registerGameTests);
         bus.addListener(this::commonSetup);
         bus.addListener(this::gatherData);
-        MinecraftForge.EVENT_BUS.addListener(AnimaniaCatsDogs::replaceVanillaCompanion);
         MinecraftForge.EVENT_BUS.addListener(AnimaniaCatsDogs::limitNaturalCompanionSpawns);
         MinecraftForge.EVENT_BUS.register(CatsDogsPetSeller.class);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> bus.addListener(AnimaniaCatsDogsClient::onClientSetup));
@@ -130,8 +128,18 @@ public final class AnimaniaCatsDogs {
     }
 
     public static void limitNaturalCompanionSpawns(MobSpawnEvent.PositionCheck event) {
-        if (!(event.getEntity() instanceof AnimaniaAnimalEntity animal)
-                || (event.getSpawnType() != MobSpawnType.NATURAL && event.getSpawnType() != MobSpawnType.CHUNK_GENERATION)) return;
+        if (event.getSpawnType() != MobSpawnType.NATURAL && event.getSpawnType() != MobSpawnType.CHUNK_GENERATION) return;
+
+        // 1.12 parity: replaceVanillaWolves/replaceVanillaOcelots only denied
+        // their natural spawn checks. It did not convert every companion that
+        // entered a level into a random, persistent Animania breed.
+        if ((event.getEntity().getClass() == Wolf.class && replaceWolves())
+                || (event.getEntity().getClass() == Ocelot.class && replaceOcelots())) {
+            event.setResult(Event.Result.DENY);
+            return;
+        }
+
+        if (!(event.getEntity() instanceof AnimaniaAnimalEntity animal)) return;
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(animal.getType());
         if (id == null || !MOD_ID.equals(id.getNamespace())) return;
         boolean cat = isCat(id.getPath());
@@ -155,39 +163,6 @@ public final class AnimaniaCatsDogs {
 
     private void registerGameTests(RegisterGameTestsEvent event) {
         event.register(com.animania.catsdogs.gametest.AnimaniaCatsDogsGameTests.class);
-    }
-
-    /** Replace vanilla companions at the world boundary while preserving tame state. */
-    private static void replaceVanillaCompanion(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide()) return;
-        net.minecraft.world.entity.Entity vanilla = event.getEntity();
-        boolean dog = vanilla instanceof Wolf;
-        boolean cat = vanilla instanceof Ocelot;
-        if ((!dog || !replaceWolves()) && (!cat || !replaceOcelots())) return;
-        boolean baby = vanilla instanceof net.minecraft.world.entity.AgeableMob ageable && ageable.isBaby();
-        String femalePrefix = dog ? "female_" : "queen_";
-        String malePrefix = dog ? "male_" : "tom_";
-        String childPrefix = dog ? "puppy_" : "kitten_";
-        java.util.List<String> candidates = ENTITIES.keySet().stream()
-                .filter(id -> baby ? id.startsWith(childPrefix) : (id.startsWith(femalePrefix) || id.startsWith(malePrefix)))
-                .toList();
-        if (candidates.isEmpty()) return;
-        String selected = candidates.get(event.getLevel().getRandom().nextInt(candidates.size()));
-        EntityType<?> registered = ENTITIES.get(selected).get();
-        if (!(registered.create(event.getLevel()) instanceof AnimaniaAnimalEntity replacement)) return;
-        replacement.moveTo(vanilla.getX(), vanilla.getY(), vanilla.getZ(), vanilla.getYRot(), vanilla.getXRot());
-        replacement.setUUID(vanilla.getUUID());
-        replacement.setCustomName(vanilla.getCustomName());
-        replacement.setCustomNameVisible(vanilla.isCustomNameVisible());
-        if (baby) replacement.setAge(-AnimaniaAnimalEntity.childGrowthDuration());
-        else replacement.setAge(0);
-        if (dog && ((Wolf) vanilla).isTame()) {
-            replacement.setTamed(true);
-            replacement.setOwnerUUID(((Wolf) vanilla).getOwnerUUID());
-            replacement.setSitting(((Wolf) vanilla).isOrderedToSit());
-        }
-        replacement.setPersistenceRequired();
-        if (event.getLevel().addFreshEntity(replacement)) event.setCanceled(true);
     }
 
     private static boolean replaceWolves() {

@@ -30,7 +30,7 @@
   "manual.basic.and": "和",
   "manual.biometypes": "它们会出现在以下生物群系类型中：",
   "manual.animalfood": "动物饲料",
-  "manual.items.animalfood.1": "动物谷为特定动物添加了新的食物。猪喜欢放在食槽里的泔水。",
+  "manual.items.animalfood.1": "用任意两份泔水原料配置允许的食材，加上一桶牛奶进行无序合成，即可获得一桶泔水。把泔水倒入食槽后，猪会主动食用。",
   "manual.items.animalfood.2": "仓鼠需要先驯服，再使用仓鼠饲料喂养：",
   "manual.items.crafting_components.1": "这些物品只用于合成，没有其他用途。",
   "manual.items.food.title": "食物",

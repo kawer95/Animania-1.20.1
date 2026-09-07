@@ -11,6 +11,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Native client registration and CraftStudio removal coverage. */
 class BaseClientContractTest {
     @Test
+    void transparentFloorPilesUseTheLegacyCutoutRenderLayer() throws Exception {
+        String client = Files.readString(Path.of("src/main/java/com/animania/client/AnimaniaClient.java"));
+        assertTrue(client.contains("setRenderLayer(AnimaniaBlocks.STRAW.get(), RenderType.cutout())"));
+        assertTrue(client.contains("setRenderLayer(AnimaniaBlocks.SEEDS.get(), RenderType.cutout())"));
+    }
+
+    @Test
     void allFacilityRenderersUseNativeModelPartsAndNoCraftStudioRuntime() throws Exception {
         String client = Files.readString(Path.of("src/main/java/com/animania/client/AnimaniaClient.java"));
         String renderer = Files.readString(Path.of("src/main/java/com/animania/client/render/AnimaniaAnimalRenderer.java"));

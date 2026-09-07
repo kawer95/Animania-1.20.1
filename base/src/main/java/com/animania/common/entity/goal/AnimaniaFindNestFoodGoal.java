@@ -50,7 +50,7 @@ public final class AnimaniaFindNestFoodGoal extends Goal {
         if (animal.level().isClientSide || !supports(animal)) return false;
         if (++delay < configured(AnimaniaConfig.AI_TICKS_BETWEEN_FIRINGS, 100)) return false;
         delay = 0;
-        if (animal.isSleeping() || animal.getHunger() >= 100 || animal.isPassenger()
+        if (animal.isSleeping() || !animal.shouldSeekFood() || animal.isPassenger()
                 || (configured(AnimaniaConfig.REQUIRE_ANIMAL_INTERACTION_FOR_AI, true) && !animal.hasInteracted())) {
             return false;
         }
@@ -65,7 +65,7 @@ public final class AnimaniaFindNestFoodGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        return target != null && !animal.isSleeping() && animal.getHunger() < 100
+        return target != null && !animal.isSleeping() && animal.shouldSeekFood()
                 && !animal.getNavigation().isDone();
     }
 

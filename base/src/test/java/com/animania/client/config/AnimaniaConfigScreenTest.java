@@ -41,7 +41,9 @@ class AnimaniaConfigScreenTest {
     }
 
     private static void assertClientOnlyConfigRegistration(String commonEntry, String clientEntry, String module) {
-        assertTrue(commonEntry.contains("Client::registerConfigScreen"), module);
+        assertTrue(commonEntry.contains("Client.registerConfigScreen()"), module);
+        assertTrue(!commonEntry.contains("Client::registerConfigScreen"),
+                module + " must not expose a direct client method handle while Forge reflects the mod constructor");
         assertTrue(!commonEntry.contains("ConfigScreenHandler.ConfigScreenFactory"), module);
         assertTrue(!commonEntry.contains("AnimaniaConfigScreen"), module);
         assertTrue(clientEntry.contains("ConfigScreenHandler.ConfigScreenFactory"), module);

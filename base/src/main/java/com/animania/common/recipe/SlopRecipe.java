@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CustomRecipe;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.level.Level;
@@ -53,6 +54,27 @@ public final class SlopRecipe extends CustomRecipe {
     @Override
     public ItemStack assemble(CraftingContainer container, RegistryAccess registries) {
         return new ItemStack(AnimaniaItems.SLOP_BUCKET.get());
+    }
+
+    @Override
+    public ItemStack getResultItem(RegistryAccess registries) {
+        return new ItemStack(AnimaniaItems.SLOP_BUCKET.get());
+    }
+
+    @Override
+    public NonNullList<Ingredient> getIngredients() {
+        Ingredient food = Ingredient.of(ForgeRegistries.ITEMS.getValues().stream()
+                .map(ItemStack::new)
+                .filter(AnimaniaConfig::matchesSlopIngredient));
+        Ingredient milk = Ingredient.of(ForgeRegistries.ITEMS.getValues().stream()
+                .map(ItemStack::new)
+                .filter(SlopRecipe::isMilkBucket));
+        return NonNullList.of(Ingredient.EMPTY, food, food, milk);
+    }
+
+    @Override
+    public boolean isSpecial() {
+        return false;
     }
 
     @Override

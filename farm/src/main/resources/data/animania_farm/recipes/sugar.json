@@ -5,7 +5,7 @@
   },
   "ingredients": [
     {
-      "item": "animania_farm:honey_jar"
+      "tag": "animania:legacy_oredict/foodhoney"
     }
   ],
   "type": "minecraft:crafting_shapeless"

@@ -14,7 +14,8 @@ class AnimaniaAnimalEntitySerializationTest {
         String entity = Files.readString(Path.of("src/main/java/com/animania/common/entity/AnimaniaAnimalEntity.java"));
         for (String key : new String[]{"AnimaniaGender", "AnimaniaVariant", "AnimaniaHunger", "AnimaniaThirst",
                 "AnimaniaSleeping", "AnimaniaPregnant", "AnimaniaSterilized", "AnimaniaSheared",
-                "AnimaniaTamed", "AnimaniaSitting", "AnimaniaFedTimer", "AnimaniaWateredTimer",
+                "AnimaniaTamed", "AnimaniaSitting", "AnimaniaFed", "AnimaniaWatered",
+                "AnimaniaFedTimer", "AnimaniaWateredTimer",
                 "AnimaniaChildGrowthTimer", "MateUUID", "ParentUUID", "InBall", "BallColor", "DyeColor", "CrowTime"}) {
             assertTrue(entity.contains("\"" + key + "\""), "missing NBT key " + key);
         }

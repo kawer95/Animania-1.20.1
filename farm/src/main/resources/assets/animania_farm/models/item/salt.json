@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "animania_farm:item/salt"
+    "layer0": "animania:item/salt"
   },
   "display": {
     "ground": {

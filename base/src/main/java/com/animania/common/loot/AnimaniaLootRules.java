@@ -17,8 +17,8 @@ import net.minecraft.resources.ResourceLocation;
 public final class AnimaniaLootRules {
     private AnimaniaLootRules() { }
 
-    public static boolean isFed(AnimaniaAnimalEntity animal) { return animal != null && animal.getHunger() > 0; }
-    public static boolean isWatered(AnimaniaAnimalEntity animal) { return animal != null && animal.getThirst() > 0; }
+    public static boolean isFed(AnimaniaAnimalEntity animal) { return animal != null && animal.isFed(); }
+    public static boolean isWatered(AnimaniaAnimalEntity animal) { return animal != null && animal.isWatered(); }
     public static boolean isMale(AnimaniaAnimalEntity animal) {
         return animal != null && animal.getGender() == AnimalGender.MALE;
     }

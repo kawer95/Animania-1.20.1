@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "animania_farm:item/honey_jar"
+    "layer0": "animania_farm:item/bottle_honey"
   }
 }

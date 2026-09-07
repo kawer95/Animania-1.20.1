@@ -39,6 +39,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.AgeableMob;
@@ -271,10 +272,12 @@ public final class AnimaniaFarmGameTests {
         helper.assertTrue(cow.drink(new ItemStack(Items.WATER_BUCKET)), "valid drink did not reset the legacy water timer");
         int fed = cow.getFedTimer();
         int watered = cow.getWateredTimer();
-        helper.assertTrue(fed >= com.animania.common.config.AnimaniaConfig.FEED_TIMER.get() && fed < com.animania.common.config.AnimaniaConfig.FEED_TIMER.get() + 100,
-                "fed timer did not use feedTimer plus the legacy random offset");
-        helper.assertTrue(watered >= com.animania.common.config.AnimaniaConfig.WATER_TIMER.get() && watered < com.animania.common.config.AnimaniaConfig.WATER_TIMER.get() + 100,
-                "water timer did not use waterTimer plus the legacy random offset");
+        helper.assertTrue(fed >= com.animania.common.config.AnimaniaConfig.FEED_TIMER.get() + 1200
+                        && fed <= com.animania.common.config.AnimaniaConfig.FEED_TIMER.get() + 2400,
+                "fed timer did not use the configured base plus a one-to-two-minute random offset");
+        helper.assertTrue(watered >= com.animania.common.config.AnimaniaConfig.WATER_TIMER.get() + 1200
+                        && watered <= com.animania.common.config.AnimaniaConfig.WATER_TIMER.get() + 2400,
+                "water timer did not use the configured base plus a one-to-two-minute random offset");
         CompoundTag saved = new CompoundTag();
         cow.addAdditionalSaveData(saved);
         AnimaniaAnimalEntity loaded = createAnimal(helper, "cow_angus");
@@ -283,16 +286,28 @@ public final class AnimaniaFarmGameTests {
                 "care timers changed during NBT round-trip");
         saved.putInt("AnimaniaFedTimer", 1);
         saved.putInt("AnimaniaWateredTimer", 1);
-        saved.putInt("AnimaniaHunger", 100);
-        saved.putInt("AnimaniaThirst", 100);
+        saved.putInt("AnimaniaHunger", 73);
+        saved.putInt("AnimaniaThirst", 64);
+        saved.putBoolean("AnimaniaFed", true);
+        saved.putBoolean("AnimaniaWatered", true);
         saved.putBoolean("AnimaniaInteracted", true);
         loaded.readAdditionalSaveData(saved);
+        // Direct GameTest calls leave Entity#tickCount at zero, which is also
+        // a boundary for both gradual meter intervals. Keep this assertion
+        // isolated to the two care-cycle timers.
+        loaded.tickCount = 1;
         loaded.tick();
-        helper.assertTrue(loaded.getHunger() == 0 && loaded.getThirst() == 0,
-                "expired legacy care timers did not clear fed/watered state");
-        helper.assertTrue(loaded.hasEffect(net.minecraft.world.effect.MobEffects.WEAKNESS)
-                        && loaded.getEffect(net.minecraft.world.effect.MobEffects.WEAKNESS).getAmplifier() == 1,
-                "fully hungry/thirsty animal did not receive legacy Weakness II");
+        helper.assertTrue(loaded.getHunger() == 73 && loaded.getThirst() == 64,
+                "care timer expiry destroyed the independent hunger/thirst meters: hunger="
+                        + loaded.getHunger() + ", thirst=" + loaded.getThirst()
+                        + ", fed=" + loaded.isFed() + ", watered=" + loaded.isWatered()
+                        + ", fedTimer=" + loaded.getFedTimer()
+                        + ", wateredTimer=" + loaded.getWateredTimer());
+        helper.assertTrue(!loaded.isFed() && !loaded.isWatered()
+                        && loaded.shouldSeekFood() && loaded.shouldSeekWater(),
+                "expired care timers did not make a partially full animal seek food and water");
+        helper.assertTrue(!loaded.hasEffect(net.minecraft.world.effect.MobEffects.WEAKNESS),
+                "care timer expiry incorrectly caused weakness without an empty meter");
         helper.succeed();
     }
 
@@ -782,7 +797,16 @@ public final class AnimaniaFarmGameTests {
         assertTagged(helper, "animania_wool", "minecraft", "wool");
         assertTagged(helper, "raw_prime_mutton", "forge", "raw_meats");
         assertTagged(helper, "cooked_prime_mutton", "forge", "cooked_meats");
+        assertTagged(helper, "raw_prime_beef", "forge", "foods/raw_beef");
+        assertTagged(helper, "raw_prime_steak", "forge", "foods/raw_beef");
+        helper.assertTrue(AnimaniaConfig.matchesTroughFood(
+                        new ItemStack(FarmContent.ITEM_ENTRIES.get("raw_prime_beef").get())),
+                "listAllbeefraw did not accept Animania raw prime beef");
+        helper.assertFalse(AnimaniaConfig.matchesTroughFood(
+                        new ItemStack(FarmContent.ITEM_ENTRIES.get("cooked_prime_beef").get())),
+                "listAllbeefraw accepted Animania cooked prime beef");
         assertTagged(helper, "friesian_cheese_wedge", "forge", "foods/cheese");
+        assertTagged(helper, "honey_bottle", "forge", "foods/honey");
         assertTagged(helper, "honey_jar", "forge", "foods/honey");
         helper.succeed();
     }
@@ -1157,7 +1181,7 @@ public final class AnimaniaFarmGameTests {
         helper.getLevel().setBlock(pigPos.below(), net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), 3);
         pig.moveTo(pigPos.getX() + 0.5D, pigPos.getY(), pigPos.getZ() + 0.5D, 0.0F, 0.0F);
         pig.setAge(0);
-        pig.setHunger(25);
+        pig.setHunger(20);
         helper.getLevel().addFreshEntity(pig);
         var player = helper.makeMockPlayer();
         player.moveTo(pig.getX() + 1.0D, pig.getY(), pig.getZ(), 0.0F, 0.0F);
@@ -1189,17 +1213,18 @@ public final class AnimaniaFarmGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void animalsPathToAndConsumeTroughWaterAndFood(GameTestHelper helper) {
+    public static void animalsConsumeTroughWaterAndFoodAcrossExpandedRange(GameTestHelper helper) {
         AnimaniaGameTestEvidence.mark("animania_farm:generic_ai_find_food");
         AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
-        BlockPos cowPos = helper.absolutePos(new BlockPos(0, 1, 0));
+        BlockPos cowPos = helper.absolutePos(new BlockPos(1, 3, 3));
         BlockPos troughPos = helper.absolutePos(new BlockPos(4, 1, 0));
         cow.moveTo(cowPos.getX() + 0.5D, cowPos.getY(), cowPos.getZ() + 0.5D, 0.0F, 0.0F);
         cow.setAge(0);
         cow.markInteracted();
-        cow.setThirst(0);
+        cow.setThirst(21);
         cow.setHunger(100);
         helper.getLevel().addFreshEntity(cow);
+        cow.setOnGround(true);
         helper.getLevel().setBlock(troughPos, com.animania.common.AnimaniaBlocks.TROUGH.get().defaultBlockState(), 3);
         var storage = (com.animania.common.block.AnimaniaStorageBlockEntity) helper.getLevel().getBlockEntity(troughPos);
         helper.assertTrue(storage != null, "trough block entity missing");
@@ -1208,32 +1233,651 @@ public final class AnimaniaFarmGameTests {
         helper.assertTrue(fluidHandler.fill(new net.minecraftforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1000),
                 net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE) == 1000, "trough rejected water capability input");
         AnimaniaFindWaterGoal waterGoal = new AnimaniaFindWaterGoal(cow);
+        boolean foundWaterAboveThreshold = false;
+        for (int attempt = 0; attempt < 500 && !foundWaterAboveThreshold; attempt++) {
+            foundWaterAboveThreshold = waterGoal.canUse();
+        }
+        helper.assertFalse(foundWaterAboveThreshold, "cow sought trough water above the thirst threshold");
+        cow.setThirst(20);
         boolean foundWater = false;
         for (int attempt = 0; attempt < 500 && !foundWater; attempt++) foundWater = waterGoal.canUse();
         helper.assertTrue(foundWater && waterGoal.targetsTrough() && troughPos.equals(waterGoal.target()),
                 "thirsty cow did not select the filled trough");
         if (!foundWater) return;
         waterGoal.start();
-        cow.moveTo(troughPos.getX() + 1.0D, troughPos.getY(), troughPos.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(waterGoal.approach() == null && cow.getNavigation().isDone(),
+                "cow inside the 8 x 7 x 5 trough range was assigned a watering position");
+        helper.assertTrue(waterGoal.canContinueToUse(),
+                "water goal stopped before direct interaction with the in-range trough");
         waterGoal.tick();
         helper.assertTrue(cow.getThirst() == 100, "cow did not become watered at the trough");
         helper.assertTrue(storage.fluidAmount(stack -> stack.getFluid().is(net.minecraft.tags.FluidTags.WATER)) == 900,
                 "cow did not drain exactly 100 mB from the trough");
 
+        storage.drainFluid(900, stack -> stack.getFluid().is(net.minecraft.tags.FluidTags.WATER),
+                net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
         storage.setItem(0, new ItemStack(Items.WHEAT, 3));
-        cow.moveTo(cowPos.getX() + 0.5D, cowPos.getY(), cowPos.getZ() + 0.5D, 0.0F, 0.0F);
-        cow.setHunger(0);
+        cow.setHunger(21);
         AnimaniaFindFoodGoal foodGoal = new AnimaniaFindFoodGoal(cow);
+        boolean foundFoodAboveThreshold = false;
+        for (int attempt = 0; attempt < 500 && !foundFoodAboveThreshold; attempt++) {
+            foundFoodAboveThreshold = foodGoal.canUse();
+        }
+        helper.assertFalse(foundFoodAboveThreshold, "cow sought trough food above the hunger threshold");
+        cow.setHunger(20);
         boolean foundFood = false;
         for (int attempt = 0; attempt < 500 && !foundFood; attempt++) foundFood = foodGoal.canUse();
         helper.assertTrue(foundFood && troughPos.equals(foodGoal.target()), "hungry cow did not select trough wheat");
         if (!foundFood) return;
         foodGoal.start();
-        cow.moveTo(troughPos.getX() + 1.0D, troughPos.getY(), troughPos.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(foodGoal.approach() == null && cow.getNavigation().isDone(),
+                "cow inside the 8 x 7 x 5 trough range was assigned a feeding position");
+        helper.assertTrue(foodGoal.canContinueToUse(),
+                "food goal stopped before direct interaction with the in-range trough");
         foodGoal.tick();
         helper.assertTrue(cow.getHunger() == 100, "trough food did not restore the fed state");
         helper.assertTrue(storage.getItem(0).getCount() == 2, "trough did not consume exactly one wheat");
         cow.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void cowsIgnoreUnreachableBedsOutsideTheirPen(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:sleep_ignores_unreachable_beds");
+        ServerLevel level = (ServerLevel) helper.getLevel();
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        try {
+            for (int x = 0; x <= 8; x++) {
+                for (int z = 0; z <= 4; z++) {
+                    helper.setBlock(new BlockPos(x, 0, z), Blocks.GRASS_BLOCK);
+                    for (int y = 1; y <= 3; y++) helper.setBlock(new BlockPos(x, y, z), Blocks.AIR);
+                }
+            }
+            for (int z = 0; z <= 4; z++) {
+                for (int y = 1; y <= 3; y++) helper.setBlock(new BlockPos(4, y, z), Blocks.STONE);
+            }
+            for (int x = 0; x <= 4; x++) {
+                for (int y = 1; y <= 3; y++) {
+                    helper.setBlock(new BlockPos(x, y, 0), Blocks.STONE);
+                    helper.setBlock(new BlockPos(x, y, 4), Blocks.STONE);
+                }
+            }
+            for (int z = 0; z <= 4; z++) {
+                for (int y = 1; y <= 3; y++) helper.setBlock(new BlockPos(0, y, z), Blocks.STONE);
+            }
+            BlockPos localBed = helper.absolutePos(new BlockPos(2, 0, 2));
+            BlockPos unreachablePrimary = helper.absolutePos(new BlockPos(6, 0, 2));
+            helper.getLevel().setBlock(unreachablePrimary, AnimaniaBlocks.STRAW.get().defaultBlockState(), 3);
+            cow.moveTo(localBed.getX() + 0.5D, localBed.getY() + 1.0D,
+                    localBed.getZ() + 0.5D, 0.0F, 0.0F);
+            level.addFreshEntity(cow);
+            cow.setOnGround(true);
+
+            AnimaniaSleepGoal sleep = new AnimaniaSleepGoal(cow);
+            var profile = new com.animania.common.entity.AnimaniaSleepProfiles.Profile(
+                    () -> "animania:straw", () -> "minecraft:grass_block", ignored -> true);
+            helper.assertTrue(sleep.findTargetNow(profile), "cow found no reachable configured bed inside its pen");
+            helper.assertTrue(localBed.equals(sleep.targetBed()),
+                    "cow selected an unreachable primary bed and would crowd the fence; target=" + sleep.targetBed()
+                            + ", unreachable=" + unreachablePrimary);
+        } finally {
+            cow.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 320)
+    public static void thirstyCowCanPushPastASleepingCow(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:sleeping_animals_remain_pushable");
+        for (int x = 0; x <= 14; x++) {
+            for (int z = 0; z <= 3; z++) {
+                helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+                for (int y = 1; y <= 3; y++) helper.setBlock(new BlockPos(x, y, z), Blocks.AIR);
+            }
+            for (int y = 1; y <= 3; y++) {
+                helper.setBlock(new BlockPos(x, y, 0), Blocks.STONE);
+                helper.setBlock(new BlockPos(x, y, 3), Blocks.STONE);
+            }
+        }
+        BlockPos waterPos = helper.absolutePos(new BlockPos(12, 1, 1));
+        helper.getLevel().setBlock(waterPos, Blocks.WATER.defaultBlockState(), 3);
+        AnimaniaAnimalEntity thirsty = createAnimal(helper, "cow_angus");
+        AnimaniaAnimalEntity sleeper = createAnimal(helper, "cow_angus");
+        BlockPos thirstyStart = helper.absolutePos(new BlockPos(2, 1, 1));
+        BlockPos sleeperStart = helper.absolutePos(new BlockPos(7, 1, 1));
+        thirsty.moveTo(thirstyStart.getX() + 0.5D, thirstyStart.getY(),
+                thirstyStart.getZ() + 0.5D, 0.0F, 0.0F);
+        sleeper.moveTo(sleeperStart.getX() + 0.5D, sleeperStart.getY(),
+                sleeperStart.getZ() + 0.5D, 0.0F, 0.0F);
+        thirsty.goalSelector.removeAllGoals(ignored -> true);
+        thirsty.targetSelector.removeAllGoals(ignored -> true);
+        sleeper.goalSelector.removeAllGoals(ignored -> true);
+        sleeper.targetSelector.removeAllGoals(ignored -> true);
+        thirsty.markInteracted();
+        thirsty.setHunger(100);
+        thirsty.setThirst(20);
+        sleeper.setSleeping(true);
+        helper.getLevel().addFreshEntity(thirsty);
+        helper.getLevel().addFreshEntity(sleeper);
+        thirsty.setOnGround(true);
+        sleeper.setOnGround(true);
+
+        AnimaniaFindWaterGoal goal = new AnimaniaFindWaterGoal(thirsty, false, true, waterPos::equals);
+        boolean found = false;
+        for (int attempt = 0; attempt < 500 && !found; attempt++) found = goal.canUse();
+        helper.assertTrue(found && waterPos.equals(goal.target()),
+                "thirsty cow did not select the water beyond its sleeping herd mate");
+        if (!found) return;
+        goal.start();
+        helper.startSequence().thenExecuteFor(260, () -> {
+            if (goal.target() != null && !helper.getLevel().getFluidState(waterPos).isSource()) {
+                helper.getLevel().setBlock(waterPos, Blocks.WATER.defaultBlockState(), 3);
+            }
+            thirsty.setSleeping(false);
+            if (goal.target() != null && goal.canContinueToUse()) goal.tick();
+        }).thenExecute(() -> {
+            helper.assertTrue(thirsty.getThirst() == 100,
+                    "sleeping cow permanently blocked its thirsty herd mate; thirsty=" + thirsty.position()
+                            + ", sleeper=" + sleeper.position());
+            helper.assertTrue(sleeper.distanceToSqr(sleeperStart.getX() + 0.5D, sleeperStart.getY(),
+                            sleeperStart.getZ() + 0.5D) > 0.04D,
+                    "sleeping cow did not yield to normal entity collision pushing");
+            helper.assertTrue(sleeper.isSleeping(), "ordinary collision incorrectly woke the sleeping cow");
+            goal.stop();
+            thirsty.discard();
+            sleeper.discard();
+        }).thenSucceed();
+    }
+
+    @GameTest(template = "empty")
+    public static void denseHerdsShareFoodTroughsWithoutFeedingLanes(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:dense_herd_shared_trough_range");
+        for (int x = -2; x <= 14; x++) {
+            for (int z = -3; z <= 10; z++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, 0, z)),
+                        Blocks.STONE.defaultBlockState(), 3);
+                for (int y = 1; y <= 3; y++) {
+                    helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, z)), Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+        }
+        BlockPos nearTrough = helper.absolutePos(new BlockPos(3, 1, 3));
+        BlockPos farTrough = helper.absolutePos(new BlockPos(10, 1, 3));
+        BlockState troughState = AnimaniaBlocks.TROUGH.get().defaultBlockState()
+                .setValue(com.animania.common.block.AnimaniaTroughBlock.FACING, Direction.EAST);
+        helper.getLevel().setBlock(nearTrough, troughState, 3);
+        ((com.animania.common.block.AnimaniaTroughBlock) AnimaniaBlocks.TROUGH.get())
+                .setPlacedBy(helper.getLevel(), nearTrough, troughState, null, ItemStack.EMPTY);
+        helper.getLevel().setBlock(farTrough, troughState, 3);
+        ((com.animania.common.block.AnimaniaTroughBlock) AnimaniaBlocks.TROUGH.get())
+                .setPlacedBy(helper.getLevel(), farTrough, troughState, null, ItemStack.EMPTY);
+        var nearStorage = (com.animania.common.block.AnimaniaStorageBlockEntity)
+                helper.getLevel().getBlockEntity(nearTrough);
+        var farStorage = (com.animania.common.block.AnimaniaStorageBlockEntity)
+                helper.getLevel().getBlockEntity(farTrough);
+        helper.assertTrue(nearStorage != null && farStorage != null, "dense-herd trough fixtures were not created");
+        if (nearStorage == null || farStorage == null) return;
+        nearStorage.setItem(0, new ItemStack(Items.WHEAT, 16));
+        farStorage.setItem(0, new ItemStack(Items.WHEAT, 16));
+
+        java.util.List<AnimaniaAnimalEntity> cows = new java.util.ArrayList<>();
+        java.util.List<AnimaniaFindFoodGoal> goals = new java.util.ArrayList<>();
+        try {
+            for (int index = 0; index < 8; index++) {
+                AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+                cow.moveTo(helper.absolutePos(new BlockPos(0, 1, index + 1)), 0.0F, 0.0F);
+                cow.setAge(0);
+                cow.markInteracted();
+                cow.setHunger(0);
+                cow.setThirst(100);
+                helper.getLevel().addFreshEntity(cow);
+                AnimaniaFindFoodGoal goal = new AnimaniaFindFoodGoal(cow, true, false);
+                boolean selected = false;
+                for (int attempt = 0; attempt < 500 && !selected; attempt++) selected = goal.canUse();
+                helper.assertTrue(selected, "dense-herd cow " + index + " did not select the shared trough");
+                cows.add(cow);
+                goals.add(goal);
+            }
+            for (int index = 0; index < 8; index++) {
+                helper.assertTrue(nearTrough.equals(goals.get(index).target()),
+                        "cow " + index + " did not share the nearest food trough");
+                helper.assertTrue(goals.get(index).approach() == null,
+                        "cow " + index + " was assigned an obsolete feeding lane");
+            }
+
+            AnimaniaAnimalEntity waitingCow = createAnimal(helper, "cow_angus");
+            waitingCow.moveTo(helper.absolutePos(new BlockPos(0, 1, 9)), 0.0F, 0.0F);
+            waitingCow.setAge(0);
+            waitingCow.markInteracted();
+            waitingCow.setHunger(0);
+            waitingCow.setThirst(100);
+            helper.getLevel().addFreshEntity(waitingCow);
+            cows.add(waitingCow);
+            AnimaniaFindFoodGoal waitingGoal = new AnimaniaFindFoodGoal(waitingCow, true, false);
+            boolean selectedSharedTrough = false;
+            for (int attempt = 0; attempt < 500 && !selectedSharedTrough; attempt++) {
+                selectedSharedTrough = waitingGoal.canUse();
+            }
+            helper.assertTrue(selectedSharedTrough && nearTrough.equals(waitingGoal.target())
+                            && waitingGoal.approach() == null,
+                    "ninth cow could not share the food trough without a feeding lane");
+            goals.add(waitingGoal);
+
+            nearStorage.clearContent();
+            helper.assertTrue(!goals.get(0).canContinueToUse(),
+                    "food goal retained MOVE/LOOK after another animal emptied its target trough");
+        } finally {
+            for (AnimaniaFindFoodGoal goal : goals) goal.stop();
+            for (AnimaniaAnimalEntity cow : cows) cow.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void denseHerdsShareWaterTroughsWithoutWateringLanes(GameTestHelper helper) {
+        for (int x = -2; x <= 14; x++) {
+            for (int z = -3; z <= 10; z++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, 0, z)),
+                        Blocks.STONE.defaultBlockState(), 3);
+                for (int y = 1; y <= 3; y++) {
+                    helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, z)), Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+        }
+        BlockPos nearTrough = helper.absolutePos(new BlockPos(3, 1, 3));
+        BlockPos farTrough = helper.absolutePos(new BlockPos(10, 1, 3));
+        BlockState troughState = AnimaniaBlocks.TROUGH.get().defaultBlockState()
+                .setValue(com.animania.common.block.AnimaniaTroughBlock.FACING, Direction.EAST);
+        helper.getLevel().setBlock(nearTrough, troughState, 3);
+        ((com.animania.common.block.AnimaniaTroughBlock) AnimaniaBlocks.TROUGH.get())
+                .setPlacedBy(helper.getLevel(), nearTrough, troughState, null, ItemStack.EMPTY);
+        helper.getLevel().setBlock(farTrough, troughState, 3);
+        ((com.animania.common.block.AnimaniaTroughBlock) AnimaniaBlocks.TROUGH.get())
+                .setPlacedBy(helper.getLevel(), farTrough, troughState, null, ItemStack.EMPTY);
+        var nearStorage = (com.animania.common.block.AnimaniaStorageBlockEntity)
+                helper.getLevel().getBlockEntity(nearTrough);
+        var farStorage = (com.animania.common.block.AnimaniaStorageBlockEntity)
+                helper.getLevel().getBlockEntity(farTrough);
+        helper.assertTrue(nearStorage != null && farStorage != null, "dense-herd water trough fixtures were not created");
+        if (nearStorage == null || farStorage == null) return;
+        for (var storage : java.util.List.of(nearStorage, farStorage)) {
+            helper.assertTrue(storage.fillFluid(new net.minecraftforge.fluids.FluidStack(
+                            net.minecraft.world.level.material.Fluids.WATER, 1000),
+                    net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE) == 1000,
+                    "dense-herd trough rejected water");
+        }
+
+        java.util.List<AnimaniaAnimalEntity> cows = new java.util.ArrayList<>();
+        java.util.List<AnimaniaFindWaterGoal> goals = new java.util.ArrayList<>();
+        try {
+            for (int index = 0; index < 8; index++) {
+                AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+                cow.moveTo(helper.absolutePos(new BlockPos(0, 1, index + 1)), 0.0F, 0.0F);
+                cow.setAge(0);
+                cow.markInteracted();
+                cow.setHunger(100);
+                cow.setThirst(20);
+                helper.getLevel().addFreshEntity(cow);
+                AnimaniaFindWaterGoal goal = new AnimaniaFindWaterGoal(cow, true, false);
+                boolean selected = false;
+                for (int attempt = 0; attempt < 500 && !selected; attempt++) selected = goal.canUse();
+                helper.assertTrue(selected, "dense-herd cow " + index + " did not select the shared water trough");
+                cows.add(cow);
+                goals.add(goal);
+            }
+            for (int index = 0; index < 8; index++) {
+                helper.assertTrue(nearTrough.equals(goals.get(index).target()),
+                        "cow " + index + " did not share the nearest water trough");
+                helper.assertTrue(goals.get(index).approach() == null,
+                        "cow " + index + " was assigned an obsolete watering lane");
+            }
+
+            AnimaniaAnimalEntity waitingCow = createAnimal(helper, "cow_angus");
+            waitingCow.moveTo(helper.absolutePos(new BlockPos(0, 1, 9)), 0.0F, 0.0F);
+            waitingCow.setAge(0);
+            waitingCow.markInteracted();
+            waitingCow.setHunger(100);
+            waitingCow.setThirst(20);
+            helper.getLevel().addFreshEntity(waitingCow);
+            cows.add(waitingCow);
+            AnimaniaFindWaterGoal waitingGoal = new AnimaniaFindWaterGoal(waitingCow, true, false);
+            boolean selectedSharedTrough = false;
+            for (int attempt = 0; attempt < 500 && !selectedSharedTrough; attempt++) {
+                selectedSharedTrough = waitingGoal.canUse();
+            }
+            helper.assertTrue(selectedSharedTrough && nearTrough.equals(waitingGoal.target())
+                            && waitingGoal.approach() == null,
+                    "ninth cow could not share the water trough without a watering lane");
+            goals.add(waitingGoal);
+
+            nearStorage.drainFluid(1000, stack -> stack.getFluid().is(net.minecraft.tags.FluidTags.WATER),
+                    net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            helper.assertTrue(!goals.get(0).canContinueToUse(),
+                    "water goal retained MOVE/LOOK after another animal emptied its target trough");
+        } finally {
+            for (AnimaniaFindWaterGoal goal : goals) goal.stop();
+            for (AnimaniaAnimalEntity cow : cows) cow.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void unreachableFoodTargetCoolsDownBeforeSelectingAlternative(GameTestHelper helper) {
+        for (int x = -2; x <= 15; x++) {
+            for (int z = 0; z <= 8; z++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, 0, z)),
+                        Blocks.STONE.defaultBlockState(), 3);
+                for (int y = 1; y <= 3; y++) {
+                    helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, z)), Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+        }
+        BlockPos nearTrough = helper.absolutePos(new BlockPos(6, 1, 4));
+        BlockPos farTrough = helper.absolutePos(new BlockPos(12, 1, 4));
+        BlockState troughState = AnimaniaBlocks.TROUGH.get().defaultBlockState()
+                .setValue(com.animania.common.block.AnimaniaTroughBlock.FACING, Direction.EAST);
+        for (BlockPos troughPos : new BlockPos[]{nearTrough, farTrough}) {
+            helper.getLevel().setBlock(troughPos, troughState, 3);
+            ((com.animania.common.block.AnimaniaTroughBlock) AnimaniaBlocks.TROUGH.get())
+                    .setPlacedBy(helper.getLevel(), troughPos, troughState, null, ItemStack.EMPTY);
+            var storage = (com.animania.common.block.AnimaniaStorageBlockEntity)
+                    helper.getLevel().getBlockEntity(troughPos);
+            helper.assertTrue(storage != null, "unreachable-target trough block entity missing");
+            if (storage != null) storage.setItem(0, new ItemStack(Items.WHEAT, 4));
+        }
+
+        BlockPos cowPos = helper.absolutePos(new BlockPos(1, 1, 4));
+        for (int x = -1; x <= 3; x++) {
+            for (int y = 1; y <= 2; y++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, 2)), Blocks.STONE.defaultBlockState(), 3);
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, 6)), Blocks.STONE.defaultBlockState(), 3);
+            }
+        }
+        for (int z = 2; z <= 6; z++) {
+            for (int y = 1; y <= 2; y++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(-1, y, z)), Blocks.STONE.defaultBlockState(), 3);
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(3, y, z)), Blocks.STONE.defaultBlockState(), 3);
+            }
+        }
+
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        cow.moveTo(cowPos.getX() + 0.5D, cowPos.getY(), cowPos.getZ() + 0.5D, 0.0F, 0.0F);
+        cow.setAge(0);
+        cow.markInteracted();
+        cow.setHunger(0);
+        cow.setThirst(100);
+        helper.getLevel().addFreshEntity(cow);
+        cow.setOnGround(true);
+        AnimaniaFindFoodGoal goal = new AnimaniaFindFoodGoal(cow, true, false);
+        try {
+            boolean selectedNear = false;
+            for (int attempt = 0; attempt < 500 && !selectedNear; attempt++) selectedNear = goal.canUse();
+            helper.assertTrue(selectedNear && nearTrough.equals(goal.target()),
+                    "trapped cow did not initially select the nearest food target");
+            if (!selectedNear) return;
+            goal.start();
+            if (goal.target() != null) {
+                cow.getNavigation().stop();
+                helper.assertFalse(goal.canContinueToUse(),
+                        "completed partial path did not reject the unreachable food target");
+            }
+            helper.assertTrue(goal.target() == null,
+                    "unreachable food target remained active after path failure");
+
+            boolean selectedAlternative = false;
+            for (int attempt = 0; attempt < 500 && !selectedAlternative; attempt++) {
+                selectedAlternative = goal.canUse();
+            }
+            helper.assertTrue(selectedAlternative && farTrough.equals(goal.target()),
+                    "food search retried its cooled-down target instead of selecting the alternative trough");
+        } finally {
+            goal.stop();
+            cow.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void expandedTroughRangeSupportsNormalAndRecessedTroughs(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:expanded_trough_interaction_range");
+        for (int x = 0; x <= 9; x++) {
+            for (int z = 0; z <= 8; z++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, 0, z)),
+                        Blocks.STONE.defaultBlockState(), 3);
+                for (int y = 1; y <= 3; y++) {
+                    helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, z)), Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+        }
+        verifyDirectTroughInteraction(helper, new BlockPos(4, 1, 2), new BlockPos(1, 1, 2));
+        verifyDirectTroughInteraction(helper, new BlockPos(4, 0, 6), new BlockPos(1, 1, 6));
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void naturalWaterAndSaltLicksUseTheSingleBlockInteractionRange(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:single_block_direct_interaction_range");
+        boolean previousRemoveWater = AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING.get();
+        AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING.set(true);
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        BlockPos waterPos = helper.absolutePos(new BlockPos(4, 1, 4));
+        BlockPos waterCowPos = waterPos.offset(-2, 1, -2);
+        try {
+            helper.getLevel().setBlock(waterCowPos.below(), Blocks.STONE.defaultBlockState(), 3);
+            helper.getLevel().setBlock(waterPos, Blocks.WATER.defaultBlockState(), 3);
+            for (Direction direction : Direction.Plane.HORIZONTAL) {
+                helper.getLevel().setBlock(waterPos.relative(direction), Blocks.WATER.defaultBlockState(), 3);
+            }
+            cow.moveTo(waterCowPos.getX() + 0.5D, waterCowPos.getY(), waterCowPos.getZ() + 0.5D,
+                    0.0F, 0.0F);
+            cow.goalSelector.removeAllGoals(ignored -> true);
+            cow.targetSelector.removeAllGoals(ignored -> true);
+            cow.markInteracted();
+            cow.setHunger(100);
+            cow.setThirst(20);
+            helper.getLevel().addFreshEntity(cow);
+
+            AnimaniaFindWaterGoal waterGoal = new AnimaniaFindWaterGoal(cow, false, true, waterPos::equals);
+            boolean foundWater = false;
+            for (int attempt = 0; attempt < 500 && !foundWater; attempt++) foundWater = waterGoal.canUse();
+            helper.assertTrue(foundWater && waterPos.equals(waterGoal.target()),
+                    "cow did not select natural water at the range corner");
+            helper.assertTrue(waterGoal.approach() == null,
+                    "in-range natural water still required a reserved dry-bank position");
+            waterGoal.start();
+            helper.assertTrue(cow.getNavigation().isDone(),
+                    "in-range cow tried to path before drinking natural water");
+            waterGoal.tick();
+            helper.assertTrue(cow.getThirst() == 100
+                            && helper.getLevel().getFluidState(waterPos).isSource(),
+                    "cow did not drink directly or damaged its renewable water source");
+
+            BlockPos saltPos = helper.absolutePos(new BlockPos(9, 1, 4));
+            BlockPos saltCowPos = saltPos.offset(-2, 1, -2);
+            helper.getLevel().setBlock(saltCowPos.below(), Blocks.STONE.defaultBlockState(), 3);
+            helper.getLevel().setBlock(saltPos, AnimaniaBlocks.SALT_LICK.get().defaultBlockState(), 3);
+            var lick = (com.animania.common.block.AnimaniaSaltLickBlockEntity)
+                    helper.getLevel().getBlockEntity(saltPos);
+            helper.assertTrue(lick != null, "salt lick block entity missing for range test");
+            if (lick == null) return;
+            int uses = lick.usesLeft();
+            cow.moveTo(saltCowPos.getX() + 0.5D, saltCowPos.getY(), saltCowPos.getZ() + 0.5D,
+                    0.0F, 0.0F);
+            cow.setHealth(cow.getMaxHealth() - 4.0F);
+            float health = cow.getHealth();
+            AnimaniaFindSaltLickGoal saltGoal = new AnimaniaFindSaltLickGoal(cow, saltPos::equals);
+            helper.assertTrue(saltGoal.findTargetNow() && saltPos.equals(saltGoal.target()),
+                    "cow did not select salt lick at the range corner");
+            helper.assertTrue(saltGoal.approach() == null,
+                    "in-range salt lick still required a reserved approach position");
+            saltGoal.start();
+            helper.assertTrue(cow.getNavigation().isDone(),
+                    "in-range cow tried to path before using the salt lick");
+            saltGoal.tick();
+            helper.assertTrue(cow.getHealth() == Math.min(cow.getMaxHealth(), health + 2.0F)
+                            && lick.usesLeft() == uses - 1,
+                    "cow did not use the salt lick directly from the expanded range");
+        } finally {
+            cow.discard();
+            AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING.set(previousRemoveWater);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 240)
+    public static void thirstyCowWalksIntoNaturalWaterRangeWithoutAPreselectedPosition(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:natural_water_navigation_without_reserved_position");
+        for (int x = 0; x <= 7; x++) {
+            for (int z = 0; z <= 2; z++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, 0, z)),
+                        Blocks.STONE.defaultBlockState(), 3);
+                for (int y = 1; y <= 3; y++) {
+                    helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, z)),
+                            Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+        }
+        BlockPos cowPos = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockPos waterPos = helper.absolutePos(new BlockPos(6, 1, 1));
+        helper.getLevel().setBlock(waterPos, Blocks.WATER.defaultBlockState(), 3);
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        cow.moveTo(cowPos.getX() + 0.5D, cowPos.getY(), cowPos.getZ() + 0.5D, 0.0F, 0.0F);
+        cow.goalSelector.removeAllGoals(ignored -> true);
+        cow.targetSelector.removeAllGoals(ignored -> true);
+        cow.markInteracted();
+        cow.setHunger(100);
+        cow.setThirst(20);
+        helper.getLevel().addFreshEntity(cow);
+        cow.setOnGround(true);
+
+        AnimaniaFindWaterGoal goal = new AnimaniaFindWaterGoal(cow, false, true, waterPos::equals);
+        boolean found = false;
+        for (int attempt = 0; attempt < 500 && !found; attempt++) found = goal.canUse();
+        helper.assertTrue(found && waterPos.equals(goal.target()) && goal.approach() == null,
+                "cow did not select distant natural water without a reserved bank position");
+        if (!found) return;
+        goal.start();
+        helper.assertFalse(cow.getNavigation().isDone(),
+                "cow selected distant natural water but did not start navigating toward its range");
+        helper.startSequence().thenExecuteFor(200, () -> {
+            // GameTests share a level, so another thirsty test animal can consume this fixture's
+            // source while the cow is still walking. Keep the isolated target present until this
+            // goal has finished with it; the goal itself remains responsible for the final drink.
+            if (goal.target() != null && !helper.getLevel().getFluidState(waterPos).isSource()) {
+                helper.getLevel().setBlock(waterPos, Blocks.WATER.defaultBlockState(), 3);
+            }
+            cow.setSleeping(false);
+            if (goal.target() != null && goal.canContinueToUse()) goal.tick();
+        }).thenExecute(() -> {
+            helper.assertTrue(cow.getThirst() == 100,
+                    "cow did not drink after navigating into the natural-water range; pos=" + cow.position()
+                            + ", water=" + waterPos + ", target=" + goal.target()
+                            + ", sleeping=" + cow.isSleeping());
+            cow.discard();
+        }).thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 80)
+    public static void thirstySheepDirectlyUsesRecessedInfiniteWaterPool(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:recessed_infinite_water_direct_use");
+        boolean previousRemoveWater = AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING.get();
+        AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING.set(true);
+        for (int x = 0; x <= 9; x++) {
+            for (int z = 0; z <= 5; z++) {
+                BlockPos ground = helper.absolutePos(new BlockPos(x, 1, z));
+                helper.getLevel().setBlock(ground.below(), Blocks.STONE.defaultBlockState(), 3);
+                helper.getLevel().setBlock(ground, Blocks.GRASS_BLOCK.defaultBlockState(), 3);
+                for (int y = 2; y <= 4; y++) {
+                    helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, z)),
+                            Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+        }
+
+        java.util.Set<BlockPos> pool = new java.util.HashSet<>();
+        for (int x = 6; x <= 7; x++) {
+            for (int z = 2; z <= 3; z++) {
+                BlockPos water = helper.absolutePos(new BlockPos(x, 1, z));
+                pool.add(water);
+                helper.getLevel().setBlock(water, Blocks.WATER.defaultBlockState(), 3);
+            }
+        }
+
+        AnimaniaAnimalEntity sheep = createAnimal(helper, "ewe_dorper");
+        BlockPos sheepPos = helper.absolutePos(new BlockPos(4, 2, 2));
+        sheep.moveTo(sheepPos.getX() + 0.5D, sheepPos.getY(), sheepPos.getZ() + 0.5D, 0.0F, 0.0F);
+        sheep.goalSelector.removeAllGoals(ignored -> true);
+        sheep.targetSelector.removeAllGoals(ignored -> true);
+        sheep.setHunger(100);
+        sheep.setThirst(20);
+        helper.getLevel().addFreshEntity(sheep);
+        sheep.setOnGround(true);
+
+        AnimaniaFindWaterGoal goal = new AnimaniaFindWaterGoal(sheep, false, true, pool::contains);
+        boolean found = false;
+        for (int attempt = 0; attempt < 500 && !found; attempt++) found = goal.canUse();
+        helper.assertTrue(found && pool.contains(goal.target()),
+                "thirsty sheep did not select a source in the recessed 2 x 2 pool");
+        if (!found) return;
+        goal.start();
+        helper.assertTrue(sheep.getNavigation().isDone(),
+                "in-range sheep tried to path to the recessed pool");
+        goal.tick();
+        helper.assertTrue(sheep.getThirst() == 100 && sheep.hasInteracted(),
+                "in-range sheep did not drink directly before its player-interaction gate");
+        helper.assertTrue(pool.stream().allMatch(pos -> helper.getLevel().getFluidState(pos).isSource()),
+                "drinking damaged the 2 x 2 infinite water source: "
+                        + pool.stream().map(pos -> pos + "=" + helper.getLevel().getFluidState(pos)).toList());
+        AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING.set(previousRemoveWater);
+        sheep.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void animalsIgnoreCheeseMoldWaterWhileSaltAges(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:animals_ignore_cheese_mold_water");
+        boolean previousSaltDisabled = FarmConfig.DISABLE_SALT_CREATION.get();
+        int previousMaturity = FarmConfig.CHEESE_MATURITY_TIME.get();
+        int previousSaltAmount = FarmConfig.SALT_CREATION_AMOUNT.get();
+        FarmConfig.DISABLE_SALT_CREATION.set(false);
+        FarmConfig.CHEESE_MATURITY_TIME.set(20);
+        FarmConfig.SALT_CREATION_AMOUNT.set(16);
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        BlockPos cowPos = helper.absolutePos(new BlockPos(0, 1, 0));
+        BlockPos moldPos = helper.absolutePos(new BlockPos(3, 1, 0));
+        try {
+            cow.moveTo(cowPos.getX() + 0.5D, cowPos.getY(), cowPos.getZ() + 0.5D, 0.0F, 0.0F);
+            cow.markInteracted();
+            cow.setThirst(0);
+            cow.setHunger(100);
+            helper.getLevel().addFreshEntity(cow);
+            helper.getLevel().setBlock(moldPos, FarmContent.CHEESE_MOLD.get().defaultBlockState(), 3);
+            FarmCheeseMoldBlockEntity mold = (FarmCheeseMoldBlockEntity) helper.getLevel().getBlockEntity(moldPos);
+            helper.assertTrue(mold.fillFluid(new net.minecraftforge.fluids.FluidStack(
+                            net.minecraft.world.level.material.Fluids.WATER, 1000),
+                    net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE) == 1000,
+                    "cheese mold rejected the salt recipe water");
+
+            AnimaniaFindWaterGoal goal = new AnimaniaFindWaterGoal(cow, true, false, moldPos::equals);
+            boolean selectedMold = false;
+            for (int attempt = 0; attempt < 500 && !selectedMold; attempt++) selectedMold = goal.canUse();
+            helper.assertTrue(!selectedMold, "animal selected cheese mold water as a trough");
+            helper.assertTrue(mold.fluidSnapshot().getAmount() == 1000,
+                    "animal drinking search removed salt-recipe water from the cheese mold");
+            mold.serverTick();
+            helper.assertTrue(mold.processTicks() == 1,
+                    "full cheese mold water did not begin salt aging after animal search");
+            for (int tick = 1; tick < 20; tick++) mold.serverTick();
+            helper.assertTrue(mold.fluidSnapshot().isEmpty()
+                            && mold.getItem(0).is(FarmContent.ITEM_ENTRIES.get("salt").get())
+                            && mold.getItem(0).getCount() == 16,
+                    "protected 1000 mB water did not produce the configured 16 salt");
+        } finally {
+            cow.discard();
+            FarmConfig.DISABLE_SALT_CREATION.set(previousSaltDisabled);
+            FarmConfig.CHEESE_MATURITY_TIME.set(previousMaturity);
+            FarmConfig.SALT_CREATION_AMOUNT.set(previousSaltAmount);
+        }
         helper.succeed();
     }
 
@@ -1256,7 +1900,11 @@ public final class AnimaniaFarmGameTests {
         for (int attempt = 0; attempt < 500 && !found; attempt++) found = goal.canUse();
         helper.assertTrue(found && waterPos.equals(goal.target()) && !goal.targetsTrough(), "cow did not find natural fresh water");
         if (!found) return;
-        cow.moveTo(waterPos.getX() + 1.0D, waterPos.getY(), waterPos.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(goal.approach() == null,
+                "natural water still assigned a preselected drinking position");
+        BlockPos cowDrinkPos = waterPos.offset(-2, 0, 0);
+        cow.moveTo(cowDrinkPos.getX() + 0.5D, cowDrinkPos.getY(), cowDrinkPos.getZ() + 0.5D,
+                0.0F, 0.0F);
         goal.tick();
         helper.assertTrue(cow.getThirst() == 100,
                 "full-size animal did not become watered; thirst=" + cow.getThirst());
@@ -1275,17 +1923,71 @@ public final class AnimaniaFarmGameTests {
         chick.goalSelector.removeAllGoals(ignored -> true);
         chick.targetSelector.removeAllGoals(ignored -> true);
         helper.getLevel().setBlock(smallWater, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+        helper.getLevel().setBlock(smallWater.west(), Blocks.STONE.defaultBlockState(), 3);
         AnimaniaFindWaterGoal smallGoal = new AnimaniaFindWaterGoal(chick, false, true, smallWater::equals);
         boolean smallFound = false;
         for (int attempt = 0; attempt < 500 && !smallFound; attempt++) smallFound = smallGoal.canUse();
         helper.assertTrue(smallFound && smallWater.equals(smallGoal.target()), "small animal did not find natural water");
         if (!smallFound) return;
-        chick.moveTo(smallWater.getX() + 1.0D, smallWater.getY(), smallWater.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(smallGoal.approach() == null,
+                "small animal natural water still assigned a preselected drinking position");
+        BlockPos chickDrinkPos = smallWater.offset(-2, 0, 0);
+        chick.moveTo(chickDrinkPos.getX() + 0.5D, chickDrinkPos.getY(), chickDrinkPos.getZ() + 0.5D,
+                0.0F, 0.0F);
+        chick.getNavigation().stop();
         smallGoal.tick();
-        helper.assertTrue(chick.getThirst() == 100 && helper.getLevel().getBlockState(smallWater).is(net.minecraft.world.level.block.Blocks.WATER),
+        helper.assertTrue(chick.getThirst() == 100 && !chick.isInWater()
+                        && helper.getLevel().getBlockState(smallWater).is(net.minecraft.world.level.block.Blocks.WATER),
                 "small animal incorrectly removed its half-amount water source");
         chick.discard();
         com.animania.common.config.AnimaniaConfig.WATER_REMOVED_AFTER_DRINKING.set(previousRemoveWater);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void naturalWaterDoesNotRequireAPreselectedDryBankPosition(GameTestHelper helper) {
+        for (int x = 0; x <= 8; x++) {
+            for (int z = 0; z <= 8; z++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, 0, z)),
+                        Blocks.STONE.defaultBlockState(), 3);
+                for (int y = 1; y <= 3; y++) {
+                    helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, z)), Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+        }
+        BlockPos waterPos = helper.absolutePos(new BlockPos(4, 1, 4));
+        helper.getLevel().setBlock(waterPos, Blocks.WATER.defaultBlockState(), 3);
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            helper.getLevel().setBlock(waterPos.relative(direction), Blocks.WATER.defaultBlockState(), 3);
+        }
+        AnimaniaAnimalEntity chick = createAnimal(helper, "chick_leghorn");
+        BlockPos chickPos = helper.absolutePos(new BlockPos(1, 1, 4));
+        chick.moveTo(chickPos.getX() + 0.5D, chickPos.getY(), chickPos.getZ() + 0.5D, 0.0F, 0.0F);
+        chick.markInteracted();
+        chick.setHunger(100);
+        chick.setThirst(20);
+        helper.getLevel().addFreshEntity(chick);
+        chick.setOnGround(true);
+        chick.goalSelector.removeAllGoals(ignored -> true);
+        chick.targetSelector.removeAllGoals(ignored -> true);
+        AnimaniaFindWaterGoal goal = new AnimaniaFindWaterGoal(chick, false, true, waterPos::equals);
+        try {
+            boolean selectedWater = false;
+            for (int attempt = 0; attempt < 500 && !selectedWater; attempt++) {
+                selectedWater = goal.canUse();
+            }
+            helper.assertTrue(selectedWater && waterPos.equals(goal.target()) && goal.approach() == null,
+                    "natural source surrounded by water still required a preselected dry drinking point");
+            BlockPos drinkPos = waterPos.offset(-2, 0, 0);
+            chick.moveTo(drinkPos.getX() + 0.5D, drinkPos.getY(), drinkPos.getZ() + 0.5D,
+                    0.0F, 0.0F);
+            goal.tick();
+            helper.assertTrue(chick.getThirst() == 100 && helper.getLevel().getBlockState(waterPos).is(Blocks.WATER),
+                    "small animal did not drink directly once it entered the natural-water range");
+        } finally {
+            goal.stop();
+            chick.discard();
+        }
         helper.succeed();
     }
 
@@ -1312,7 +2014,10 @@ public final class AnimaniaFarmGameTests {
             helper.assertTrue(found && waterloggedPos.equals(goal.target()),
                     "animal did not select a waterlogged slab as natural water");
             if (!found) return;
-            cow.moveTo(waterloggedPos.getX() + 1.0D, waterloggedPos.getY(), waterloggedPos.getZ() + 0.5D,
+            helper.assertTrue(goal.approach() == null,
+                    "waterlogged source still assigned a preselected drinking position");
+            BlockPos drinkPos = waterloggedPos.offset(-2, 0, 0);
+            cow.moveTo(drinkPos.getX() + 0.5D, drinkPos.getY(), drinkPos.getZ() + 0.5D,
                     0.0F, 0.0F);
             goal.tick();
             helper.assertTrue(cow.getThirst() == 100,
@@ -1404,12 +2109,19 @@ public final class AnimaniaFarmGameTests {
         if (lick == null) return;
         int uses = lick.usesLeft();
         float health = cow.getHealth();
-        AnimaniaFindSaltLickGoal goal = new AnimaniaFindSaltLickGoal(cow);
+        AnimaniaFindSaltLickGoal goal = new AnimaniaFindSaltLickGoal(cow, saltPos::equals);
         boolean found = false;
         for (int attempt = 0; attempt < 30000 && !found; attempt++) found = goal.canUse();
         helper.assertTrue(found && saltPos.equals(goal.target()), "injured cow did not select salt lick");
         if (!found) return;
+        helper.assertTrue(goal.approach() != null && goal.approach().getY() == saltPos.getY()
+                        && goal.approach().distManhattan(saltPos) == 1,
+                "salt lick goal targeted the collidable block instead of its horizontal approach lane");
         cow.moveTo(saltPos.getX() + 1.0D, saltPos.getY(), saltPos.getZ() + 0.5D, 0.0F, 0.0F);
+        cow.getNavigation().stop();
+        goal.start();
+        helper.assertTrue(goal.canContinueToUse(),
+                "salt lick goal stopped after navigation completed but before the nearby lick was consumed");
         goal.tick();
         helper.assertTrue(cow.getHealth() == Math.min(cow.getMaxHealth(), health + 2.0F), "salt lick did not heal exactly two health");
         helper.assertTrue(lick.usesLeft() == uses - 1, "salt lick did not lose exactly one use");
@@ -1417,6 +2129,111 @@ public final class AnimaniaFarmGameTests {
                 "salt lick incorrectly replaced food or water care states");
         cow.discard();
         helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void saltLickSearchSkipsBlockedTargetsAndRejectsUnsupportedAnimals(GameTestHelper helper) {
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        AnimaniaAnimalEntity chicken = createAnimal(helper, "hen_leghorn");
+        BlockPos cowPos = helper.absolutePos(new BlockPos(0, 1, 0));
+        BlockPos blockedSalt = helper.absolutePos(new BlockPos(4, 1, 4));
+        BlockPos reachableSalt = helper.absolutePos(new BlockPos(6, 1, 0));
+        for (int x = 0; x <= 7; x++) {
+            for (int z = 0; z <= 4; z++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, 0, z)),
+                        Blocks.STONE.defaultBlockState(), 3);
+                for (int y = 1; y <= 3; y++) {
+                    helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, z)),
+                            Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+        }
+        cow.moveTo(cowPos.getX() + 0.5D, cowPos.getY(), cowPos.getZ() + 0.5D, 0.0F, 0.0F);
+        cow.setAge(0);
+        cow.setHealth(cow.getMaxHealth() - 4.0F);
+        helper.getLevel().addFreshEntity(cow);
+        helper.getLevel().setBlock(blockedSalt, AnimaniaBlocks.SALT_LICK.get().defaultBlockState(), 3);
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            helper.getLevel().setBlock(blockedSalt.relative(direction), Blocks.STONE.defaultBlockState(), 3);
+        }
+        helper.getLevel().setBlock(reachableSalt, AnimaniaBlocks.SALT_LICK.get().defaultBlockState(), 3);
+
+        AnimaniaFindSaltLickGoal goal = new AnimaniaFindSaltLickGoal(cow,
+                pos -> pos.equals(blockedSalt) || pos.equals(reachableSalt));
+        boolean found = goal.findTargetNow();
+        helper.assertTrue(found && reachableSalt.equals(goal.target()),
+                "salt lick search did not choose reachable farther lick; found=" + found
+                        + ", target=" + goal.target() + ", approach=" + goal.approach()
+                        + ", origin=" + cow.blockPosition() + ", blocked=" + blockedSalt
+                        + ", reachable=" + reachableSalt + ", searchRange="
+                        + AnimaniaConfig.AI_BLOCK_SEARCH_RANGE.get()
+                        + ", reachableUses=" + saltLickUses(helper, reachableSalt)
+                        + ", reachableApproaches=" + saltLickApproachStates(helper, reachableSalt));
+        helper.assertTrue(AnimaniaFindSaltLickGoal.supports(cow), "farm cow lost legacy salt lick support");
+        helper.assertFalse(AnimaniaFindSaltLickGoal.supports(chicken),
+                "farm chicken incorrectly retained the livestock-only salt lick goal");
+        cow.discard();
+        chicken.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 240)
+    public static void injuredCowWalksToSaltLickAndConsumesIt(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:salt_lick_real_navigation");
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        BlockPos cowPos = helper.absolutePos(new BlockPos(1, 1, 1));
+        BlockPos saltPos = helper.absolutePos(new BlockPos(6, 1, 1));
+        for (int x = 0; x <= 7; x++) {
+            for (int z = 0; z <= 2; z++) {
+                helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, 0, z)),
+                        Blocks.STONE.defaultBlockState(), 3);
+                for (int y = 1; y <= 3; y++) {
+                    helper.getLevel().setBlock(helper.absolutePos(new BlockPos(x, y, z)),
+                            Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+        }
+        cow.moveTo(cowPos.getX() + 0.5D, cowPos.getY(), cowPos.getZ() + 0.5D, 0.0F, 0.0F);
+        cow.setAge(0);
+        cow.setHunger(100);
+        cow.setThirst(100);
+        cow.setHealth(cow.getMaxHealth() - 4.0F);
+        float initialHealth = cow.getHealth();
+        helper.getLevel().addFreshEntity(cow);
+        cow.setOnGround(true);
+        helper.getLevel().setBlock(saltPos, AnimaniaBlocks.SALT_LICK.get().defaultBlockState(), 3);
+        var lick = (com.animania.common.block.AnimaniaSaltLickBlockEntity)
+                helper.getLevel().getBlockEntity(saltPos);
+        helper.assertTrue(lick != null, "real-navigation salt lick block entity missing");
+        if (lick == null) return;
+        int initialUses = lick.usesLeft();
+        AnimaniaFindSaltLickGoal goal = new AnimaniaFindSaltLickGoal(cow, saltPos::equals);
+        helper.assertTrue(goal.findTargetNow() && saltPos.equals(goal.target()),
+                "real-navigation goal did not select its isolated salt lick fixture; origin="
+                        + cow.blockPosition() + ", salt=" + saltPos + ", searchRange="
+                        + AnimaniaConfig.AI_BLOCK_SEARCH_RANGE.get() + ", uses=" + lick.usesLeft()
+                        + ", approaches=" + saltLickApproachStates(helper, saltPos));
+        cow.goalSelector.removeAllGoals(ignored -> true);
+        goal.start();
+        helper.assertFalse(cow.getNavigation().isDone(),
+                "real-navigation goal selected a salt lick but did not create a path; approach="
+                        + goal.approach() + ", origin=" + cow.blockPosition());
+        helper.startSequence().thenExecuteFor(200, () -> {
+            if (goal.canContinueToUse()) goal.tick();
+        }).thenExecute(() -> {
+            helper.assertTrue(cow.getHealth() == Math.min(cow.getMaxHealth(), initialHealth + 2.0F),
+                    "injured cow did not walk to and heal from the salt lick; health=" + cow.getHealth()
+                            + ", pos=" + cow.position() + ", distance="
+                            + Math.sqrt(cow.distanceToSqr(saltPos.getX() + 0.5D, saltPos.getY(),
+                            saltPos.getZ() + 0.5D)) + ", uses=" + lick.usesLeft()
+                            + ", sleeping=" + cow.isSleeping());
+            helper.assertTrue(lick.usesLeft() == initialUses - 1,
+                    "real navigation did not consume exactly one salt lick use");
+            helper.assertTrue(com.animania.common.block.AnimalBlockInteractionRange.contains(
+                            saltPos, cow),
+                    "cow healed outside the expanded salt lick interaction range");
+            cow.discard();
+        }).thenSucceed();
     }
 
     @GameTest(template = "empty")
@@ -1879,6 +2696,38 @@ public final class AnimaniaFarmGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void chickenEggHatchesFromRandomTickNearRooster(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:chicken_nest_hatching");
+        int previousChance = AnimaniaConfig.EGG_HATCH_CHANCE.get();
+        AnimaniaConfig.EGG_HATCH_CHANCE.set(1);
+        BlockPos nestPos = helper.absolutePos(new BlockPos(2, 1, 2));
+        AnimaniaAnimalEntity rooster = createAnimal(helper, "rooster_leghorn");
+        try {
+            helper.getLevel().setBlock(nestPos, AnimaniaBlocks.NEST.get().defaultBlockState(), 3);
+            AnimaniaBlocks.NestEntity nest = (AnimaniaBlocks.NestEntity) helper.getLevel().getBlockEntity(nestPos);
+            helper.assertTrue(nest.insertEgg(new ItemStack(Items.EGG), "leghorn"),
+                    "nest rejected the chicken egg hatching fixture");
+            rooster.moveTo(nestPos.getX() + 1.0D, nestPos.getY(), nestPos.getZ() + 0.5D, 0.0F, 0.0F);
+            helper.getLevel().addFreshEntity(rooster);
+
+            helper.getLevel().getBlockState(nestPos).getBlock().randomTick(
+                    helper.getLevel().getBlockState(nestPos), helper.getLevel(), nestPos,
+                    net.minecraft.util.RandomSource.create(42L));
+
+            helper.assertTrue(nest.getItem(0).isEmpty(), "successful chicken hatch did not consume one nest egg");
+            helper.assertTrue(helper.getLevel().getEntitiesOfClass(AnimaniaAnimalEntity.class,
+                    new AABB(nestPos).inflate(2.0D), animal -> {
+                        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(animal.getType());
+                        return id != null && id.equals(new ResourceLocation(AnimaniaFarm.MOD_ID, "chick_leghorn"));
+                    }).size() == 1, "nest random tick did not spawn the breed-matched chick");
+        } finally {
+            rooster.discard();
+            AnimaniaConfig.EGG_HATCH_CHANCE.set(previousChance);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void randomEggsAreRealServerItems(GameTestHelper helper) {
         for (String id : new String[]{"entity_egg_cow_random", "entity_egg_chicken_random", "entity_egg_pig_random",
                 "entity_egg_goat_random", "entity_egg_sheep_random"}) {
@@ -2002,6 +2851,44 @@ public final class AnimaniaFarmGameTests {
                     "finished Holstein cheese did not select its visible mold state");
             helper.succeed();
         });
+    }
+
+    @GameTest(template = "empty")
+    public static void chickensRejectHiddenInventoryTransfersWhileDraftHorsesKeepTheirSaddleSlot(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_farm:non_horses_reject_hidden_inventory_transfers");
+        AnimaniaAnimalEntity chicken = createAnimal(helper, "hen_leghorn");
+        AnimaniaAnimalEntity horse = createAnimal(helper, "mare_draft");
+        var source = new net.minecraft.world.SimpleContainer(1);
+        try {
+            helper.assertTrue(chicken.getContainerSize() == 0 && chicken.isEmpty(),
+                    "chicken still exposed the draft-horse inventory to Jade or automation");
+            helper.assertFalse(chicken.canPlaceItem(0, new ItemStack(Items.WHEAT_SEEDS)),
+                    "chicken still accepted seeds through the generic Container contract");
+            chicken.setItem(0, new ItemStack(Items.WHEAT_SEEDS, 3));
+            helper.assertTrue(chicken.getItem(0).isEmpty(),
+                    "direct container insertion placed seeds inside a chicken");
+            ItemStack rejected = net.minecraft.world.level.block.entity.HopperBlockEntity.addItem(
+                    source, chicken, new ItemStack(Items.WHEAT_SEEDS, 3), Direction.DOWN);
+            helper.assertTrue(rejected.is(Items.WHEAT_SEEDS) && rejected.getCount() == 3
+                            && chicken.getItem(0).isEmpty(),
+                    "hopper-style automation moved trough feed into the chicken's hidden inventory");
+
+            helper.assertTrue(horse.getContainerSize() == 9,
+                    "draft horse lost its native saddle inventory");
+            ItemStack rejectedHorseFeed = net.minecraft.world.level.block.entity.HopperBlockEntity.addItem(
+                    source, horse, new ItemStack(Items.WHEAT_SEEDS), Direction.DOWN);
+            helper.assertTrue(rejectedHorseFeed.is(Items.WHEAT_SEEDS) && horse.getItem(0).isEmpty(),
+                    "draft-horse saddle inventory accepted ordinary feed");
+            ItemStack saddleRemainder = net.minecraft.world.level.block.entity.HopperBlockEntity.addItem(
+                    source, horse, new ItemStack(Items.SADDLE), Direction.DOWN);
+            helper.assertTrue(saddleRemainder.isEmpty() && horse.getItem(0).is(Items.SADDLE)
+                            && horse.isSaddled(),
+                    "draft horse no longer accepted a saddle in its legacy saddle slot");
+        } finally {
+            chicken.discard();
+            horse.discard();
+        }
+        helper.succeed();
     }
 
     @GameTest(template = "empty")
@@ -2216,7 +3103,7 @@ public final class AnimaniaFarmGameTests {
         helper.assertTrue(FarmContent.HIVE.get().use(helper.getLevel().getBlockState(hivePos), helper.getLevel(),
                         hivePos, player, InteractionHand.MAIN_HAND, hiveHit).consumesAction(),
                 "hive rejected a glass-bottle honey extraction interaction");
-        helper.assertTrue(player.getMainHandItem().is(FarmContent.ITEM_ENTRIES.get("honey_jar").get())
+        helper.assertTrue(player.getMainHandItem().is(FarmContent.ITEM_ENTRIES.get("honey_bottle").get())
                         && hive.honeyAmount() == 1000,
                 "hive extraction did not exchange one bottle for one bucket of honey");
         BlockPos cheesePos = helper.absolutePos(new BlockPos(3, 1, 1));
@@ -2248,6 +3135,44 @@ public final class AnimaniaFarmGameTests {
                         && player.getFoodData().getFoodLevel() == 18,
                 "four cheese bites did not consume the wheel and grant two hunger each");
         player.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void wildHiveWorldgenHangsFromTreeSide(GameTestHelper helper) {
+        BlockPos trunkBase = helper.absolutePos(new BlockPos(4, 1, 4));
+        var chunk = helper.getLevel().getChunkAt(trunkBase);
+        helper.assertFalse(AnimaniaFarm.placeWildHiveOnTree(helper.getLevel(), chunk,
+                        net.minecraft.util.RandomSource.create(17L)),
+                "wild hive worldgen placed a hive without a tree");
+
+        helper.getLevel().setBlock(trunkBase.below(), Blocks.DIRT.defaultBlockState(), 3);
+        for (int y = 0; y < 5; y++) {
+            helper.getLevel().setBlock(trunkBase.above(y), Blocks.OAK_LOG.defaultBlockState(), 3);
+        }
+        BlockPos canopy = trunkBase.above(4);
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            helper.getLevel().setBlock(canopy.relative(side), Blocks.OAK_LEAVES.defaultBlockState(), 3);
+        }
+        helper.assertTrue(AnimaniaFarm.placeWildHiveOnTree(helper.getLevel(), chunk,
+                        net.minecraft.util.RandomSource.create(17L)),
+                "wild hive worldgen failed to find an eligible tree trunk");
+
+        java.util.List<BlockPos> hives = new java.util.ArrayList<>();
+        for (int y = 0; y < 5; y++) {
+            BlockPos log = trunkBase.above(y);
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                BlockPos candidate = log.relative(side);
+                if (helper.getLevel().getBlockState(candidate).is(FarmContent.WILD_HIVE.get())) hives.add(candidate);
+            }
+        }
+        helper.assertTrue(hives.size() == 1, "wild hive worldgen did not place exactly one tree-side hive");
+        BlockPos hivePos = hives.get(0);
+        Direction facing = helper.getLevel().getBlockState(hivePos).getValue(com.animania.farm.FarmHiveBlock.FACING);
+        helper.assertTrue(helper.getLevel().getBlockState(hivePos.relative(facing.getOpposite())).is(BlockTags.LOGS),
+                "wild hive facing does not point away from its supporting trunk");
+        helper.assertTrue(helper.getLevel().isEmptyBlock(hivePos.below()),
+                "wild hive worldgen placed the hive on the ground instead of hanging it");
         helper.succeed();
     }
 
@@ -2501,7 +3426,7 @@ public final class AnimaniaFarmGameTests {
         helper.getLevel().addFreshEntity(cow);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BUCKET));
         helper.assertTrue(cow.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction()
-                        && cow.getThirst() == 0
+                        && cow.getThirst() == 100 && !cow.isWatered()
                         && player.getInventory().contains(new ItemStack(Items.MILK_BUCKET)),
                 "milking did not produce milk and consume the watered state");
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BUCKET));
@@ -2532,7 +3457,7 @@ public final class AnimaniaFarmGameTests {
         helper.getLevel().addFreshEntity(mooshroom);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOWL));
         helper.assertTrue(mooshroom.mobInteract(player, InteractionHand.MAIN_HAND).consumesAction()
-                        && mooshroom.getThirst() == 0
+                        && mooshroom.getThirst() == 100 && !mooshroom.isWatered()
                         && player.getInventory().contains(new ItemStack(Items.MUSHROOM_STEW)),
                 "Mooshroom cow did not produce stew and consume watered state");
 
@@ -2639,6 +3564,72 @@ public final class AnimaniaFarmGameTests {
             }
         }
         return keys;
+    }
+
+    private static int saltLickUses(GameTestHelper helper, BlockPos pos) {
+        return helper.getLevel().getBlockEntity(pos) instanceof com.animania.common.block.AnimaniaSaltLickBlockEntity lick
+                ? lick.usesLeft() : -1;
+    }
+
+    private static void verifyDirectTroughInteraction(GameTestHelper helper, BlockPos relativeTrough,
+                                                      BlockPos relativeCow) {
+        BlockPos troughPos = helper.absolutePos(relativeTrough);
+        BlockPos companionPos = troughPos.relative(Direction.EAST);
+        helper.getLevel().setBlock(companionPos, Blocks.AIR.defaultBlockState(), 3);
+        BlockState troughState = AnimaniaBlocks.TROUGH.get().defaultBlockState()
+                .setValue(com.animania.common.block.AnimaniaTroughBlock.FACING, Direction.EAST);
+        helper.getLevel().setBlock(troughPos, troughState, 3);
+        ((com.animania.common.block.AnimaniaTroughBlock) AnimaniaBlocks.TROUGH.get())
+                .setPlacedBy(helper.getLevel(), troughPos, troughState, null, ItemStack.EMPTY);
+        var storage = (com.animania.common.block.AnimaniaStorageBlockEntity)
+                helper.getLevel().getBlockEntity(troughPos);
+        helper.assertTrue(storage != null, "expanded-range trough block entity missing");
+        if (storage == null) return;
+        storage.setItem(0, new ItemStack(Items.WHEAT, 2));
+
+        AnimaniaAnimalEntity cow = createAnimal(helper, "cow_angus");
+        BlockPos cowPos = helper.absolutePos(relativeCow);
+        cow.moveTo(cowPos.getX() + 0.5D, cowPos.getY(), cowPos.getZ() + 0.5D, 0.0F, 0.0F);
+        cow.setAge(0);
+        cow.markInteracted();
+        cow.setHunger(20);
+        cow.setThirst(100);
+        helper.getLevel().addFreshEntity(cow);
+        cow.setOnGround(true);
+        AnimaniaFindFoodGoal goal = new AnimaniaFindFoodGoal(cow, true, false);
+        try {
+            boolean selected = false;
+            for (int attempt = 0; attempt < 500 && !selected; attempt++) selected = goal.canUse();
+            helper.assertTrue(selected && troughPos.equals(goal.target()),
+                    "hungry cow did not select the feeding-lane trough");
+            if (!selected) return;
+            helper.assertTrue(goal.approach() == null,
+                    "in-range cow was assigned an obsolete feeding lane: " + goal.approach());
+            goal.start();
+            helper.assertTrue(cow.getNavigation().isDone(),
+                    "in-range cow tried to path before using the trough");
+            helper.assertTrue(goal.canContinueToUse(),
+                    "food goal stopped before direct trough interaction");
+            goal.tick();
+            helper.assertTrue(cow.getHunger() == 100 && storage.getItem(0).getCount() == 1,
+                    "cow inside the expanded trough range did not consume exactly one food item");
+        } finally {
+            goal.stop();
+            cow.discard();
+        }
+    }
+
+    private static String saltLickApproachStates(GameTestHelper helper, BlockPos saltPos) {
+        java.util.List<String> states = new java.util.ArrayList<>();
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            BlockPos near = saltPos.relative(direction);
+            BlockPos wide = saltPos.relative(direction, 2);
+            states.add(direction + "[near=" + helper.getLevel().getBlockState(near)
+                    + "/above=" + helper.getLevel().getBlockState(near.above())
+                    + ",wide=" + helper.getLevel().getBlockState(wide)
+                    + "/above=" + helper.getLevel().getBlockState(wide.above()) + "]");
+        }
+        return states.toString();
     }
 
     private static AnimaniaAnimalEntity spawn(GameTestHelper helper, EntityType<? extends AnimaniaAnimalEntity> type, int x) {

@@ -25,6 +25,11 @@ public final class FarmCheeseMoldBlockEntity extends AnimaniaStorageBlockEntity 
 
     @Override
     public int getMaxStackSize() {
+        return 64;
+    }
+
+    @Override
+    protected int automationSlotLimit(int slot) {
         return 1;
     }
 

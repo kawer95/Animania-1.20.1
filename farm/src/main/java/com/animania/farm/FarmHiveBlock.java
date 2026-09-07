@@ -88,7 +88,10 @@ public final class FarmHiveBlock extends AnimaniaContainerBlock {
         if (held.is(Items.GLASS_BOTTLE) && hive.honeyAmount() >= FluidType.BUCKET_VOLUME) {
             if (level.isClientSide) return InteractionResult.SUCCESS;
             hive.honeyTank().drain(FluidType.BUCKET_VOLUME, IFluidHandler.FluidAction.EXECUTE);
-            ItemStack honey = new ItemStack(FarmContent.ITEM_ENTRIES.get("honey_jar").get());
+            // The 1.12 Farm addon registered the filled container as
+            // animania:honey_bottle and rendered it with bottle_honey.png.
+            // honey_jar is retained only as a save-compatibility alias.
+            ItemStack honey = new ItemStack(FarmContent.ITEM_ENTRIES.get("honey_bottle").get());
             replaceHeld(player, hand, honey);
             level.playSound(null, pos, SoundEvents.BOTTLE_FILL, net.minecraft.sounds.SoundSource.BLOCKS, 0.8F, 1.0F);
             return InteractionResult.CONSUME;

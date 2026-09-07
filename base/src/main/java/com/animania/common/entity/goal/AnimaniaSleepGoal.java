@@ -5,6 +5,7 @@ import com.animania.common.entity.AnimaniaAnimalEntity;
 import com.animania.common.entity.AnimaniaSleepProfiles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.block.Block;
 
 import java.util.EnumSet;
@@ -94,6 +95,18 @@ public final class AnimaniaSleepGoal extends Goal {
         return bedPos;
     }
 
+    /** Performs the configured bed search immediately; exposed for deterministic GameTests. */
+    public boolean findTargetNow() {
+        AnimaniaSleepProfiles.Profile profile = AnimaniaSleepProfiles.resolve(animal).orElse(null);
+        return findTargetNow(profile);
+    }
+
+    /** Uses an isolated profile without mutating the live Forge configuration. */
+    public boolean findTargetNow(AnimaniaSleepProfiles.Profile profile) {
+        bedPos = profile == null ? null : findBed(profile);
+        return bedPos != null;
+    }
+
     private BlockPos findBed(AnimaniaSleepProfiles.Profile profile) {
         Block primary = profile.primaryBlock();
         Block secondary = profile.secondaryBlock();
@@ -101,24 +114,38 @@ public final class AnimaniaSleepGoal extends Goal {
         int range = Math.max(1, configured(AnimaniaConfig.AI_BLOCK_SEARCH_RANGE, 16));
         int verticalRange = Math.max(1, range / 2);
         BlockPos origin = animal.blockPosition();
-        BlockPos bestPrimary = null;
         BlockPos bestSecondary = null;
-        double primaryDistance = Double.MAX_VALUE;
-        double secondaryDistance = Double.MAX_VALUE;
-        for (BlockPos candidate : BlockPos.betweenClosed(origin.offset(-range, -verticalRange, -range),
-                origin.offset(range, verticalRange, range))) {
+        for (BlockPos candidate : BlockPos.withinManhattan(origin, range, verticalRange, range)) {
             Block block = animal.level().getBlockState(candidate).getBlock();
             if ((block != primary && block != secondary) || !animal.level().getBlockState(candidate.above()).isAir()) continue;
-            double distance = candidate.distSqr(origin);
-            if (block == primary && distance < primaryDistance) {
-                bestPrimary = candidate.immutable();
-                primaryDistance = distance;
-            } else if (block == secondary && distance < secondaryDistance) {
-                bestSecondary = candidate.immutable();
-                secondaryDistance = distance;
-            }
+            // Keep scanning for a preferred bed, but do not recalculate a path for
+            // every block of a large fallback surface such as a grass pasture.
+            if (block != primary && bestSecondary != null) continue;
+            if (!isReachableBed(candidate)) continue;
+            if (block == primary) return candidate.immutable();
+            bestSecondary = candidate.immutable();
         }
-        return bestPrimary != null ? bestPrimary : bestSecondary;
+        return bestSecondary;
+    }
+
+    /**
+     * A partial path toward an inaccessible bed used to make fenced animals
+     * pile up at the same wall or corner.  Require both enough body room and a
+     * path that reaches the block above the configured bedding.
+     */
+    private boolean isReachableBed(BlockPos bed) {
+        BlockPos standing = bed.above();
+        double x = standing.getX() + 0.5D;
+        double z = standing.getZ() + 0.5D;
+        // An animal already occupying the destination proves that the space is usable;
+        // this also avoids edge-of-GameTest structure collision artifacts.
+        if (animal.distanceToSqr(x, standing.getY(), z) <= 2.25D) return true;
+        if (!animal.level().noCollision(animal, animal.getBoundingBox().move(
+                x - animal.getX(), standing.getY() - animal.getY(), z - animal.getZ()).deflate(0.01D))) {
+            return false;
+        }
+        Path path = animal.getNavigation().createPath(standing, 0);
+        return path != null && path.canReach();
     }
 
     private void wake() {

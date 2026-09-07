@@ -1,5 +1,6 @@
 package com.animania.common.config;
 
+import com.animania.api.AnimaniaLegacyTags;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.resources.ResourceLocation;
@@ -160,9 +161,10 @@ public final class AnimaniaConfig {
             String value = raw.trim().toLowerCase(java.util.Locale.ROOT);
             if (value.equals(registryId)) return true;
             if (value.equals("minecraft:fish") && stack.is(ItemTags.FISHES)) return true;
-            if ((value.equals("listallbeefraw") || value.equals("listallbeef"))
-                    && (stack.is(net.minecraft.world.item.Items.BEEF)
-                    || stack.is(net.minecraft.world.item.Items.COOKED_BEEF))) return true;
+            if (value.equals("listallbeefraw") && stack.is(AnimaniaLegacyTags.RAW_BEEF)) return true;
+            if (value.equals("listallbeef")
+                    && (stack.is(AnimaniaLegacyTags.RAW_BEEF)
+                    || stack.is(AnimaniaLegacyTags.COOKED_BEEF))) return true;
         }
         return false;
     }

@@ -42,6 +42,9 @@ public final class CatsDogsPetBowlBlockEntity extends AnimaniaStorageBlockEntity
         catch (IllegalStateException ignored) { return true; }
     }
 
+    @Override public boolean providesAnimalFood() { return true; }
+    @Override public boolean providesAnimalWater() { return true; }
+
     /** Pet facilities are water-only; reject lava, milk and other automation fluids. */
     @Override
     protected boolean isFluidValid(FluidStack stack) {

@@ -115,10 +115,17 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBlinking, IConvertable,
         PlayerRideableJumping, Container, MenuProvider {
+    public static final int FOOD_SEARCH_HUNGER_THRESHOLD = 20;
+    public static final int WATER_SEARCH_THIRST_THRESHOLD = 20;
+    private static final int CARE_TIMER_MIN_RANDOM_OFFSET = 20 * 60;
+    private static final int CARE_TIMER_MAX_RANDOM_OFFSET = 20 * 120;
+
     private static final EntityDataAccessor<Byte> GENDER = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<String> VARIANT = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> HUNGER = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> THIRST = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> FED = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> WATERED = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> SLEEPING = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.BOOLEAN);
     /** Client-visible progress of the legacy 1.12 lie-down animation. */
     private static final EntityDataAccessor<Float> SLEEP_TIMER = SynchedEntityData.defineId(AnimaniaAnimalEntity.class, EntityDataSerializers.FLOAT);
@@ -333,7 +340,9 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             goalSelector.addGoal(1, new AnimaniaHerdedByGermanShepherdGoal(this));
         }
         goalSelector.addGoal(3, new AnimaniaFindFoodGoal(this));
-        goalSelector.addGoal(4, new AnimaniaFindSaltLickGoal(this));
+        if (AnimaniaFindSaltLickGoal.supports(this)) {
+            goalSelector.addGoal(4, new AnimaniaFindSaltLickGoal(this));
+        }
         if (AnimaniaPlayGoal.supports(this)) goalSelector.addGoal(4, playGoal = new AnimaniaPlayGoal(this));
         if (AnimaniaFindMudGoal.supports(this)) goalSelector.addGoal(1, new AnimaniaFindMudGoal(this));
         if (AnimaniaFindMudGoal.supports(this)) goalSelector.addGoal(11, new AnimaniaPigSnuffleGoal(this));
@@ -571,6 +580,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         entityData.define(VARIANT, "default");
         entityData.define(HUNGER, 100);
         entityData.define(THIRST, 100);
+        entityData.define(FED, true);
+        entityData.define(WATERED, true);
         entityData.define(SLEEPING, false);
         entityData.define(SLEEP_TIMER, 0.0F);
         entityData.define(PLAYING, false);
@@ -619,6 +630,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         tickSleepTimer();
         if (isSitting() || isSleeping()) {
             getNavigation().stop();
+        }
+        if (isSitting()) {
             setDeltaMovement(0.0D, getDeltaMovement().y, 0.0D);
         }
         tickHamsterState();
@@ -631,14 +644,19 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             // starvation pressure while retaining the visible state fields.
             setHunger(100);
             setThirst(100);
+            entityData.set(FED, true);
+            entityData.set(WATERED, true);
             fedTimer = careTimer(AnimaniaConfig.FEED_TIMER, 12000);
             wateredTimer = careTimer(AnimaniaConfig.WATER_TIMER, 12000);
             starvationTicks = 0;
         } else {
             boolean careTimersActive = !config(AnimaniaConfig.REQUIRE_ANIMAL_INTERACTION_FOR_AI, true) || interacted;
             if (careTimersActive) {
-                if (fedTimer > 0 && --fedTimer == 0) setHunger(0);
-                if (wateredTimer > 0 && --wateredTimer == 0) setThirst(0);
+                // The legacy care timers represented fed/watered booleans.
+                // Expiry makes the animal seek its next meal or drink without
+                // destroying the independently tracked 0..100 care meters.
+                if (fedTimer > 0 && --fedTimer == 0) entityData.set(FED, false);
+                if (wateredTimer > 0 && --wateredTimer == 0) entityData.set(WATERED, false);
                 if (tickCount % Math.max(20, config(AnimaniaConfig.HUNGER_INTERVAL, 2400)) == 0) setHunger(getHunger() - 1);
                 if (tickCount % Math.max(20, config(AnimaniaConfig.THIRST_INTERVAL, 1800)) == 0) setThirst(getThirst() - 1);
             }
@@ -694,7 +712,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             // The legacy timer is care-gated. Advancing it only while the
             // animal is fed, watered and awake lets the client display the
             // actual in-between-tick progress instead of jumping every step.
-            if (getHunger() > 0 && getThirst() > 0 && !isSleeping() && ++childGrowthTimer >= interval) {
+            if (isFed() && isWatered() && !isSleeping() && ++childGrowthTimer >= interval) {
                 childGrowthTimer = 0;
                 setAge(Math.min(0, getAge() + interval));
             }
@@ -1024,7 +1042,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         setPregnant(false);
         // A hungry/thirsty female can lose a pregnancy when the legacy rule is
         // enabled.  The decision is made only on the authoritative level.
-        if ((getHunger() <= 0 || getThirst() <= 0)
+        if ((!isFed() && !isWatered())
                 && config(AnimaniaConfig.ANIMAL_LOSS_CHANCE, 0.0D) > 0.0D
                 && random.nextDouble() < config(AnimaniaConfig.ANIMAL_LOSS_CHANCE, 0.0D)) {
             return;
@@ -1082,6 +1100,10 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         adult.setVariantName(getVariantName());
         adult.setHunger(getHunger());
         adult.setThirst(getThirst());
+        adult.entityData.set(FED, isFed());
+        adult.entityData.set(WATERED, isWatered());
+        adult.fedTimer = fedTimer;
+        adult.wateredTimer = wateredTimer;
         adult.setSterilized(isSterilized());
         adult.setTamed(isTamed());
         adult.setOwnerUUID(getOwnerUUID());
@@ -1485,7 +1507,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         // Legacy processInteract only mounted a cared-for animal. Keep the
         // gate for horses as well as saddle pigs; once mounted, normal riding
         // input remains available until the care timers expire.
-        if (getHunger() <= 0 || getThirst() <= 0) return false;
+        if (!isFed() || !isWatered()) return false;
         return !isFarmPig() || player.getMainHandItem().is(Items.CARROT_ON_A_STICK)
                 || player.getOffhandItem().is(Items.CARROT_ON_A_STICK);
     }
@@ -1756,10 +1778,29 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         return entityData.get(HUNGER);
     }
 
+    public boolean shouldSeekFood() {
+        return !isFed() || getHunger() <= FOOD_SEARCH_HUNGER_THRESHOLD;
+    }
+
     public void setHunger(int value) {
         int clamped = Math.max(0, Math.min(100, value));
-        if (clamped == 100 && getHunger() < 100) fedTimer = careTimer(AnimaniaConfig.FEED_TIMER, 12000);
+        if (clamped == 0) {
+            entityData.set(FED, false);
+            fedTimer = 0;
+        } else if (clamped == 100 && (getHunger() < 100 || !isFed())) {
+            setFed(true);
+        }
         entityData.set(HUNGER, clamped);
+    }
+
+    @Override
+    public boolean isFed() {
+        return entityData.get(FED);
+    }
+
+    public void setFed(boolean fed) {
+        entityData.set(FED, fed);
+        fedTimer = fed ? careTimer(AnimaniaConfig.FEED_TIMER, 12000) : 0;
     }
 
     public int getFedTimer() {
@@ -1771,10 +1812,29 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         return entityData.get(THIRST);
     }
 
+    public boolean shouldSeekWater() {
+        return !isWatered() || getThirst() <= WATER_SEARCH_THIRST_THRESHOLD;
+    }
+
     public void setThirst(int value) {
         int clamped = Math.max(0, Math.min(100, value));
-        if (clamped == 100 && getThirst() < 100) wateredTimer = careTimer(AnimaniaConfig.WATER_TIMER, 12000);
+        if (clamped == 0) {
+            entityData.set(WATERED, false);
+            wateredTimer = 0;
+        } else if (clamped == 100 && (getThirst() < 100 || !isWatered())) {
+            setWatered(true);
+        }
         entityData.set(THIRST, clamped);
+    }
+
+    @Override
+    public boolean isWatered() {
+        return entityData.get(WATERED);
+    }
+
+    public void setWatered(boolean watered) {
+        entityData.set(WATERED, watered);
+        wateredTimer = watered ? careTimer(AnimaniaConfig.WATER_TIMER, 12000) : 0;
     }
 
     public int getWateredTimer() {
@@ -2031,22 +2091,26 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     // second custom menu type for the four addon modules.
     @Override
     public int getContainerSize() {
-        return horseItems.size();
+        // This shared class backs every Animania animal. Only draft horses
+        // owned a native inventory in 1.12; exposing these slots on chickens
+        // lets hoppers and modded automation insert feed into the animal, and
+        // makes Jade render that accidental inventory.
+        return isHorseAnimal() ? horseItems.size() : 0;
     }
 
     @Override
     public boolean isEmpty() {
-        return horseItems.stream().allMatch(ItemStack::isEmpty);
+        return !isHorseAnimal() || horseItems.stream().allMatch(ItemStack::isEmpty);
     }
 
     @Override
     public ItemStack getItem(int slot) {
-        return slot >= 0 && slot < horseItems.size() ? horseItems.get(slot) : ItemStack.EMPTY;
+        return slot >= 0 && slot < getContainerSize() ? horseItems.get(slot) : ItemStack.EMPTY;
     }
 
     @Override
     public ItemStack removeItem(int slot, int amount) {
-        if (slot < 0 || slot >= horseItems.size()) return ItemStack.EMPTY;
+        if (slot < 0 || slot >= getContainerSize()) return ItemStack.EMPTY;
         ItemStack result = net.minecraft.world.ContainerHelper.removeItem(horseItems, slot, amount);
         syncSaddleFromContainer();
         return result;
@@ -2054,7 +2118,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     @Override
     public ItemStack removeItemNoUpdate(int slot) {
-        if (slot < 0 || slot >= horseItems.size()) return ItemStack.EMPTY;
+        if (slot < 0 || slot >= getContainerSize()) return ItemStack.EMPTY;
         ItemStack result = net.minecraft.world.ContainerHelper.takeItem(horseItems, slot);
         syncSaddleFromContainer();
         return result;
@@ -2062,7 +2126,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     @Override
     public void setItem(int slot, ItemStack stack) {
-        if (slot < 0 || slot >= horseItems.size() || !canPlaceItem(slot, stack)) return;
+        if (slot < 0 || slot >= getContainerSize() || !canPlaceItem(slot, stack)) return;
         horseItems.set(slot, stack.copy());
         syncSaddleFromContainer();
         setChanged();
@@ -2070,7 +2134,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return !isHorseAnimal() || (slot == 0 && stack.is(Items.SADDLE));
+        return isHorseAnimal() && slot == 0 && stack.is(Items.SADDLE);
     }
 
     private void syncSaddleFromContainer() {
@@ -2090,6 +2154,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     @Override
     public void clearContent() {
+        if (!isHorseAnimal()) return;
         horseItems.clear();
         syncSaddleFromContainer();
     }
@@ -2101,7 +2166,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return new ChestMenu(MenuType.GENERIC_9x1, id, inventory, this, 1);
+        return isHorseAnimal() ? new ChestMenu(MenuType.GENERIC_9x1, id, inventory, this, 1) : null;
     }
 
     /** Whether a female milk-producing animal has entered its lactation window. */
@@ -2235,8 +2300,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     public boolean feed(ItemStack stack) {
         if (stack == null || stack.isEmpty() || level().isClientSide || !isAnimaniaFood(stack)) return false;
         interacted = true;
-        fedTimer = careTimer(AnimaniaConfig.FEED_TIMER, 12000);
         setHunger(Math.min(100, getHunger() + 20));
+        setFed(true);
         if (isAdult() && !isSterilized()) {
             setInLove(null);
         }
@@ -2246,7 +2311,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     /** Exact modern predicate for the legacy 60-tick unhappy smoke cue. */
     public boolean shouldShowUnhappyParticles() {
         return config(AnimaniaConfig.SHOW_UNHAPPY_PARTICLES, true)
-                && getHunger() <= 0 && getThirst() <= 0 && !isSleeping()
+                && !isFed() && !isWatered() && !isSleeping()
                 && (!config(AnimaniaConfig.REQUIRE_ANIMAL_INTERACTION_FOR_AI, true) || hasInteracted());
     }
 
@@ -2254,8 +2319,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     public boolean drink(ItemStack stack) {
         if (stack == null || stack.isEmpty() || level().isClientSide || !isAnimaniaDrink(stack)) return false;
         interacted = true;
-        wateredTimer = careTimer(AnimaniaConfig.WATER_TIMER, 12000);
         setThirst(100);
+        setWatered(true);
         return true;
     }
 
@@ -2277,7 +2342,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         boolean tamedRequirement = AnimaniaApi.requiresTaming(first) || AnimaniaApi.requiresTaming(second);
         if (config(AnimaniaConfig.REQUIRE_ANIMAL_INTERACTION_FOR_AI, true) && (!interacted || !mate.interacted)) return false;
         if (config(AnimaniaConfig.FEED_TO_BREED, true) && (!isInLove() || !mate.isInLove())) return false;
-        if (getHunger() <= 0 || getThirst() <= 0 || mate.getHunger() <= 0 || mate.getThirst() <= 0) return false;
+        if (!isFed() || !isWatered() || !mate.isFed() || !mate.isWatered()) return false;
         if (getAge() != 0 || mate.getAge() != 0 || isSleeping() || mate.isSleeping()
                 || isInWater() || mate.isInWater()) return false;
         if (!breedingCapacityAvailable(mate)) return false;
@@ -2439,23 +2504,23 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     private int careTimer(net.minecraftforge.common.ForgeConfigSpec.IntValue value, int fallback) {
         int base = Math.max(1, config(value, fallback));
         ResourceLocation type = ForgeRegistries.ENTITY_TYPES.getKey(getType());
-        if (type == null) return base + random.nextInt(100);
+        if (type == null) return base + CARE_TIMER_MIN_RANDOM_OFFSET
+                + random.nextInt(CARE_TIMER_MAX_RANDOM_OFFSET - CARE_TIMER_MIN_RANDOM_OFFSET + 1);
         String path = type.getPath();
         boolean water = value == AnimaniaConfig.WATER_TIMER;
         int multiplier = 1;
-        int randomRange = 100;
         if ("animania_extra".equals(type.getNamespace())) {
             if (path.equals("hamster") && water) {
                 multiplier = 4;
-                randomRange = 200;
             } else if ((path.startsWith("ferret_") || path.startsWith("hedgehog")) && water) {
                 multiplier = 2;
-                randomRange = 200;
             } else if (path.startsWith("peacock_") || path.startsWith("peahen_") || path.startsWith("peachick_")) {
                 multiplier = 2;
             }
         }
-        return Math.multiplyExact(base, multiplier) + random.nextInt(randomRange);
+        int randomOffset = CARE_TIMER_MIN_RANDOM_OFFSET
+                + random.nextInt(CARE_TIMER_MAX_RANDOM_OFFSET - CARE_TIMER_MIN_RANDOM_OFFSET + 1);
+        return Math.multiplyExact(base, multiplier) + randomOffset;
     }
 
     private static double config(net.minecraftforge.common.ForgeConfigSpec.DoubleValue value, double fallback) {
@@ -2506,6 +2571,8 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         tag.putInt("AnimaniaFeatherDropTicks", featherDropTicks);
         tag.putInt("AnimaniaFedTimer", fedTimer);
         tag.putInt("AnimaniaWateredTimer", wateredTimer);
+        tag.putBoolean("AnimaniaFed", isFed());
+        tag.putBoolean("AnimaniaWatered", isWatered());
         tag.putInt("AnimaniaDartFrogPoisonTimer", dartFrogPoisonTimer);
         tag.putInt("AnimaniaChildGrowthTimer", childGrowthTimer);
         tag.putInt("CrowTime", crowCooldown);
@@ -2580,6 +2647,14 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
                 : careTimer(AnimaniaConfig.FEED_TIMER, 12000);
         wateredTimer = tag.contains("AnimaniaWateredTimer") ? Math.max(0, tag.getInt("AnimaniaWateredTimer"))
                 : careTimer(AnimaniaConfig.WATER_TIMER, 12000);
+        boolean savedFed = tag.contains("AnimaniaFed") ? tag.getBoolean("AnimaniaFed")
+                : tag.contains("Fed") ? tag.getBoolean("Fed") : fedTimer > 0 && getHunger() > 0;
+        boolean savedWatered = tag.contains("AnimaniaWatered") ? tag.getBoolean("AnimaniaWatered")
+                : tag.contains("Watered") ? tag.getBoolean("Watered") : wateredTimer > 0 && getThirst() > 0;
+        entityData.set(FED, savedFed);
+        entityData.set(WATERED, savedWatered);
+        if (!savedFed) fedTimer = 0;
+        if (!savedWatered) wateredTimer = 0;
         dartFrogPoisonTimer = tag.contains("AnimaniaDartFrogPoisonTimer")
                 ? Math.max(0, tag.getInt("AnimaniaDartFrogPoisonTimer")) : 2;
         childGrowthTimer = tag.contains("AnimaniaChildGrowthTimer")
@@ -2629,7 +2704,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
 
     private boolean isMilkable() {
         if (getGender() != AnimalGender.FEMALE || !isAdult() || !isMilkReady()
-                || getHunger() <= 0 || getThirst() <= 0) return false;
+                || !isFed() || !isWatered()) return false;
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(getType());
         if (id == null) return false;
         String path = id.getPath();
@@ -2640,12 +2715,11 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
     private boolean isMilkableMooshroom() {
         return registryNamespace().equals("animania_farm") && registryPath().equals("cow_mooshroom")
                 && getGender() == AnimalGender.FEMALE && isAdult() && isMilkReady()
-                && getHunger() > 0 && getThirst() > 0;
+                && isFed() && isWatered();
     }
 
     private void consumeWateredAfterProduction() {
-        setThirst(0);
-        wateredTimer = 0;
+        setWatered(false);
     }
 
     @Nullable
@@ -2701,6 +2775,10 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
         replacement.setNoAi(isNoAi());
         replacement.setHunger(getHunger());
         replacement.setThirst(getThirst());
+        replacement.entityData.set(FED, isFed());
+        replacement.entityData.set(WATERED, isWatered());
+        replacement.fedTimer = fedTimer;
+        replacement.wateredTimer = wateredTimer;
         replacement.interacted = interacted;
         replacement.setPersistenceRequired();
         if (!server.addFreshEntity(replacement)) return false;
@@ -2790,7 +2868,7 @@ public class AnimaniaAnimalEntity extends Animal implements IAnimaniaAnimal, IBl
             eggLayTicks = Math.max(20, config(AnimaniaConfig.LAID_TIMER, 2000) / 2) + random.nextInt(100);
             eggLayInitialized = true;
         }
-        if (!isLegacyDaytime() || isSleeping() || getHunger() <= 0 || getThirst() <= 0) return false;
+        if (!isLegacyDaytime() || isSleeping() || !isFed() || !isWatered()) return false;
         if (--eggLayTicks > 0) return false;
         eggLayTicks = Math.max(20, config(AnimaniaConfig.LAID_TIMER, 2000)) + random.nextInt(100);
         String variant = speciesKey(id.getPath());

@@ -9,6 +9,7 @@ import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
+import com.animania.common.AnimaniaBlocks;
 import com.animania.common.AnimaniaFluids;
 import com.animania.common.item.AnimaniaEntityEggItem;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
@@ -53,6 +54,10 @@ public final class AnimaniaClient {
 
     public static void clientSetup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
+            // The legacy floor piles use transparent pixels in carpet-shaped
+            // models. Rendering them as solid turns that transparency black.
+            ItemBlockRenderTypes.setRenderLayer(AnimaniaBlocks.STRAW.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(AnimaniaBlocks.SEEDS.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(AnimaniaFluids.SOURCE_SLOP.get(), RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(AnimaniaFluids.FLOWING_SLOP.get(), RenderType.translucent());
         });

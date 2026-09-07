@@ -1,12 +1,15 @@
 package com.animania.common.block;
 
 import com.animania.common.AnimaniaBlocks;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TroughCapacityTest {
@@ -37,5 +40,41 @@ class TroughCapacityTest {
         assertTrue(entity.contains("syncConfiguredLimits()"));
         assertTrue(renderer.contains("entity.foodDisplayLevel()"));
         assertTrue(renderer.contains("entity.fluidDisplayLevel()"));
+    }
+
+    @Test
+    void animalInteractionRangeCoversBothTroughHalvesPlusConfiguredMargins() {
+        BlockPos controller = new BlockPos(10, 20, 30);
+
+        assertEquals(280, countInteractionBlocks(controller, Direction.EAST));
+        assertTrue(TroughInteractionRange.contains(
+                controller, Direction.EAST, new BlockPos(7, 18, 27)));
+        assertTrue(TroughInteractionRange.contains(
+                controller, Direction.EAST, new BlockPos(14, 22, 33)));
+        assertFalse(TroughInteractionRange.contains(
+                controller, Direction.EAST, new BlockPos(6, 20, 30)));
+        assertFalse(TroughInteractionRange.contains(
+                controller, Direction.EAST, new BlockPos(10, 23, 30)));
+
+        assertEquals(280, countInteractionBlocks(controller, Direction.NORTH));
+        assertTrue(TroughInteractionRange.contains(
+                controller, Direction.NORTH, new BlockPos(7, 18, 26)));
+        assertTrue(TroughInteractionRange.contains(
+                controller, Direction.NORTH, new BlockPos(13, 22, 33)));
+        assertFalse(TroughInteractionRange.contains(
+                controller, Direction.NORTH, new BlockPos(10, 20, 25)));
+    }
+
+    private static int countInteractionBlocks(BlockPos controller, Direction facing) {
+        int count = 0;
+        for (int x = controller.getX() - 5; x <= controller.getX() + 5; x++) {
+            for (int y = controller.getY() - 4; y <= controller.getY() + 4; y++) {
+                for (int z = controller.getZ() - 5; z <= controller.getZ() + 5; z++) {
+                    if (TroughInteractionRange.contains(
+                            controller, facing, new BlockPos(x, y, z))) count++;
+                }
+            }
+        }
+        return count;
     }
 }

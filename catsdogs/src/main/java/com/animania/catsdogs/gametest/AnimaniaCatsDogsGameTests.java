@@ -11,6 +11,8 @@ import com.animania.catsdogs.CatsDogsPetFacilityBlockEntity;
 import com.animania.catsdogs.CatsDogsLegacyIds;
 import com.animania.api.data.AnimalGender;
 import com.animania.common.entity.AnimaniaAnimalEntity;
+import com.animania.common.entity.goal.AnimaniaFindFoodGoal;
+import com.animania.common.entity.goal.AnimaniaFindWaterGoal;
 import com.animania.common.entity.goal.AnimaniaTemptGoal;
 import com.animania.common.entity.goal.AnimaniaPlayGoal;
 import com.animania.common.entity.goal.AnimaniaFollowOwnerGoal;
@@ -147,6 +149,43 @@ public final class AnimaniaCatsDogsGameTests {
                 "cat natural spawn ignored spawnLimitCats");
         helper.assertTrue(egg.getResult() != net.minecraftforge.eventbus.api.Event.Result.DENY,
                 "cat spawn limit blocked a spawn egg");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void vanillaCompanionReplacementOnlyBlocksNaturalSpawns(GameTestHelper helper) {
+        var wolf = EntityType.WOLF.create(helper.getLevel());
+        var ocelot = EntityType.OCELOT.create(helper.getLevel());
+        if (wolf == null || ocelot == null) {
+            helper.fail("failed to create vanilla companion test entities");
+            return;
+        }
+
+        boolean previousWolves = CatsDogsConfig.REPLACE_VANILLA_WOLVES.get();
+        boolean previousOcelots = CatsDogsConfig.REPLACE_VANILLA_OCELOTS.get();
+        var naturalWolf = new net.minecraftforge.event.entity.living.MobSpawnEvent.PositionCheck(
+                wolf, helper.getLevel(), net.minecraft.world.entity.MobSpawnType.NATURAL, null);
+        var generatedOcelot = new net.minecraftforge.event.entity.living.MobSpawnEvent.PositionCheck(
+                ocelot, helper.getLevel(), net.minecraft.world.entity.MobSpawnType.CHUNK_GENERATION, null);
+        var eggWolf = new net.minecraftforge.event.entity.living.MobSpawnEvent.PositionCheck(
+                wolf, helper.getLevel(), net.minecraft.world.entity.MobSpawnType.SPAWN_EGG, null);
+        try {
+            CatsDogsConfig.REPLACE_VANILLA_WOLVES.set(true);
+            CatsDogsConfig.REPLACE_VANILLA_OCELOTS.set(true);
+            AnimaniaCatsDogs.limitNaturalCompanionSpawns(naturalWolf);
+            AnimaniaCatsDogs.limitNaturalCompanionSpawns(generatedOcelot);
+            AnimaniaCatsDogs.limitNaturalCompanionSpawns(eggWolf);
+        } finally {
+            CatsDogsConfig.REPLACE_VANILLA_WOLVES.set(previousWolves);
+            CatsDogsConfig.REPLACE_VANILLA_OCELOTS.set(previousOcelots);
+        }
+
+        helper.assertTrue(naturalWolf.getResult() == net.minecraftforge.eventbus.api.Event.Result.DENY,
+                "replaceVanillaWolves did not deny a natural vanilla wolf spawn");
+        helper.assertTrue(generatedOcelot.getResult() == net.minecraftforge.eventbus.api.Event.Result.DENY,
+                "replaceVanillaOcelots did not deny a chunk-generated vanilla ocelot spawn");
+        helper.assertTrue(eggWolf.getResult() != net.minecraftforge.eventbus.api.Event.Result.DENY,
+                "replaceVanillaWolves blocked a non-natural vanilla wolf");
         helper.succeed();
     }
 
@@ -492,6 +531,59 @@ public final class AnimaniaCatsDogsGameTests {
                 && !bowl.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.DOWN).isPresent();
         com.animania.common.config.AnimaniaConfig.ALLOW_TROUGH_AUTOMATION.set(oldAutomation);
         helper.assertTrue(sidedAutomationHidden, "pet bowl ignored allowTroughAutomation=false");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void petsUseBowlsFromTheExpandedDirectInteractionRange(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_catsdogs:pets_use_bowls_from_expanded_range");
+        BlockPos bowlPos = helper.absolutePos(new BlockPos(4, 1, 4));
+        BlockPos petPos = bowlPos.offset(-2, 1, -2);
+        helper.getLevel().setBlock(bowlPos, CatsDogsContent.PET_BOWL.get().defaultBlockState(), 3);
+        BlockEntity raw = helper.getLevel().getBlockEntity(bowlPos);
+        helper.assertTrue(raw instanceof CatsDogsPetBowlBlockEntity, "pet bowl block entity was not registered");
+        CatsDogsPetBowlBlockEntity bowl = (CatsDogsPetBowlBlockEntity) raw;
+
+        AnimaniaAnimalEntity cat = createPet(helper, "queen_tabby");
+        cat.moveTo(petPos.getX() + 0.5D, petPos.getY(), petPos.getZ() + 0.5D, 0.0F, 0.0F);
+        cat.goalSelector.removeAllGoals(ignored -> true);
+        cat.markInteracted();
+        cat.setHunger(20);
+        cat.setThirst(100);
+        helper.getLevel().addFreshEntity(cat);
+
+        helper.assertTrue(bowl.tryInsertFood(new ItemStack(Items.COD)), "pet bowl rejected cat food");
+        AnimaniaFindFoodGoal foodGoal = new AnimaniaFindFoodGoal(cat, true, false);
+        boolean foundFood = false;
+        for (int attempt = 0; attempt < 500 && !foundFood; attempt++) foundFood = foodGoal.canUse();
+        helper.assertTrue(foundFood && bowlPos.equals(foodGoal.target()),
+                "cat did not select a bowl at the horizontal/vertical range boundary");
+        helper.assertTrue(foodGoal.approach() == null,
+                "cat inside the bowl range still reserved an approach position");
+        foodGoal.start();
+        foodGoal.tick();
+        helper.assertTrue(cat.getHunger() == 100 && bowl.getItem(0).isEmpty(),
+                "cat did not eat directly from the expanded bowl range");
+
+        int filled = bowl.getCapability(ForgeCapabilities.FLUID_HANDLER, null).map(handler ->
+                handler.fill(new FluidStack(Fluids.WATER, FluidType.BUCKET_VOLUME),
+                        IFluidHandler.FluidAction.EXECUTE)).orElse(0);
+        helper.assertTrue(filled == FluidType.BUCKET_VOLUME, "pet bowl could not be filled for range test");
+        cat.setHunger(100);
+        cat.setThirst(20);
+        AnimaniaFindWaterGoal waterGoal = new AnimaniaFindWaterGoal(cat, true, false);
+        boolean foundWater = false;
+        for (int attempt = 0; attempt < 500 && !foundWater; attempt++) foundWater = waterGoal.canUse();
+        helper.assertTrue(foundWater && bowlPos.equals(waterGoal.target()),
+                "cat did not select bowl water at the horizontal/vertical range boundary");
+        helper.assertTrue(waterGoal.approach() == null,
+                "cat inside the bowl water range still reserved an approach position");
+        waterGoal.start();
+        waterGoal.tick();
+        helper.assertTrue(cat.getThirst() == 100 && bowl.fluidAmount(
+                        stack -> stack.getFluid().is(net.minecraft.tags.FluidTags.WATER)) == 950,
+                "cat did not drink the legacy 50 mB amount from the expanded bowl range");
+        cat.discard();
         helper.succeed();
     }
 

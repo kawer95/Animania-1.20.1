@@ -717,6 +717,39 @@ public final class AnimaniaExtraGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void peafowlEggHatchesFromRandomTickNearPeacock(GameTestHelper helper) {
+        AnimaniaGameTestEvidence.mark("animania_extra:peafowl_nest_hatching");
+        int previousChance = com.animania.common.config.AnimaniaConfig.EGG_HATCH_CHANCE.get();
+        com.animania.common.config.AnimaniaConfig.EGG_HATCH_CHANCE.set(1);
+        BlockPos nestPos = helper.absolutePos(new BlockPos(2, 1, 2));
+        AnimaniaAnimalEntity peacock = createAnimal(helper, "peacock_blue");
+        try {
+            helper.getLevel().setBlock(nestPos, AnimaniaBlocks.NEST.get().defaultBlockState(), 3);
+            AnimaniaBlocks.NestEntity nest = (AnimaniaBlocks.NestEntity) helper.getLevel().getBlockEntity(nestPos);
+            helper.assertTrue(nest.insertEgg(new ItemStack(
+                            ExtraContent.ITEM_ENTRIES.get("peacock_egg_blue").get()), "blue"),
+                    "nest rejected the peafowl egg hatching fixture");
+            peacock.moveTo(nestPos.getX() + 1.0D, nestPos.getY(), nestPos.getZ() + 0.5D, 0.0F, 0.0F);
+            helper.getLevel().addFreshEntity(peacock);
+
+            helper.getLevel().getBlockState(nestPos).getBlock().randomTick(
+                    helper.getLevel().getBlockState(nestPos), helper.getLevel(), nestPos,
+                    net.minecraft.util.RandomSource.create(42L));
+
+            helper.assertTrue(nest.getItem(0).isEmpty(), "successful peafowl hatch did not consume one nest egg");
+            helper.assertTrue(helper.getLevel().getEntitiesOfClass(AnimaniaAnimalEntity.class,
+                    new net.minecraft.world.phys.AABB(nestPos).inflate(2.0D), animal -> {
+                        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(animal.getType());
+                        return id != null && id.equals(new ResourceLocation(AnimaniaExtra.MOD_ID, "peachick_blue"));
+                    }).size() == 1, "nest random tick did not spawn the breed-matched peachick");
+        } finally {
+            peacock.discard();
+            com.animania.common.config.AnimaniaConfig.EGG_HATCH_CHANCE.set(previousChance);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void onlyMalePeacockDropsTimedFeather(GameTestHelper helper) {
         AnimaniaGameTestEvidence.mark("animania_extra:onlyMalePeacockDropsTimedFeather");
         AnimaniaAnimalEntity peahen = createAnimal(helper, "peahen_blue");

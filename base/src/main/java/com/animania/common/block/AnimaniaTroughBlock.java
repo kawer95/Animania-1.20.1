@@ -50,6 +50,15 @@ public final class AnimaniaTroughBlock extends BaseEntityBlock implements Liquid
 
     public BlockPos companionPos(BlockPos controller, BlockState state) { return controller.relative(state.getValue(FACING)); }
 
+    /**
+     * Animals may use either half of the trough from three blocks away on each
+     * horizontal side and two blocks above or below it.  Because the trough is
+     * two blocks long, this produces an 8 x 7 x 5 block interaction volume.
+     */
+    public boolean isWithinAnimalInteractionRange(BlockPos controller, BlockState state, Entity animal) {
+        return TroughInteractionRange.contains(controller, state.getValue(FACING), animal.blockPosition());
+    }
+
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING); }
     @Override public BlockState rotate(BlockState state, Rotation rotation) { return state.setValue(FACING, rotation.rotate(state.getValue(FACING))); }
     @Override public BlockState mirror(BlockState state, Mirror mirror) { return rotate(state, mirror.getRotation(state.getValue(FACING))); }

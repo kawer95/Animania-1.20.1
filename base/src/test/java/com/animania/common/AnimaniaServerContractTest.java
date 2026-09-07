@@ -13,7 +13,11 @@ class AnimaniaServerContractTest {
     void serverHooksKeepSeedSpawnDamageAndAdvancementResponsibilities() throws Exception {
         String events = Files.readString(Path.of("src/main/java/com/animania/AnimaniaServerEvents.java"));
         String animal = Files.readString(Path.of("src/main/java/com/animania/common/entity/AnimaniaAnimalEntity.java"));
-        assertTrue(events.contains("onSeedRightClick"));
+        assertTrue(events.contains("onSeedRightClick(PlayerInteractEvent.RightClickItem event)"),
+                "seed piles must run after usable blocks receive right-click, matching 1.12");
+        assertTrue(!events.contains("onSeedRightClick(PlayerInteractEvent.RightClickBlock event)"),
+                "a RightClickBlock seed hook steals chest/door interactions before vanilla can consume them");
+        assertTrue(events.contains("ForgeMod.BLOCK_REACH"));
         assertTrue(events.contains("onSpawnPlacement"));
         assertTrue(events.contains("onEntityJoin"));
         assertTrue(animal.contains("source.is(net.minecraft.world.damagesource.DamageTypes.STARVE)"));
